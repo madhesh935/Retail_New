@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.db.database import engine, Base, get_db
 from app.services.firebase_sync import init_firebase
 from app.services.queue_intelligence import queue_monitor
-from app.api.endpoints import queue
+from app.api.endpoints import queue, entrance
 
 # Create SQLite tables
 Base.metadata.create_all(bind=engine)
@@ -38,6 +38,7 @@ app.add_middleware(
 )
 
 app.include_router(queue.router, prefix="/api/v1/queue", tags=["Queue Intelligence"])
+app.include_router(entrance.router, prefix="/api/v1/entrance", tags=["Entrance Intelligence"])
 
 @app.get("/")
 def read_root():

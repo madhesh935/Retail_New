@@ -7,20 +7,24 @@ from ultralytics import YOLO
 logger = logging.getLogger(__name__)
 
 class QueueMonitor:
+    """
+    Acts as a Checkout / Exit monitor. 
+    Uses line-crossing logic to count checked out people.
+    """
     def __init__(self, model_path="yolo11n.pt", lane_id: str = "lane-1"):
         self.model_path = model_path
         self.model = None
         self.lane_id = lane_id
         
         # State variables
-        self.current_people_count = 0
-        self.tracked_people = {}  # dict mapping track_id -> start_time
-        self.completed_wait_times = [] # list of wait times in seconds for average calculation
+        self.checked_out_count = 0
+        self.tracked_centroids = {}  # dict mapping track_id -> list of (x, y)
+        self.line_y = None
 
     def initialize_model(self):
         """Initializes the YOLO model."""
         if self.model is None:
-            logger.info("Initializing YOLO model...")
+            logger.info(f"Initializing YOLO model for Checkout Lane {self.lane_id}...")
             self.model = YOLO(self.model_path)
             logger.info("YOLO model loaded.")
 
@@ -40,66 +44,61 @@ class QueueMonitor:
             logger.error("Failed to decode frame bytes")
             return self.get_status()
 
+        height, width = frame.shape[:2]
+        if self.line_y is None:
+            self.line_y = height // 2
+
         # Run YOLO inference with tracking
-        # class=0 is person in COCO dataset
-        results = self.model.track(frame, classes=[0], conf=0.6, persist=True, verbose=False)
+        results = self.model.track(frame, classes=[0], conf=0.5, persist=True, verbose=False)
         
         current_ids = set()
-        now = time.time()
         detections = []
         
         if results and results[0].boxes and results[0].boxes.id is not None:
             boxes = results[0].boxes
             track_ids = boxes.id.int().cpu().tolist()
             confs = boxes.conf.cpu().tolist()
+            xywh = boxes.xywh.cpu().tolist()
             
             for i, track_id in enumerate(track_ids):
                 current_ids.add(track_id)
-                # New person detected
-                if track_id not in self.tracked_people:
-                    self.tracked_people[track_id] = now
+                cx, cy, _, _ = xywh[i]
+                
+                if track_id in self.tracked_centroids:
+                    prev_cy = self.tracked_centroids[track_id][-1][1]
+                    
+                    # Passed from top to bottom (Checkout Exit)
+                    if prev_cy < self.line_y and cy >= self.line_y:
+                        self.checked_out_count += 1
+                        
+                else:
+                    self.tracked_centroids[track_id] = []
+                    
+                self.tracked_centroids[track_id].append((cx, cy))
+                
+                if len(self.tracked_centroids[track_id]) > 30:
+                    self.tracked_centroids[track_id] = self.tracked_centroids[track_id][-30:]
                     
                 detections.append({
                     "trackId": f"T-{track_id}",
                     "conf": f"{confs[i]:.2f}",
-                    "position": f"Queue Pos #{i+1}"
+                    "position": f"({int(cx)}, {int(cy)})"
                 })
                     
-        self.current_people_count = len(current_ids)
-        
-        # Check for people who left the frame
-        missing_ids = list(set(self.tracked_people.keys()) - current_ids)
-        for m_id in missing_ids:
-            start_time = self.tracked_people.pop(m_id)
-            wait_duration = now - start_time
-            # Only record if they were present for at least 2 seconds
-            if wait_duration > 2.0:
-                self.completed_wait_times.append(wait_duration)
-                
-                if len(self.completed_wait_times) > 100:
-                    self.completed_wait_times.pop(0)
-
+        # Clean up lost tracks
+        lost_ids = set(self.tracked_centroids.keys()) - current_ids
+        for track_id in lost_ids:
+            del self.tracked_centroids[track_id]
+            
         status = self.get_status()
         status["detections"] = detections
         return status
 
     def get_status(self):
-        """Returns the current queue status."""
-        avg_time = 0
-        if self.completed_wait_times:
-            avg_time = sum(self.completed_wait_times) / len(self.completed_wait_times)
-        
-        # Incorporate active waiting times into the average if queue is active
-        if not self.completed_wait_times and self.tracked_people:
-            now = time.time()
-            active_times = [now - start for start in self.tracked_people.values()]
-            avg_time = sum(active_times) / len(active_times)
-        
+        """Returns the current checkout status."""
         return {
             "lane_id": self.lane_id,
-            "people_count": self.current_people_count,
-            "average_wait_time_seconds": round(avg_time, 2),
-            "total_completed_visits": len(self.completed_wait_times)
+            "checked_out_count": self.checked_out_count
         }
 
 # Registry of monitors per lane (lane-1 through lane-4)
