@@ -7,9 +7,10 @@ from ultralytics import YOLO
 logger = logging.getLogger(__name__)
 
 class QueueMonitor:
-    def __init__(self, model_path="yolo11n.pt"):
+    def __init__(self, model_path="yolo11n.pt", lane_id: str = "lane-1"):
         self.model_path = model_path
         self.model = None
+        self.lane_id = lane_id
         
         # State variables
         self.current_people_count = 0
@@ -95,10 +96,21 @@ class QueueMonitor:
             avg_time = sum(active_times) / len(active_times)
         
         return {
+            "lane_id": self.lane_id,
             "people_count": self.current_people_count,
             "average_wait_time_seconds": round(avg_time, 2),
             "total_completed_visits": len(self.completed_wait_times)
         }
 
-# Global instance
-queue_monitor = QueueMonitor()
+# Registry of monitors per lane (lane-1 through lane-4)
+_MONITOR_REGISTRY: dict[str, QueueMonitor] = {}
+
+def get_monitor(lane_id: str = "lane-1") -> QueueMonitor:
+    """Returns (or lazily creates) a QueueMonitor for the given lane_id."""
+    global _MONITOR_REGISTRY
+    if lane_id not in _MONITOR_REGISTRY:
+        _MONITOR_REGISTRY[lane_id] = QueueMonitor(model_path="yolo11n.pt", lane_id=lane_id)
+    return _MONITOR_REGISTRY[lane_id]
+
+# Default global instance for backwards compatibility (lane-1 / C1)
+queue_monitor = get_monitor("lane-1")

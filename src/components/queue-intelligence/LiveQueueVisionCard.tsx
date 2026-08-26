@@ -117,8 +117,9 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
         }
         setIsStreaming(true);
 
-        // Connect to FastAPI WebSocket
-        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream`;
+        // Connect to per-lane FastAPI WebSocket
+        const laneNum = parseInt(laneCode.replace('C', '')) || 1
+        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream/lane-${laneNum}`;
         wsRef.current = new WebSocket(wsUrl);
 
         wsRef.current.onopen = () => {

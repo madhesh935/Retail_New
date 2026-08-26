@@ -18,6 +18,9 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
   useEffect(() => {
     let intervalId: number
 
+    const laneNum = parseInt(laneCode.replace('C', '')) || 1
+    const laneId = `lane-${laneNum}`
+
     const startBackgroundCamera = async () => {
       try {
         if (!ipUrl) {
@@ -27,19 +30,17 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
           }
         }
 
-        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream`
+        // Use per-lane WebSocket endpoint so each counter tracks independently
+        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream/${laneId}`
         wsRef.current = new WebSocket(wsUrl)
 
         wsRef.current.onopen = () => {
-          console.log(`Background WS Connected for ${laneCode}`)
-          intervalId = window.setInterval(captureAndSendFrame, 1000) // 1 FPS for background to save CPU
+          console.log(`Background WS Connected for ${laneCode} (${laneId})`)
+          intervalId = window.setInterval(captureAndSendFrame, 1500) // 0.67 FPS for background
         }
 
         wsRef.current.onmessage = (event) => {
           const data = JSON.parse(event.data)
-          const laneNum = parseInt(laneCode.replace('C', '')) || 1
-          const laneId = `lane-${laneNum}`
-          
           useAppStore.getState().updateLaneQueue(laneId, data.people_count, data.average_wait_time_seconds)
         }
       } catch (err) {
@@ -83,6 +84,8 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
     const context = canvas.getContext('2d')
     if (context) {
       try {
+        const laneNum = parseInt(laneCode.replace('C', '')) || 1
+        const laneId = `lane-${laneNum}`
         const roi = useAppStore.getState().cameraRois[laneCode] || { x: 0, y: 0, width: 1, height: 1 }
         
         const sx = sourceWidth * roi.x

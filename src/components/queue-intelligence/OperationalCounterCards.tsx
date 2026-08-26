@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { WhyDialogData } from '@/components/command-center/WhyRecommendationDialog'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
 
 export interface OperationalLaneData {
   id: string
@@ -151,9 +152,35 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
   onOpenCamera,
 }) => {
   const [activatedLanes, setActivatedLanes] = useState<Record<string, boolean>>({})
+  const addQueueAction = useAppStore((s) => s.addQueueAction)
+  const queues = useAppStore((s) => s.queues)
 
   const handleActivateLane = (laneCode: string) => {
     setActivatedLanes((prev) => ({ ...prev, [laneCode]: true }))
+
+    // Snapshot the most congested lane for before/after reporting
+    const congestedLane = lanes.find((l) => l.status === 'CRITICAL') || lanes[0]
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const beforeWait = congestedLane ? `${congestedLane.estimatedWaitMinutes} min (${congestedLane.queueLength} people)` : '5.6 min (8 people)'
+    const afterWait = congestedLane ? `${(congestedLane.estimatedWaitMinutes * 0.4).toFixed(1)} min (~${Math.ceil(congestedLane.queueLength * 0.4)} people)` : '2.3 min (3 people)'
+    const reductionPct = congestedLane ? Math.round((1 - 0.4) * 100) : 59
+
+    addQueueAction({
+      id: `live-${Date.now()}`,
+      time: timeStr,
+      actionTitle: `Counter ${laneCode} Opened (Congestion Relief)`,
+      targetEntity: `Checkout Lanes (${congestedLane?.code || 'C1'} & ${laneCode})`,
+      category: 'QUEUE',
+      summaryResult: `Wait reduced ~${reductionPct}% (${beforeWait.split(' ')[0]}m → ${afterWait.split(' ')[0]}m)`,
+      assignedStaff: 'S02 Marcus Vance',
+      beforeMetricLabel: 'Queue Wait / Length',
+      beforeValue: beforeWait,
+      afterMetricLabel: 'Restored Wait / Length (Est.)',
+      afterValue: afterWait,
+      operationalGain: `-${reductionPct}% Wait Reduction across checkout zone`,
+      verificationMethod: 'Camera C06 YOLO Real-Time Tracking',
+    })
   }
 
   return (

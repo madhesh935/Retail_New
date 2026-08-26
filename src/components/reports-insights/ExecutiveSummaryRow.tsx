@@ -9,8 +9,19 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react'
+import { useAppStore } from '@/store/useAppStore'
 
 export const ExecutiveSummaryRow: React.FC = () => {
+  const systemAvgWaitSec = useAppStore((s) => s.systemAverageWaitTimeSeconds)
+  const queues = useAppStore((s) => s.queues)
+  const queueActionLog = useAppStore((s) => s.queueActionLog)
+
+  const avgWaitMin = systemAvgWaitSec ? (systemAvgWaitSec / 60).toFixed(1) : '2.7'
+  const isSlaBreached = Number(avgWaitMin) > 3.0
+
+  // Resolve critical incidents: queue action log entries count as resolved
+  const queueActionsCount = queueActionLog.length
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-mono">
       {/* 1. Footfall */}
@@ -56,27 +67,29 @@ export const ExecutiveSummaryRow: React.FC = () => {
       </div>
 
       {/* 3. Average Queue Wait */}
-      <div className="rounded-lg bg-[#0F172A] border border-cyan-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className={`rounded-lg bg-[#0F172A] border ${isSlaBreached ? 'border-rose-500/40' : 'border-cyan-500/30'} p-3 flex flex-col justify-between shadow-sm`}>
         <div className="flex items-center justify-between gap-1 mb-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
             Avg Queue Wait
           </span>
-          <div className="p-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+          <div className={`p-1 rounded ${isSlaBreached ? 'bg-rose-950 text-rose-400 border border-rose-500/30' : 'bg-cyan-950 text-cyan-400 border border-cyan-500/30'}`}>
             <Clock className="h-3 w-3" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-white tracking-tight flex items-baseline gap-1">
-            <span>2.7</span>
+          <div className={`text-2xl font-bold tracking-tight flex items-baseline gap-1 ${isSlaBreached ? 'text-rose-400' : 'text-white'}`}>
+            <span>{avgWaitMin}</span>
             <span className="text-xs text-slate-400 font-normal">min</span>
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Max Wait SLA: 3.0 min</div>
+          <div className={`text-[10px] mt-0.5 ${isSlaBreached ? 'text-rose-400 font-semibold' : 'text-slate-400'}`}>
+            {isSlaBreached ? '⚠️ SLA Breached (&gt;3.0 min)' : 'Max Wait SLA: 3.0 min'}
+          </div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400 flex items-center gap-0.5">
-            <ArrowDownRight className="h-3 w-3" /> -18%
+          <span className={`flex items-center gap-0.5 ${isSlaBreached ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <ArrowDownRight className="h-3 w-3" /> Live
           </span>
-          <span className="text-slate-500 text-[9px]">vs baseline</span>
+          <span className="text-slate-500 text-[9px]">YOLO Model</span>
         </div>
       </div>
 
