@@ -78,13 +78,13 @@ export const getOperationalLanes = (
       targetEntity: 'Checkout Counter C1',
       signals: [
         { label: 'Current Queue Depth', value: '8 shoppers', highlight: true },
-        { label: 'Arrival Rate (Î»)', value: '2.8 / min' },
-        { label: 'Service Rate (Î¼)', value: '1.5 / min' },
+        { label: 'Arrival Rate (λ)', value: '2.8 / min' },
+        { label: 'Service Rate (μ)', value: '1.5 / min' },
         { label: 'Forecast +3 min', value: '10 shoppers' },
         { label: 'Forecast +5 min', value: '13 shoppers', highlight: true },
         { label: 'Congestion Probability', value: '92%' },
       ],
-      mathFormula: 'Q(t + 5) = Q(t) + 5 × (Î» - Î¼) = 8 + 5 × (2.8 - 1.5) = 14.5 ≈ 13 shoppers',
+      mathFormula: 'Q(t + 5) = Q(t) + 5 × (λ - μ) = 8 + 5 × (2.8 - 1.5) = 14.5 ≈ 13 shoppers',
       threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
       confidence: '92% (QueueSense-TemporalEdge)',
       conclusion: 'Open Standby Counter C3 and reallocate Marcus Vance (EMP-402)',
@@ -263,11 +263,11 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
               {!isClosed && (
                 <div className="space-y-1.5 text-[10px] text-slate-300 bg-[#090D14] p-2.5 rounded border border-[#1E293B] mb-2.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Arrival Rate (Î»):</span>
+                    <span className="text-slate-500">Arrival Rate (λ):</span>
                     <strong>{lane.arrivalRate} cust/min</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Service Rate (Î¼):</span>
+                    <span className="text-slate-500">Service Rate (μ):</span>
                     <strong>{lane.serviceRate} cust/min</strong>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-[#1E293B]">

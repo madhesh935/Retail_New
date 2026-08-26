@@ -39,7 +39,10 @@ export const CommandCenterPage: React.FC = () => {
       {/* 2. Top KPI Row (Exactly 6 primary KPI cards) */}
       <KpiSummaryRow />
 
-      {/* 3. Main Content: 65% Digital Twin Store Map / 35% AI Action Center */}
+      {/* 3. Live Camera Strip (Entrance C01, Produce C02, Beverages C03, Checkout C05) */}
+      <LiveCameraStrip />
+
+      {/* 4. Main Content: 65% Digital Twin Store Map / 35% AI Action Center */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
         {/* Left 65% (Approx. 8 of 12 cols on desktop) - Interactive Digital Twin */}
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
@@ -54,9 +57,6 @@ export const CommandCenterPage: React.FC = () => {
           />
         </div>
       </div>
-
-      {/* 4. Live Camera Strip (Entrance C01, Beverage C03, Checkout C05, Aisle C04) */}
-      <LiveCameraStrip />
 
       {/* 5. Bottom Intelligence Section (4 compact analytics widgets) */}
       <BottomIntelligenceGrid />

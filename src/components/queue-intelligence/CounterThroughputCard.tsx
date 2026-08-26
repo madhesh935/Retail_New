@@ -37,7 +37,7 @@ export const CounterThroughputCard: React.FC = () => {
         </div>
 
         <div className="bg-[#090D14] p-2.5 rounded border border-amber-500/40">
-          <span className="text-[10px] text-slate-500 block">Arrival Rate (Î»)</span>
+          <span className="text-[10px] text-slate-500 block">Arrival Rate (λ)</span>
           <div className="text-xl font-bold text-amber-400">2.8/min</div>
           <span className="text-[9px] text-amber-300">Rush Inflow</span>
         </div>

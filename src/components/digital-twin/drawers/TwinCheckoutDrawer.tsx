@@ -90,13 +90,13 @@ export const TwinCheckoutDrawer: React.FC<TwinCheckoutDrawerProps> = ({
                 </span>
               </div>
               <div className="bg-[#090D14] p-2 rounded border border-[#1E293B]">
-                <span className="text-[10px] text-slate-500 block">Arrival Rate (Î»)</span>
+                <span className="text-[10px] text-slate-500 block">Arrival Rate (λ)</span>
                 <span className="text-base font-bold text-white">
                   {checkout.arrivalRate}/min
                 </span>
               </div>
               <div className="bg-[#090D14] p-2 rounded border border-[#1E293B]">
-                <span className="text-[10px] text-slate-500 block">Service Rate (Î¼)</span>
+                <span className="text-[10px] text-slate-500 block">Service Rate (μ)</span>
                 <span className="text-base font-bold text-white">
                   {checkout.serviceRate}/min
                 </span>

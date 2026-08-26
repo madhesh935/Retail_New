@@ -30,8 +30,8 @@ export const CopilotLiveBriefCard: React.FC<CopilotLiveBriefCardProps> = ({
     targetEntity: 'Checkout Counter C1',
     signals: [
       { label: 'Current Queue Depth', value: '8 shoppers', highlight: true },
-      { label: 'Arrival Rate (Î»)', value: '2.8 / min' },
-      { label: 'Service Rate (Î¼)', value: '1.5 / min' },
+      { label: 'Arrival Rate (λ)', value: '2.8 / min' },
+      { label: 'Service Rate (μ)', value: '1.5 / min' },
       { label: 'Forecast +5 min', value: '13 shoppers', highlight: true },
     ],
     threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
