@@ -7,6 +7,7 @@ import {
   UserCheck,
   AlertTriangle,
   Sparkles,
+  ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -27,17 +28,70 @@ export interface TooltipData {
 
 interface TwinTooltipProps {
   data: TooltipData | null
+  cursorPos?: { x: number; y: number } | null
+  containerRef?: React.RefObject<HTMLDivElement | null>
 }
 
-export const TwinTooltip: React.FC<TwinTooltipProps> = ({ data }) => {
+export const TwinTooltip: React.FC<TwinTooltipProps> = ({
+  data,
+  cursorPos,
+  containerRef,
+}) => {
   if (!data) return null
+
+  // Calculate container-relative coordinates
+  const containerW = containerRef?.current?.clientWidth || 900
+  const containerH = containerRef?.current?.clientHeight || 600
+
+  let posX = cursorPos?.x ?? 0
+  let posY = cursorPos?.y ?? 0
+
+  if ((!cursorPos || (cursorPos.x === 0 && cursorPos.y === 0)) && data.screenX !== undefined && data.screenY !== undefined) {
+    if (containerRef?.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      posX = data.screenX - rect.left
+      posY = data.screenY - rect.top
+    } else {
+      posX = data.screenX
+      posY = data.screenY
+    }
+  }
+
+  // Estimated tooltip dimensions
+  const tooltipWidth = 270
+  const tooltipHeight = data.alert ? 190 : 160
+
+  // Smart floating placement:
+  // Default: Float above and to the right of cursor
+  let left = posX + 16
+  let top = posY - tooltipHeight - 12
+
+  // If it goes beyond the right edge, flip to the left of the cursor
+  if (left + tooltipWidth > containerW - 14) {
+    left = posX - tooltipWidth - 16
+  }
+
+  // If too close to the left edge, clamp
+  if (left < 14) {
+    left = 14
+  }
+
+  // If it goes above the top edge, flip below the cursor
+  if (top < 14) {
+    top = posY + 22
+  }
+
+  // If it goes below the bottom edge, clamp
+  if (top + tooltipHeight > containerH - 14) {
+    top = containerH - tooltipHeight - 14
+  }
 
   const getIcon = () => {
     switch (data.type) {
       case 'shelf':
-        return <Box className="h-3.5 w-3.5 text-amber-400" />
+        return <Box className="h-3.5 w-3.5 text-cyan-400" />
       case 'checkout':
-        return <ListOrdered className="h-3.5 w-3.5 text-cyan-400" />
+        return <ListOrdered className="h-3.5 w-3.5 text-emerald-400" />
       case 'zone':
         return <Layers className="h-3.5 w-3.5 text-indigo-400" />
       case 'staff':
@@ -45,7 +99,7 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({ data }) => {
       case 'incident':
         return <AlertTriangle className="h-3.5 w-3.5 text-rose-400" />
       case 'camera':
-        return <Camera className="h-3.5 w-3.5 text-cyan-300" />
+        return <Camera className="h-3.5 w-3.5 text-sky-400" />
       default:
         return <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
     }
@@ -53,19 +107,19 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({ data }) => {
 
   const getStatusBadge = () => {
     if (!data.status) return null
-    let colorClasses = 'bg-[#131D31] text-cyan-300 border-cyan-500/30'
+    let colorClasses = 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
     if (data.statusColor === 'rose') {
-      colorClasses = 'bg-rose-950 text-rose-300 border-rose-500/40'
+      colorClasses = 'bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-rose-500/20 shadow-sm'
     } else if (data.statusColor === 'amber') {
-      colorClasses = 'bg-amber-950 text-amber-300 border-amber-500/40'
+      colorClasses = 'bg-amber-950/80 text-amber-300 border-amber-500/50 shadow-amber-500/20 shadow-sm'
     } else if (data.statusColor === 'emerald') {
-      colorClasses = 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
+      colorClasses = 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50 shadow-emerald-500/20 shadow-sm'
     } else if (data.statusColor === 'purple') {
-      colorClasses = 'bg-purple-950 text-purple-300 border-purple-500/40'
+      colorClasses = 'bg-purple-950/80 text-purple-300 border-purple-500/50 shadow-purple-500/20 shadow-sm'
     }
 
     return (
-      <span className={cn('text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase', colorClasses)}>
+      <span className={cn('text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider', colorClasses)}>
         {data.status}
       </span>
     )
@@ -73,18 +127,18 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({ data }) => {
 
   return (
     <div
-      className="pointer-events-none absolute z-30 transition-transform duration-75 ease-out font-sans"
+      className="pointer-events-none absolute z-40 font-sans transition-all duration-75 ease-out"
       style={{
-        left: data.screenX !== undefined ? Math.min(Math.max(data.screenX + 16, 16), window.innerWidth - 280) : '50%',
-        top: data.screenY !== undefined ? Math.min(Math.max(data.screenY - 20, 40), window.innerHeight - 200) : '50%',
+        left: `${left}px`,
+        top: `${top}px`,
       }}
     >
-      <div className="w-64 rounded-lg bg-[#090D14]/95 backdrop-blur-md border border-[#1E293B] shadow-2xl p-2.5 space-y-2 select-none text-slate-200 text-xs">
+      <div className="w-[268px] rounded-xl bg-[#090E17]/95 backdrop-blur-xl border border-[#1E293B] shadow-2xl p-2.5 space-y-2 select-none text-slate-200 text-xs">
         {/* Header */}
         <div className="flex items-center justify-between pb-1.5 border-b border-[#1E293B]/80">
-          <div className="flex items-center gap-1.5 truncate">
+          <div className="flex items-center gap-1.5 min-w-0 pr-1">
             {getIcon()}
-            <span className="font-bold text-white text-xs truncate font-sans">
+            <span className="font-bold text-white text-[12px] truncate font-sans tracking-tight">
               {data.title}
             </span>
           </div>
@@ -92,17 +146,17 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({ data }) => {
         </div>
 
         {data.subtitle && (
-          <div className="text-[11px] text-slate-400 font-sans truncate">
+          <div className="text-[10.5px] text-slate-400 font-sans truncate -mt-0.5">
             {data.subtitle}
           </div>
         )}
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-1.5 bg-[#070A0F] p-1.5 rounded border border-[#1E293B]/60 font-mono text-[10px]">
+        <div className="grid grid-cols-2 gap-1.5 bg-[#05080F]/90 p-1.5 rounded-lg border border-[#1E293B]/60 font-mono text-[10px]">
           {data.metrics.map((m, idx) => (
             <div key={idx} className="space-y-0.5">
-              <span className="text-slate-500 block font-sans">{m.label}</span>
-              <span className={cn('font-bold', m.highlight ? 'text-rose-400' : 'text-white')}>
+              <span className="text-slate-400 block font-sans text-[9.5px]">{m.label}</span>
+              <span className={cn('font-bold text-[11px]', m.highlight ? 'text-rose-400' : 'text-slate-100')}>
                 {m.value}
               </span>
             </div>
@@ -111,15 +165,18 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({ data }) => {
 
         {/* Alert Pill if any */}
         {data.alert && (
-          <div className="text-[10px] font-mono bg-rose-950/40 p-1.5 rounded border border-rose-500/30 text-rose-300 font-medium">
-            ? {data.alert}
+          <div className="text-[9.5px] font-mono bg-rose-950/60 p-1.5 rounded-lg border border-rose-500/40 text-rose-300 font-medium flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3 shrink-0 text-rose-400" />
+            <span className="truncate">{data.alert}</span>
           </div>
         )}
 
         {/* Action Hint */}
-        <div className="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
-          <span>Click to pin full details</span>
-          <span className="text-cyan-400 font-mono">Inspect ?</span>
+        <div className="text-[9.5px] text-slate-400 flex items-center justify-between pt-0.5 border-t border-[#1E293B]/40">
+          <span>Click object to inspect</span>
+          <span className="text-cyan-400 font-mono flex items-center gap-0.5 text-[9px]">
+            Details <ArrowRight className="h-2.5 w-2.5" />
+          </span>
         </div>
       </div>
     </div>

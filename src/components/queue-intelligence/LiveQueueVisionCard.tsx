@@ -211,14 +211,14 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
   return (
     <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none font-mono">
       {/* Header & Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1E293B] mb-2.5">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-400">
             <Camera className="h-3.5 w-3.5" />
           </div>
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <span>Live Checkout Edge Vision Pipeline</span>
+              <span>Live Checkout Real Vision</span>
               <span className="text-[10px] text-cyan-400 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-500/40 font-normal">
                 CAM-06 ({laneCode})
               </span>
@@ -240,6 +240,23 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
               <Settings2 className="h-3 w-3 mr-1" /> Adjust ROI
             </Button>
           )}
+        </div>
+      </div>
+
+      {/* RTSP Stream Status & Prominent People Count Bar (Above Video) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-md bg-[#070D18] border border-cyan-500/30 text-cyan-300 text-xs font-bold mb-3 shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="tracking-wide text-cyan-300">RTSP STREAM • CAM-06 (Overhead Checkout)</span>
+        </div>
+        
+        {/* People Count Badge Above Video */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-400 font-mono font-normal">People Count:</span>
+          <span className="px-2 py-0.5 rounded bg-rose-950/80 border border-rose-500/50 text-rose-300 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm shadow-rose-500/20">
+            <Users className="h-3.5 w-3.5 text-rose-400" />
+            <span>{liveQueueCount} Shoppers ({liveWaitTime})</span>
+          </span>
         </div>
       </div>
 
@@ -275,17 +292,6 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
             backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
           }}
         />
-
-        {/* Top HUD */}
-        <div className="flex items-center justify-between text-[10px] text-cyan-300 z-10">
-          <span className="flex items-center gap-1 font-bold">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>RTSP STREAM • CAM-06 (Overhead Checkout)</span>
-          </span>
-          <span className="bg-[#0F172A] px-2 py-0.5 rounded border border-[#1E293B] text-slate-300">
-            {laneName}
-          </span>
-        </div>
 
         {/* AI Overlay Layer */}
         <div className="absolute inset-0 pointer-events-none">
@@ -330,23 +336,18 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
             </div>
           )}
         </div>
-
-        {/* Bottom HUD */}
-        <div className="flex items-center justify-between text-[10px] text-slate-300 z-10 pt-1 relative">
-          <span>Target Counter: <strong className="text-white">{laneCode} (Elena Rostova)</strong></span>
-          <div className="flex items-center gap-3">
-            <span>Inference: <strong className="text-emerald-400">2 FPS (WebSocket)</strong></span>
-            <span>Detected Queue: <strong className="text-rose-400">{liveQueueCount} Shoppers ({liveWaitTime})</strong></span>
-          </div>
-        </div>
       </div>
 
       {/* Footer */}
-      <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[10px] text-slate-400 mt-2">
-        <span className="flex items-center gap-1">
-          <Cpu className="h-3 w-3 text-cyan-400" />
-          <span>Real-Time Person Tracking &amp; Queue Polygon Extraction</span>
-        </span>
+      <div className="pt-2.5 border-t border-[#1E293B] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] text-slate-400 mt-2">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <Cpu className="h-3 w-3 text-cyan-400" />
+            <span>Target: <strong className="text-white">{laneCode} (Elena Rostova)</strong></span>
+          </span>
+          <span className="text-slate-600">•</span>
+          <span>Inference: <strong className="text-emerald-400">2 FPS (WebSocket)</strong></span>
+        </div>
         <span className="text-emerald-400 font-bold">100% Edge Processing</span>
       </div>
     </div>

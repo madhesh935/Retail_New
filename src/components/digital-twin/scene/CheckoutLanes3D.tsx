@@ -151,32 +151,32 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
             onPointerOut={handlePointerOut}
           >
             {/* ======================================================= */}
-            {/* CHECKOUT FURNITURE */}
+            {/* CHECKOUT FURNITURE                                       */}
             {/* ======================================================= */}
             {!lane.isSelfCheckout ? (
               <group>
-                {/* Main Counter Body (Clean Grey & Stainless) */}
+                {/* Main Counter Body — sleek dark slate/carbon */}
                 <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
                   <boxGeometry args={[1.4, 0.9, 2.2]} />
-                  <meshStandardMaterial color="#334155" metalness={0.4} roughness={0.4} />
+                  <meshStandardMaterial color="#1E293B" metalness={0.4} roughness={0.4} />
                 </mesh>
 
                 {/* Top Counter Stainless Edge Trim */}
                 <mesh position={[0, 0.91, 0]}>
                   <boxGeometry args={[1.44, 0.04, 2.24]} />
-                  <meshStandardMaterial color="#94A3B8" metalness={0.8} />
+                  <meshStandardMaterial color="#475569" metalness={0.85} roughness={0.2} />
                 </mesh>
 
                 {/* Black Rubber Conveyor Belt */}
                 <mesh position={[0.25, 0.94, 0.2]}>
-                  <boxGeometry args={[0.62, 0.02, 1.4]} />
-                  <meshStandardMaterial color="#0F172A" roughness={0.9} />
+                  <boxGeometry args={[0.62, 0.025, 1.4]} />
+                  <meshStandardMaterial color="#0B1322" roughness={0.85} />
                 </mesh>
 
                 {/* Cashier Barcode Scanner Glass Bed */}
-                <mesh position={[0.25, 0.95, -0.6]}>
-                  <boxGeometry args={[0.42, 0.02, 0.32]} />
-                  <meshStandardMaterial color="#38BDF8" transparent opacity={0.6} />
+                <mesh position={[0.25, 0.955, -0.6]}>
+                  <boxGeometry args={[0.42, 0.018, 0.32]} />
+                  <meshStandardMaterial color="#38BDF8" transparent opacity={0.65} roughness={0.05} metalness={0.9} />
                 </mesh>
 
                 {/* Impulse Candy & Gum Rack attached to belt side */}
@@ -184,13 +184,13 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
                   {/* Rack wire frame */}
                   <mesh>
                     <boxGeometry args={[0.18, 0.65, 1.2]} />
-                    <meshStandardMaterial color="#1E293B" metalness={0.7} />
+                    <meshStandardMaterial color="#546E7A" metalness={0.6} />
                   </mesh>
                   {/* Candy & Chocolate bars */}
                   {[-0.4, -0.15, 0.1, 0.35].map((cz, cIdx) => (
                     <mesh key={cIdx} position={[0.08, 0.1, cz]}>
                       <boxGeometry args={[0.08, 0.12, 0.18]} />
-                      <meshStandardMaterial color={cIdx % 2 === 0 ? '#DC2626' : '#F59E0B'} />
+                      <meshStandardMaterial color={cIdx % 2 === 0 ? '#DC2626' : '#F59E0B'} roughness={0.5} />
                     </mesh>
                   ))}
                 </group>
@@ -200,12 +200,12 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
                   {/* Carousel Center Post */}
                   <mesh>
                     <cylinderGeometry args={[0.03, 0.03, 0.7, 8]} />
-                    <meshStandardMaterial color="#94A3B8" metalness={0.9} />
+                    <meshStandardMaterial color="#90A4AE" metalness={0.9} />
                   </mesh>
                   {/* Bag Holder Wire Arms */}
                   <mesh position={[0, 0.25, 0]}>
                     <cylinderGeometry args={[0.25, 0.25, 0.02, 12]} />
-                    <meshStandardMaterial color="#CBD5E1" metalness={0.8} />
+                    <meshStandardMaterial color="#B0BEC5" metalness={0.8} />
                   </mesh>
                   {/* White plastic grocery bags */}
                   <mesh position={[0, 0.1, 0]}>
@@ -218,12 +218,12 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
                 <group position={[-0.35, 0.95, -0.4]}>
                   <mesh position={[0, 0.2, 0]}>
                     <cylinderGeometry args={[0.025, 0.025, 0.4, 8]} />
-                    <meshStandardMaterial color="#94A3B8" metalness={0.9} />
+                    <meshStandardMaterial color="#90A4AE" metalness={0.9} />
                   </mesh>
                   {/* Glowing POS Screen */}
                   <mesh position={[0.05, 0.35, 0]} rotation={[0, -0.4, -0.2]}>
                     <boxGeometry args={[0.28, 0.22, 0.03]} />
-                    <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.6} />
+                    <meshStandardMaterial color="#0369A1" emissive="#0369A1" emissiveIntensity={0.7} />
                   </mesh>
                   {/* PIN Pad */}
                   <mesh position={[0.15, 0.18, 0.1]} rotation={[0.4, 0, 0]}>
@@ -235,19 +235,19 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
                 {/* Stainless Queue Guide Rails */}
                 <mesh position={[-0.75, 0.45, 1.2]}>
                   <boxGeometry args={[0.05, 0.9, 2.0]} />
-                  <meshStandardMaterial color="#CBD5E1" metalness={0.8} roughness={0.2} />
+                  <meshStandardMaterial color="#B0BEC5" metalness={0.82} roughness={0.18} />
                 </mesh>
 
                 {/* Overhead Lane Indicator Pillar with 3D Signboard */}
                 <group position={[-0.7, 1.3, -1.0]}>
                   <mesh>
                     <cylinderGeometry args={[0.03, 0.03, 1.2, 8]} />
-                    <meshStandardMaterial color="#94A3B8" metalness={0.8} />
+                    <meshStandardMaterial color="#90A4AE" metalness={0.8} />
                   </mesh>
-                  {/* Acrylic Illuminated Lane Sign Box */}
+                  {/* Lane sign box */}
                   <mesh position={[0, 0.6, 0]}>
                     <boxGeometry args={[0.42, 0.26, 0.08]} />
-                    <meshStandardMaterial color="#0F172A" metalness={0.7} roughness={0.3} />
+                    <meshStandardMaterial color="#1E293B" metalness={0.7} roughness={0.3} />
                   </mesh>
                   {/* Bright Lane Status Beacon */}
                   <mesh position={[0, 0.76, 0]}>
@@ -255,22 +255,30 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
                     <meshStandardMaterial
                       color={isCritical ? '#EF4444' : lane.status === 'STANDBY' ? '#F59E0B' : '#10B981'}
                       emissive={isCritical ? '#EF4444' : lane.status === 'STANDBY' ? '#F59E0B' : '#10B981'}
-                      emissiveIntensity={0.8}
+                      emissiveIntensity={0.9}
                     />
                   </mesh>
                 </group>
 
-                {/* Cashier Associate Avatar behind counter */}
+                {/* Cashier Associate Avatar — teal vest to match store uniform */}
                 <group position={[-0.35, 0, 0]}>
                   {/* Head */}
-                  <mesh position={[0, 1.48, 0]} castShadow>
-                    <sphereGeometry args={[0.11, 10, 10]} />
-                    <meshStandardMaterial color="#E0AC69" roughness={0.7} />
+                  <mesh position={[0, 1.52, 0]} castShadow>
+                    <sphereGeometry args={[0.11, 12, 10]} />
+                    <meshStandardMaterial color="#E0AC69" roughness={0.65} />
                   </mesh>
-                  {/* Uniform Vest */}
-                  <mesh position={[0, 1.12, 0]} castShadow>
+                  {/* White shirt + teal vest */}
+                  <mesh position={[0, 1.14, 0]} castShadow>
                     <boxGeometry args={[0.32, 0.48, 0.2]} />
-                    <meshStandardMaterial color="#7E22CE" roughness={0.6} />
+                    <meshStandardMaterial color="#F8FAFC" roughness={0.7} />
+                  </mesh>
+                  <mesh position={[-0.09, 1.14, 0.02]}>
+                    <boxGeometry args={[0.13, 0.47, 0.21]} />
+                    <meshStandardMaterial color="#0D9488" roughness={0.6} />
+                  </mesh>
+                  <mesh position={[0.09, 1.14, 0.02]}>
+                    <boxGeometry args={[0.13, 0.47, 0.21]} />
+                    <meshStandardMaterial color="#0D9488" roughness={0.6} />
                   </mesh>
                 </group>
               </group>
@@ -306,28 +314,29 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
             )}
 
             {/* ======================================================= */}
-            {/* REALISTIC QUEUED SHOPPERS (With Floor Contact Shadow) */}
+            {/* QUEUED SHOPPERS — proportional to queue length          */}
             {/* ======================================================= */}
             {showQueueStatus && (
               <group position={[0, 0, 1.5]}>
                 {Array.from({ length: Math.min(lane.queueLength, 5) }).map((_, i) => {
                   const zPos = i * 0.95
-                  const skinTones = ['#D4A373', '#E0AC69', '#C68642']
-                  const shirtColors = ['#2563EB', '#475569', '#16A34A', '#D97706', '#DC2626']
+                  const skinTones = ['#D4A373', '#E0AC69', '#C68642', '#F1C27D', '#8D5524']
+                  // Neutral retail casual clothing — no neons
+                  const shirtColors = ['#334155', '#1E3A5F', '#4A5568', '#6B4F3A', '#2D4A2D']
 
                   return (
                     <group key={`queued-shopper-${i}`} position={[0, 0, zPos]}>
-                      {/* Soft Contact Drop Shadow Disc */}
+                      {/* Soft shadow disc */}
                       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
                         <circleGeometry args={[0.22, 16]} />
-                        <meshBasicMaterial color="#0F172A" transparent opacity={0.5} />
+                        <meshBasicMaterial color="#1A2636" transparent opacity={0.35} />
                       </mesh>
                       {/* Head */}
                       <mesh position={[0, 1.54, 0]} castShadow>
-                        <sphereGeometry args={[0.11, 10, 10]} />
-                        <meshStandardMaterial color={skinTones[i % 3]} roughness={0.7} />
+                        <sphereGeometry args={[0.11, 12, 10]} />
+                        <meshStandardMaterial color={skinTones[i % skinTones.length]} roughness={0.65} />
                       </mesh>
-                      {/* Torso */}
+                      {/* Shirt */}
                       <mesh position={[0, 1.16, 0]} castShadow>
                         <boxGeometry args={[0.32, 0.48, 0.2]} />
                         <meshStandardMaterial color={shirtColors[i % shirtColors.length]} roughness={0.7} />
@@ -335,7 +344,7 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
                       {/* Legs */}
                       <mesh position={[0, 0.46, 0]} castShadow>
                         <boxGeometry args={[0.28, 0.74, 0.14]} />
-                        <meshStandardMaterial color="#1E293B" roughness={0.8} />
+                        <meshStandardMaterial color="#263238" roughness={0.8} />
                       </mesh>
                     </group>
                   )

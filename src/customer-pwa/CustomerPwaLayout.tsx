@@ -7,23 +7,33 @@ import {
   ShoppingBag,
   Navigation,
   MapPin,
+  HandHelping,
 } from 'lucide-react'
 import {
   CustomerShoppingProvider,
   useCustomerShopping,
   CustomerPwaTab,
 } from './context/CustomerShoppingContext'
+import {
+  CustomerAssistProvider,
+  useCustomerAssist,
+} from './context/CustomerAssistContext'
 import { CustomerHomePage } from './pages/CustomerHomePage'
 import { CustomerSearchPage } from './pages/CustomerSearchPage'
 import { CustomerCopilotPage } from './pages/CustomerCopilotPage'
 import { ShoppingListPage } from './pages/ShoppingListPage'
 import { SmartMapRoutePage } from './pages/SmartMapRoutePage'
+import { CustomerAssistStatusPage } from './pages/CustomerAssistStatusPage'
 import { CustomerFloatingCopilot } from './components/CustomerFloatingCopilot'
 import { CustomerCopilotQuickDrawer } from './components/CustomerCopilotQuickDrawer'
+import { HelpRequestSheet } from './components/assist/HelpRequestSheet'
 
 const CustomerPwaContent: React.FC = () => {
   const { activeTab, setActiveTab, shoppingList, storeName } = useCustomerShopping()
+  const { activeRequest, viewActiveRequest } = useCustomerAssist()
   const totalUnits = shoppingList.reduce((sum, item) => sum + item.quantity, 0)
+  const hasActiveHelp =
+    activeRequest && activeRequest.status !== 'COMPLETED' && activeRequest.status !== 'CANCELLED'
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 flex justify-center font-sans antialiased select-none">
@@ -49,6 +59,17 @@ const CustomerPwaContent: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Active Help Request Status Pill in Header */}
+          {hasActiveHelp && activeTab !== 'HELP' && (
+            <button
+              onClick={viewActiveRequest}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-50 border border-cyan-300 text-cyan-800 text-[11px] font-bold animate-pulse hover:bg-cyan-100 transition-all cursor-pointer"
+            >
+              <HandHelping className="h-3.5 w-3.5 text-cyan-700" />
+              <span>Staff En Route</span>
+            </button>
+          )}
         </header>
 
         {/* Dynamic Mobile Viewport Content */}
@@ -58,11 +79,15 @@ const CustomerPwaContent: React.FC = () => {
           {(activeTab === 'COPILOT' || activeTab === 'ASSISTANT') && <CustomerCopilotPage />}
           {activeTab === 'LIST' && <ShoppingListPage />}
           {(activeTab === 'ROUTE' || activeTab === 'MAP') && <SmartMapRoutePage />}
+          {activeTab === 'HELP' && <CustomerAssistStatusPage />}
         </main>
 
         {/* Floating Shopping Copilot Button & Quick Drawer */}
         <CustomerFloatingCopilot />
         <CustomerCopilotQuickDrawer />
+
+        {/* Global Contextual Help Request Bottom Sheet */}
+        <HelpRequestSheet />
 
         {/* Bottom Mobile Tab Bar (5-item bar with min 48px touch targets) */}
         <nav className="sticky bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1.5 flex items-center justify-between shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]">
@@ -148,7 +173,10 @@ export const CustomerPwaLayout: React.FC<{ defaultTab?: CustomerPwaTab }> = ({ d
 
   return (
     <CustomerShoppingProvider storeId={storeId} defaultTab={defaultTab}>
-      <CustomerPwaContent />
+      <CustomerAssistProvider storeId={storeId}>
+        <CustomerPwaContent />
+      </CustomerAssistProvider>
     </CustomerShoppingProvider>
   )
 }
+

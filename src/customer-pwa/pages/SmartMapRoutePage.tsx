@@ -17,9 +17,11 @@ import {
   CreditCard,
 } from 'lucide-react'
 import { useCustomerShopping, STORE_CATALOG, CustomerProduct } from '../context/CustomerShoppingContext'
+import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerIndoorMap2D } from '../components/CustomerIndoorMap2D'
 import { CheckoutRecommendationCard } from '../components/CheckoutRecommendationCard'
 import { OutOfStockAlertModal } from '../components/OutOfStockAlertModal'
+import { HandHelping } from 'lucide-react'
 
 export const SmartMapRoutePage: React.FC = () => {
   const {
@@ -41,6 +43,7 @@ export const SmartMapRoutePage: React.FC = () => {
     showToast,
     setActiveTab,
   } = useCustomerShopping()
+  const { openHelpSheet } = useCustomerAssist()
 
   const [foundFeedback, setFoundFeedback] = useState<string | null>(null)
   const [showOtherCountersModal, setShowOtherCountersModal] = useState(false)
@@ -119,9 +122,20 @@ export const SmartMapRoutePage: React.FC = () => {
                 </span>
               </div>
             </div>
-            <span className="text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-lg border border-cyan-200">
-              Optimized Route
-            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() =>
+                  openHelpSheet({
+                    zoneName: 'Store Floor',
+                    requestType: 'PRODUCT_ASSISTANCE',
+                  })
+                }
+                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-[11px] font-bold cursor-pointer transition-all shadow-2xs"
+              >
+                <HandHelping className="h-3 w-3 text-cyan-700" />
+                <span>Need Help?</span>
+              </button>
+            </div>
           </div>
 
           {/* Key Metrics: Distance & Shopping Time */}
@@ -246,11 +260,22 @@ export const SmartMapRoutePage: React.FC = () => {
 
           <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
             <span className="text-cyan-800 font-extrabold">
-              {completedCount} of {totalItemsCount} found
+              {completedCount}/{totalItemsCount} found
             </span>
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-              {useCrowdAlternativeRoute ? '8 min remaining' : '11 min remaining'}
-            </span>
+            <button
+              onClick={() =>
+                openHelpSheet({
+                  product: currentStep?.item,
+                  shelfCode: currentStep?.item?.shelf,
+                  zoneName: currentStep?.location || 'Store Floor',
+                  requestType: 'PRODUCT_ASSISTANCE',
+                })
+              }
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-[10px] font-bold cursor-pointer transition-all shadow-2xs"
+            >
+              <HandHelping className="h-3 w-3 text-cyan-700" />
+              <span>Need Help?</span>
+            </button>
           </div>
         </div>
 

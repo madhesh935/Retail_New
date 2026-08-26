@@ -31,53 +31,52 @@ const createSignTexture = (label: string, count: number, accentColor: string) =>
   canvas.height = 256
   const ctx = canvas.getContext('2d')
   if (ctx) {
-    // Dark architectural background
-    ctx.fillStyle = '#0F172A'
-    ctx.roundRect(16, 16, 992, 224, 28)
+    // 1. High-tech dark glass panel background
+    ctx.fillStyle = '#0B1322'
+    ctx.roundRect(14, 14, 996, 228, 24)
     ctx.fill()
 
-    // Outer accent border
-    ctx.lineWidth = 10
+    // 2. Glowing outer accent border
+    ctx.lineWidth = 6
     ctx.strokeStyle = accentColor
-    ctx.roundRect(16, 16, 992, 224, 28)
+    ctx.roundRect(14, 14, 996, 228, 24)
     ctx.stroke()
 
-    // Inner subtle glow border
-    ctx.lineWidth = 3
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
-    ctx.roundRect(26, 26, 972, 204, 20)
-    ctx.stroke()
-
-    // Accent indicator dot
+    // 3. Top accent glow band
     ctx.fillStyle = accentColor
-    ctx.beginPath()
-    ctx.arc(80, 128, 22, 0, Math.PI * 2)
+    ctx.roundRect(14, 14, 996, 44, [24, 24, 0, 0])
     ctx.fill()
 
-    // Department Title Text
-    ctx.fillStyle = '#FFFFFF'
-    ctx.font = 'bold 72px Inter, sans-serif'
+    // 4. White department category indicator
+    ctx.fillStyle = '#0B1322'
+    ctx.font = 'bold 26px Inter, Arial, sans-serif'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label, 130, 128)
+    ctx.fillText('• STORE INTELLIGENCE DEPARTMENT •', 40, 36)
 
-    // Shopper count pill
+    // 5. Main department title text
+    ctx.fillStyle = '#F8FAFC'
+    ctx.font = 'bold 74px Inter, Arial, sans-serif'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(label, 40, 150)
+
+    // 6. Real-time Shopper Count Pill (Right)
     if (count > 0) {
       const countText = `${count} shoppers`
-      ctx.font = 'bold 50px Inter, sans-serif'
+      ctx.font = 'bold 44px Inter, Arial, sans-serif'
       const textWidth = ctx.measureText(countText).width
-      const pillX = 992 - textWidth - 60
+      const pillX = 996 - textWidth - 54
 
       ctx.fillStyle = '#1E293B'
-      ctx.roundRect(pillX, 70, textWidth + 40, 116, 20)
+      ctx.roundRect(pillX, 90, textWidth + 38, 100, 16)
       ctx.fill()
 
-      ctx.strokeStyle = '#334155'
-      ctx.lineWidth = 4
-      ctx.roundRect(pillX, 70, textWidth + 40, 116, 20)
+      ctx.strokeStyle = accentColor
+      ctx.lineWidth = 3
+      ctx.roundRect(pillX, 90, textWidth + 38, 100, 16)
       ctx.stroke()
 
-      ctx.fillStyle = '#94A3B8'
-      ctx.fillText(countText, pillX + 20, 128)
+      ctx.fillStyle = '#38BDF8'
+      ctx.fillText(countText, pillX + 19, 142)
     }
   }
 
@@ -96,6 +95,21 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
   const zones: Zone3DData[] = useMemo(
     () => [
       {
+        id: 'zone-1',
+        code: 'Z01',
+        name: 'Bakery & Gourmet Deli',
+        signLabel: 'BAKERY & DELI',
+        accentColor: '#F59E0B',
+        currentShoppers: 16,
+        trafficDensity: 'MODERATE',
+        avgDwellSeconds: 160,
+        shelfHealthPercent: 88,
+        criticalShelvesCount: 0,
+        opportunityRisk: 'LOW',
+        position: [-14, 0.01, 0],
+        bounds: [8.5, 9.5],
+      },
+      {
         id: 'zone-2',
         code: 'Z02',
         name: 'Fresh Produce',
@@ -107,14 +121,29 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
         shelfHealthPercent: 92,
         criticalShelvesCount: 0,
         opportunityRisk: 'LOW',
-        position: [-8, 0.01, -6],
-        bounds: [9.5, 7.5],
+        position: [-10, 0.01, -6],
+        bounds: [10.5, 7.5],
+      },
+      {
+        id: 'zone-5',
+        code: 'Z05',
+        name: 'Grocery & Packaged Goods',
+        signLabel: 'GROCERY & PANTRY',
+        accentColor: '#6366F1',
+        currentShoppers: 34,
+        trafficDensity: 'HIGH',
+        avgDwellSeconds: 210,
+        shelfHealthPercent: 93,
+        criticalShelvesCount: 0,
+        opportunityRisk: 'LOW',
+        position: [2.5, 0.01, -1.5],
+        bounds: [11.0, 7.5],
       },
       {
         id: 'zone-3',
         code: 'Z03',
-        name: 'Dairy & Bakery',
-        signLabel: 'DAIRY & BAKERY',
+        name: 'Dairy & Frozen Foods',
+        signLabel: 'DAIRY & FROZEN',
         accentColor: '#06B6D4',
         currentShoppers: 22,
         trafficDensity: 'MODERATE',
@@ -122,38 +151,38 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
         shelfHealthPercent: 71,
         criticalShelvesCount: 1,
         opportunityRisk: 'HIGH',
-        position: [2, 0.01, -6],
+        position: [0, 0.01, -6],
         bounds: [9.5, 7.5],
       },
       {
         id: 'zone-4',
         code: 'Z04',
-        name: 'Cold Beverages',
+        name: 'Cold Beverages & Snacks',
         signLabel: 'COLD BEVERAGES',
-        accentColor: '#38BDF8',
-        currentShoppers: 18,
+        accentColor: '#0EA5E9',
+        currentShoppers: 24,
         trafficDensity: 'HIGH',
-        avgDwellSeconds: 54,
+        avgDwellSeconds: 85,
         shelfHealthPercent: 68,
         criticalShelvesCount: 1,
         opportunityRisk: 'HIGH',
-        position: [14, 0.01, -6],
-        bounds: [8.5, 7.5],
+        position: [14, 0.01, -5.5],
+        bounds: [8.5, 8.5],
       },
       {
         id: 'zone-6',
         code: 'Z06',
-        name: 'Electronics Hub',
+        name: 'Electronics & Smart Tech',
         signLabel: 'ELECTRONICS',
-        accentColor: '#818CF8',
+        accentColor: '#8B5CF6',
         currentShoppers: 12,
         trafficDensity: 'MODERATE',
         avgDwellSeconds: 240,
         shelfHealthPercent: 95,
         criticalShelvesCount: 0,
         opportunityRisk: 'LOW',
-        position: [3, 0.01, 4.5],
-        bounds: [9.5, 7.5],
+        position: [3.5, 0.01, 5.0],
+        bounds: [8.5, 6.5],
       },
       {
         id: 'zone-7',
@@ -173,10 +202,10 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
       {
         id: 'zone-8',
         code: 'Z08',
-        name: 'Stockroom',
+        name: 'Stockroom Logistics',
         signLabel: 'STOCKROOM / INVENTORY',
         accentColor: '#F59E0B',
-        currentShoppers: 2,
+        currentShoppers: 4,
         trafficDensity: 'LOW',
         avgDwellSeconds: 600,
         shelfHealthPercent: 100,
@@ -279,22 +308,22 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
               {/* Suspended Steel Wire Cables */}
               <mesh position={[-1.4, 0.9, 0]}>
                 <cylinderGeometry args={[0.01, 0.01, 1.8, 8]} />
-                <meshStandardMaterial color="#94A3B8" metalness={0.9} />
+                <meshStandardMaterial color="#90A4AE" metalness={0.9} />
               </mesh>
               <mesh position={[1.4, 0.9, 0]}>
                 <cylinderGeometry args={[0.01, 0.01, 1.8, 8]} />
-                <meshStandardMaterial color="#94A3B8" metalness={0.9} />
+                <meshStandardMaterial color="#90A4AE" metalness={0.9} />
               </mesh>
 
-              {/* Sign Board Body Housing */}
+              {/* Sign Board Body — dark glass panel */}
               <mesh castShadow>
                 <boxGeometry args={[3.4, 0.85, 0.1]} />
-                <meshStandardMaterial color="#1E293B" roughness={0.4} metalness={0.6} />
+                <meshStandardMaterial color="#0B1322" roughness={0.3} metalness={0.6} />
               </mesh>
 
-              {/* Glowing Accent Underside Light Bar */}
+              {/* Luminous Department Accent Neon Bottom Strip */}
               <mesh position={[0, -0.43, 0]}>
-                <boxGeometry args={[3.3, 0.05, 0.08]} />
+                <boxGeometry args={[3.3, 0.06, 0.12]} />
                 <meshBasicMaterial color={zone.accentColor} />
               </mesh>
 

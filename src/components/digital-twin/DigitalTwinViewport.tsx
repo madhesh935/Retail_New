@@ -29,44 +29,44 @@ const CameraController: React.FC<CameraControllerProps> = ({
   const { camera } = useThree()
   const controlsRef = useRef<any>(null)
 
-  // Handle 3D vs Top View camera position switches
   useEffect(() => {
     if (viewMode === 'TOP_VIEW') {
-      camera.position.set(0, 32, 0.001)
+      camera.position.set(0, 36, 0.001)
       camera.lookAt(0, 0, 0)
       if (controlsRef.current) {
         controlsRef.current.target.set(0, 0, 0)
         controlsRef.current.enableRotate = false
       }
     } else {
-      camera.position.set(0, 20, 24)
-      camera.lookAt(0, 0, 0)
+      // Cinematic 3D isometric command center view
+      camera.position.set(-6, 22, 27)
+      camera.lookAt(0, 0, -2)
       if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, 0)
+        controlsRef.current.target.set(0, 0, -2)
         controlsRef.current.enableRotate = true
       }
     }
   }, [viewMode, camera])
 
-  // Reset Trigger
   useEffect(() => {
     if (resetTrigger > 0) {
       if (viewMode === 'TOP_VIEW') {
-        camera.position.set(0, 32, 0.001)
+        camera.position.set(0, 36, 0.001)
+        camera.lookAt(0, 0, 0)
+        if (controlsRef.current) controlsRef.current.target.set(0, 0, 0)
       } else {
-        camera.position.set(0, 20, 24)
+        camera.position.set(-6, 22, 27)
+        camera.lookAt(0, 0, -2)
+        if (controlsRef.current) controlsRef.current.target.set(0, 0, -2)
       }
-      camera.lookAt(0, 0, 0)
-      if (controlsRef.current) controlsRef.current.target.set(0, 0, 0)
     }
   }, [resetTrigger, viewMode, camera])
 
-  // Fit Trigger
   useEffect(() => {
     if (fitTrigger > 0) {
-      camera.position.set(0, 18, 22)
-      camera.lookAt(0, 0, 0)
-      if (controlsRef.current) controlsRef.current.target.set(0, 0, 0)
+      camera.position.set(-6, 22, 27)
+      camera.lookAt(0, 0, -2)
+      if (controlsRef.current) controlsRef.current.target.set(0, 0, -2)
     }
   }, [fitTrigger, camera])
 
@@ -75,41 +75,91 @@ const CameraController: React.FC<CameraControllerProps> = ({
       ref={controlsRef}
       makeDefault
       minDistance={8}
-      maxDistance={50}
-      maxPolarAngle={viewMode === 'TOP_VIEW' ? 0 : Math.PI / 2.15}
-      dampingFactor={0.06}
+      maxDistance={60}
+      maxPolarAngle={viewMode === 'TOP_VIEW' ? 0 : Math.PI / 2.1}
+      dampingFactor={0.07}
+      enableDamping
     />
   )
 }
 
-// Overhead Linear Supermarket LED Lighting Fixtures
-const SupermarketCeilingLights: React.FC = () => {
-  const lightAisles = [
-    { x: -8, z: -6, length: 16 },
-    { x: 2, z: -6, length: 16 },
-    { x: 14, z: -6, length: 16 },
-    { x: 3, z: 4.5, length: 14 },
-    { x: 14, z: 3.5, length: 14 },
-    { x: 0, z: -10, length: 36, rotate: true },
+// ============================================================
+// ARCHITECTURAL CEILING TRUSSES, HVAC DUCTS & LED FIXTURES
+// ============================================================
+const SupermarketCeilingRig: React.FC = () => {
+  const lightStrips = [
+    { x: -14, z: -6, length: 16, rotate: false },
+    { x: -8,  z: -6, length: 16, rotate: false },
+    { x: -2,  z: -6, length: 16, rotate: false },
+    { x: 4,   z: -6, length: 16, rotate: false },
+    { x: 10,  z: -6, length: 16, rotate: false },
+    { x: 16,  z: -6, length: 16, rotate: false },
+    { x: 14,  z: 4.5, length: 12, rotate: false },
+    { x: 0,   z: -11, length: 42, rotate: true },
+    { x: 0,   z: 2.5, length: 42, rotate: true },
+    { x: 0,   z: 11.5, length: 42, rotate: true },
   ]
 
   return (
     <group position={[0, 6.2, 0]}>
-      {lightAisles.map((aisle, idx) => (
-        <group
-          key={idx}
-          position={[aisle.x, 0, aisle.z]}
-          rotation={aisle.rotate ? [0, Math.PI / 2, 0] : [0, 0, 0]}
-        >
-          {/* Aluminum Light Fixture Housing */}
-          <mesh position={[0, 0.05, 0]}>
-            <boxGeometry args={[0.3, 0.1, aisle.length]} />
-            <meshStandardMaterial color="#334155" metalness={0.8} />
+      {/* 1. Industrial Dark Steel Ceiling Trusses */}
+      {[-12, -4, 4, 12].map((zPos, idx) => (
+        <group key={`truss-${idx}`} position={[0, 0.4, zPos]}>
+          {/* Main horizontal beam */}
+          <mesh>
+            <boxGeometry args={[44, 0.2, 0.2]} />
+            <meshStandardMaterial color="#1E293B" metalness={0.8} roughness={0.3} />
           </mesh>
-          {/* Glowing LED Diffuser Bar */}
-          <mesh position={[0, -0.01, 0]}>
-            <boxGeometry args={[0.24, 0.04, aisle.length]} />
-            <meshBasicMaterial color="#FFFFFF" />
+          {/* Diagonal braces */}
+          {[-16, -8, 0, 8, 16].map((bx, bIdx) => (
+            <mesh key={bIdx} position={[bx, -0.2, 0]} rotation={[0, 0, Math.PI / 4]}>
+              <boxGeometry args={[0.08, 0.6, 0.08]} />
+              <meshStandardMaterial color="#1E293B" metalness={0.8} roughness={0.3} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* 2. HVAC Spiral Metal Air Ventilation Ducts */}
+      <group position={[0, 0.8, -3]}>
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.38, 0.38, 43, 20]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        </mesh>
+        {/* Duct hanging brackets */}
+        {[-15, -7.5, 0, 7.5, 15].map((hx, hIdx) => (
+          <mesh key={hIdx} position={[hx, 0.35, 0]}>
+            <cylinderGeometry args={[0.02, 0.02, 0.7, 8]} />
+            <meshStandardMaterial color="#64748B" metalness={0.9} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* 3. Linear Suspended LED Luminaire Strips */}
+      {lightStrips.map((s, i) => (
+        <group
+          key={i}
+          position={[s.x, 0, s.z]}
+          rotation={s.rotate ? [0, Math.PI / 2, 0] : [0, 0, 0]}
+        >
+          {/* Dark aluminium fixture housing */}
+          <mesh>
+            <boxGeometry args={[0.26, 0.08, s.length]} />
+            <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.2} />
+          </mesh>
+          {/* Cool White Glowing LED Diffuser Bar */}
+          <mesh position={[0, -0.015, 0]}>
+            <boxGeometry args={[0.2, 0.025, s.length - 0.1]} />
+            <meshBasicMaterial color="#E0F2FE" />
+          </mesh>
+          {/* Suspension wire cords */}
+          <mesh position={[0, 0.25, -s.length * 0.4]}>
+            <cylinderGeometry args={[0.01, 0.01, 0.5, 6]} />
+            <meshBasicMaterial color="#64748B" />
+          </mesh>
+          <mesh position={[0, 0.25, s.length * 0.4]}>
+            <cylinderGeometry args={[0.01, 0.01, 0.5, 6]} />
+            <meshBasicMaterial color="#64748B" />
           </mesh>
         </group>
       ))}
@@ -145,20 +195,53 @@ export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
   onSelectIncident,
 }) => {
   const [hoverData, setHoverData] = useState<TooltipData | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null)
+
+  // Listen to window-level mousemove so R3F canvas event interception doesn't block cursor updates
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      // If cursor is within viewport bounds
+      if (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+      ) {
+        setCursorPos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        })
+      }
+    }
+
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
+    return () => window.removeEventListener('mousemove', handleGlobalMouseMove)
+  }, [])
 
   return (
-    <div className="relative w-full h-full min-h-[580px] bg-[#0B0F17] rounded-lg border border-[#1E293B] overflow-hidden">
-      {/* Unified Hover Tooltip Overlay */}
-      <TwinTooltip data={hoverData} />
+    <div
+      ref={containerRef}
+      className="relative w-full h-full min-h-[580px] bg-[#070B14] rounded-lg border border-[#1E293B] shadow-2xl overflow-hidden"
+    >
+      {/* Unified Hover Tooltip Overlay with Continuous Floating Tracking */}
+      <TwinTooltip
+        data={hoverData}
+        cursorPos={cursorPos}
+        containerRef={containerRef}
+      />
 
       <Canvas
         shadows
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         className="w-full h-full"
       >
-        <color attach="background" args={['#0B0F17']} />
+        {/* Deep sleek command center background */}
+        <color attach="background" args={['#070B14']} />
 
-        <PerspectiveCamera makeDefault position={[0, 20, 24]} fov={45} />
+        <PerspectiveCamera makeDefault position={[-6, 22, 27]} fov={45} />
         <CameraController
           viewMode={viewMode}
           resetTrigger={resetTrigger}
@@ -166,41 +249,52 @@ export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
         />
 
         {/* ======================================================= */}
-        {/* BRIGHT, CRYSTAL CLEAR COMMERCIAL SUPERMARKET LIGHTING */}
+        {/* CINEMATIC DIGITAL TWIN LIGHTING RIG                      */}
         {/* ======================================================= */}
-        {/* 1. Global Hemisphere Light (Soft Sky White + Warm Floor Bounce) */}
+
+        {/* 1. Hemisphere: Deep Cyan Sky + Dark Slate Floor Bounce */}
         <hemisphereLight
-          args={['#FFFFFF', '#475569', 1.4]}
+          args={['#38BDF8', '#0F172A', 1.05]}
           position={[0, 30, 0]}
         />
 
-        {/* 2. Main Key Commercial Ceiling Light */}
+        {/* 2. Main Key Directional Light (Casts crisp geometric shadows) */}
         <directionalLight
-          position={[12, 30, 14]}
-          intensity={1.8}
+          position={[12, 28, 16]}
+          intensity={2.1}
           color="#FFFFFF"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-bias={-0.0001}
+          shadow-bias={-0.0002}
+          shadow-camera-near={0.5}
+          shadow-camera-far={80}
+          shadow-camera-left={-30}
+          shadow-camera-right={30}
+          shadow-camera-top={24}
+          shadow-camera-bottom={-24}
         />
 
-        {/* 3. Cool Secondary Fill Directional Light (Eliminates pitch black shadows) */}
+        {/* 3. Cool Cyan Fill Directional Light (Gives high-tech edge definition) */}
         <directionalLight
-          position={[-16, 25, -14]}
-          intensity={1.1}
-          color="#E2E8F0"
+          position={[-18, 22, -14]}
+          intensity={1.2}
+          color="#0EA5E9"
         />
 
-        {/* 4. Front Fill Light for Clear Face & Shelf Visibility */}
+        {/* 4. Warm Shelf/Counter Rim Highlight */}
         <directionalLight
-          position={[0, 18, 26]}
-          intensity={0.8}
-          color="#F8FAFC"
+          position={[0, 16, 28]}
+          intensity={0.9}
+          color="#F1F5F9"
         />
 
-        {/* 5. Overhead Aisle Linear LED Fixtures */}
-        <SupermarketCeilingLights />
+        {/* 5. Overhead Trusses & Linear LED Light Fixtures */}
+        <SupermarketCeilingRig />
+
+        {/* ======================================================= */}
+        {/* SCENE LAYERS                                             */}
+        {/* ======================================================= */}
 
         {/* 1. Base Store Floor & Architectural Shell */}
         <StoreFloor />
@@ -236,7 +330,7 @@ export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
           onHoverStaff={setHoverData}
         />
 
-        {/* 7. 3D Camera Frustums & Cones */}
+        {/* 7. 3D Camera Frustums & Coverage Cones */}
         <CameraCoverage3D
           showCoverage={layers.cameraCoverage}
           onSelectCamera={onSelectCamera}

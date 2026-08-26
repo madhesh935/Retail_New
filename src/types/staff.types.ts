@@ -21,7 +21,7 @@ export interface StaffMember {
 export interface StaffTask {
   id: string
   title: string
-  category: 'RESTOCK' | 'QUEUE_SUPPORT' | 'SPILL_CLEANUP' | 'SECURITY_CHECK' | 'PLANOGRAM_AUDIT'
+  category: 'RESTOCK' | 'QUEUE_SUPPORT' | 'SPILL_CLEANUP' | 'SECURITY_CHECK' | 'PLANOGRAM_AUDIT' | 'CUSTOMER_ASSISTANCE'
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   status: 'PENDING' | 'DISPATCHED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
   zoneId: string

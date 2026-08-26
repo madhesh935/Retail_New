@@ -15,10 +15,14 @@ import {
   Percent,
 } from 'lucide-react'
 import { useCustomerShopping, STORE_CATALOG } from '../context/CustomerShoppingContext'
+import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerProductCard } from '../components/CustomerProductCard'
+import { AssistanceStatusCard } from '../components/assist/AssistanceStatusCard'
+import { HandHelping } from 'lucide-react'
 
 export const CustomerHomePage: React.FC = () => {
   const { shoppingList, setActiveTab, setIsNavigating } = useCustomerShopping()
+  const { openHelpSheet, activeRequest } = useCustomerAssist()
   const [showOffersModal, setShowOffersModal] = useState(false)
   const [smartNowIndex, setSmartNowIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -105,6 +109,9 @@ export const CustomerHomePage: React.FC = () => {
         </p>
       </div>
 
+      {/* Active Help Request Status Banner (Replaces standard view when request is active) */}
+      <AssistanceStatusCard />
+
       {/* 2. Primary Search Input & Shopping Copilot Shortcut */}
       <div className="space-y-2">
         <div
@@ -165,17 +172,17 @@ export const CustomerHomePage: React.FC = () => {
           </div>
         </button>
 
-        {/* 4. Offers */}
+        {/* 4. Need Help / Store Associate */}
         <button
-          onClick={() => setShowOffersModal(true)}
-          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-amber-400 hover:shadow-sm transition-all text-left flex items-center gap-3 cursor-pointer group min-h-[56px]"
+          onClick={() => openHelpSheet()}
+          className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-cyan-400 hover:shadow-sm transition-all text-left flex items-center gap-3 cursor-pointer group min-h-[56px]"
         >
-          <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Tag className="h-4.5 w-4.5" />
+          <div className="h-9 w-9 rounded-xl bg-cyan-50 text-cyan-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <HandHelping className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-xs font-bold text-slate-900 leading-tight">Offers</h3>
-            <p className="text-[10px] text-slate-500 truncate mt-0.5">Daily in-store deals</p>
+            <h3 className="text-xs font-bold text-slate-900 leading-tight">Need Help?</h3>
+            <p className="text-[10px] text-slate-500 truncate mt-0.5">Ask store associate</p>
           </div>
         </button>
       </div>

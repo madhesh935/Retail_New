@@ -22,8 +22,10 @@ import {
   CustomerProduct,
   CopilotShoppingPlanItem,
 } from '../context/CustomerShoppingContext'
+import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerMiniRoutePreview } from '../components/CustomerMiniRoutePreview'
 import { CopilotRobotIcon } from '../components/CopilotRobotIcon'
+import { HandHelping } from 'lucide-react'
 
 export const CustomerCopilotPage: React.FC = () => {
   const {
@@ -37,6 +39,7 @@ export const CustomerCopilotPage: React.FC = () => {
     setActiveTab,
     setIsNavigating,
   } = useCustomerShopping()
+  const { openHelpSheet } = useCustomerAssist()
 
   const [inputPrompt, setInputPrompt] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -399,6 +402,52 @@ export const CustomerCopilotPage: React.FC = () => {
                   >
                     <Navigation className="h-3.5 w-3.5" />
                     <span>Navigate to Checkout C2</span>
+                  </button>
+                </div>
+              )}
+
+              {/* 6. Emergency Guidance Alert */}
+              {msg.isEmergencyAlert && (
+                <div className="p-3.5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 space-y-1.5 shadow-sm">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <span>Immediate Safety Guidance</span>
+                  </div>
+                  <p className="text-xs font-medium leading-relaxed">
+                    For immediate medical emergencies, fire, or physical danger, please notify store personnel directly or call emergency services.
+                  </p>
+                </div>
+              )}
+
+              {/* 7. Staff Assistance Contextual CTA */}
+              {msg.showStaffAssistButton && (
+                <div className="p-3.5 rounded-2xl bg-cyan-50/90 border border-cyan-300 text-slate-800 space-y-2.5 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-cyan-600 text-white shrink-0">
+                      <HandHelping className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        {msg.staffAssistPrefill?.requestType === 'BACKROOM_REQUEST'
+                          ? 'Fetch Item from Backroom'
+                          : 'Request Store Associate'}
+                      </h4>
+                      <p className="text-[11px] text-slate-600">
+                        An associate can meet you in {msg.staffAssistPrefill?.zoneName || 'your aisle'}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => openHelpSheet(msg.staffAssistPrefill)}
+                    className="w-full py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98"
+                  >
+                    <HandHelping className="h-3.5 w-3.5" />
+                    <span>
+                      {msg.staffAssistPrefill?.requestType === 'BACKROOM_REQUEST'
+                        ? 'Request From Backroom'
+                        : 'Request Staff Assistance'}
+                    </span>
                   </button>
                 </div>
               )}

@@ -12,6 +12,7 @@ export interface CustomerProduct {
   stockCount: number
   isAvailable: boolean
   isLowStock?: boolean
+  backroomStock?: number
   mapCoord: { x: number; y: number }
   alternatives?: { id: string; name: string; shelf: string; price: string; isAvailable?: boolean }[]
 }
@@ -56,6 +57,14 @@ export interface CopilotMessage {
   alternativeProducts?: CustomerProduct[]
   showRoutePreview?: boolean
   showCheckoutRecommendation?: boolean
+  showStaffAssistButton?: boolean
+  staffAssistPrefill?: {
+    requestType?: 'PRODUCT_ASSISTANCE' | 'SHELF_ASSISTANCE' | 'BACKROOM_REQUEST' | 'PRICE_ASSISTANCE' | 'PRODUCT_GUIDANCE' | 'ACCESSIBILITY_ASSISTANCE' | 'CHECKOUT_ASSISTANCE' | 'GENERAL_ASSISTANCE'
+    product?: CustomerProduct
+    zoneName?: string
+    shelfCode?: string
+  }
+  isEmergencyAlert?: boolean
   singleProductLocation?: {
     product: CustomerProduct
     aisle: string
@@ -75,6 +84,7 @@ export const STORE_CATALOG: CustomerProduct[] = [
     shelf: 'Shelf C2',
     stockCount: 18,
     isAvailable: true,
+    backroomStock: 24,
     mapCoord: { x: 142, y: 220 },
     alternatives: [
       { id: 'prod-aavin-milk', name: 'Aavin Full Cream Milk (500ml)', shelf: 'Shelf C3', price: '₹34', isAvailable: true },
@@ -333,7 +343,7 @@ export const STORE_CATALOG: CustomerProduct[] = [
   },
 ]
 
-export type CustomerPwaTab = 'HOME' | 'SEARCH' | 'COPILOT' | 'ROUTE' | 'MAP' | 'LIST' | 'ASSISTANT'
+export type CustomerPwaTab = 'HOME' | 'SEARCH' | 'COPILOT' | 'ROUTE' | 'MAP' | 'LIST' | 'ASSISTANT' | 'HELP'
 
 interface CustomerShoppingContextType {
   storeName: string
@@ -533,6 +543,47 @@ export const CustomerShoppingProvider: React.FC<{
       let showCheckout = false
       let singleLoc: { product: CustomerProduct; aisle: string; shelf: string } | undefined
 
+      let showStaffAssist = false
+      let staffPrefill: any = undefined
+      let isEmergency = false
+
+      // 0. Safety / Emergency Check
+      if (q.includes('emergency') || q.includes('fire') || q.includes('injury') || q.includes('danger') || q.includes('hurt')) {
+        isEmergency = true
+        replyText = "⚠️ For immediate danger, medical emergencies, or safety incidents, please alert store staff in person or contact emergency services immediately."
+      }
+      // 0.1 Direct Staff Help Request
+      else if (q.includes('need staff') || q.includes('call staff') || q.includes('need help') || q.includes('someone help') || q.includes('can someone help') || q.includes('associate')) {
+        showStaffAssist = true
+        staffPrefill = {
+          requestType: 'GENERAL_ASSISTANCE',
+          zoneName: 'Store Floor',
+        }
+        replyText = "I can dispatch an on-shift store associate directly to your location. Tap below to choose your assistance request:"
+      }
+      // 0.2 Cannot find product / Shelf empty / Backroom request
+      else if (q.includes('backroom') || q.includes('stockroom') || (q.includes('bring') && q.includes('back'))) {
+        const cola = STORE_CATALOG.find((p) => p.id === 'prod-cola')!
+        showStaffAssist = true
+        staffPrefill = {
+          requestType: 'BACKROOM_REQUEST',
+          product: cola,
+          zoneName: 'Beverages',
+          shelfCode: 'B4',
+        }
+        replyText = "We have 14 units of Sparkling Cola Zero available in the backroom. Would you like a store associate to bring one out for you?"
+      }
+      else if (q.includes("can't find") || q.includes("cannot find") || q.includes("not on shelf") || q.includes("empty shelf")) {
+        const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
+        showStaffAssist = true
+        staffPrefill = {
+          requestType: 'SHELF_ASSISTANCE',
+          product: milk,
+          zoneName: 'Dairy & Chilled',
+          shelfCode: 'C2',
+        }
+        replyText = "If you're at the shelf and the item is missing or out of reach, tap below to request immediate staff assistance:"
+      }
       // 1. Breakfast for N people
       if (q.includes('breakfast')) {
         const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
@@ -677,6 +728,9 @@ export const CustomerShoppingProvider: React.FC<{
         showRoutePreview: showRoute,
         showCheckoutRecommendation: showCheckout,
         singleProductLocation: singleLoc,
+        showStaffAssistButton: showStaffAssist,
+        staffAssistPrefill: staffPrefill,
+        isEmergencyAlert: isEmergency,
       }
 
       setCopilotMessages((prev) => [...prev, botMsg])
