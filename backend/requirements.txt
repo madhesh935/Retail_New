@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+firebase-admin
+ultralytics
+opencv-python
+w e b s o c k e t s  
+httpx  
+ 

@@ -6,6 +6,8 @@ interface IncidentSummaryKpisProps {
   highCount?: number
   activeCount?: number
   resolvedTodayCount?: number
+  latestCriticalMessage?: string
+  latestHighMessage?: string
 }
 
 export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
@@ -13,6 +15,8 @@ export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
   highCount = 4,
   activeCount = 7,
   resolvedTodayCount = 18,
+  latestCriticalMessage = 'C1 Congestion · Express C2',
+  latestHighMessage = 'B4 Depletion · Floor Spill',
 }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 select-none">
@@ -32,8 +36,8 @@ export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
             Need immediate action
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-rose-400 font-medium">
-          C1 Congestion · Express C2
+        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-rose-400 font-medium truncate">
+          {latestCriticalMessage}
         </div>
       </div>
 
@@ -53,8 +57,8 @@ export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
             Priority operational issues
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-amber-400 font-medium">
-          B4 Depletion · Floor Spill
+        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-amber-400 font-medium truncate">
+          {latestHighMessage}
         </div>
       </div>
 

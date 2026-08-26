@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Radio,
   Sparkles,
+  Settings,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { NAV_MAIN_ITEMS } from '@/lib/constants'
@@ -30,6 +31,7 @@ const iconMap = {
   ShieldAlert,
   Sparkles,
   BarChart3,
+  Settings,
 }
 
 export const Sidebar: React.FC = () => {

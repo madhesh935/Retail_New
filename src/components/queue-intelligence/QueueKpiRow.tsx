@@ -14,9 +14,22 @@ export const QueueKpiRow: React.FC = () => {
   const queues = useAppStore((s) => s.queues)
   const systemAvgWaitSec = useAppStore((s) => s.systemAverageWaitTimeSeconds)
 
-  const activeCount = Array.isArray(queues) ? queues.filter((l) => l.status !== 'CLOSED').length : 3
+  const activeQueues = Array.isArray(queues) ? queues.filter((l) => l.status !== 'CLOSED') : []
+  const activeCount = activeQueues.length
   const totalCount = Array.isArray(queues) && queues.length > 0 ? queues.length : 4
-  const avgWaitMin = systemAvgWaitSec ? (systemAvgWaitSec / 60).toFixed(1) : '2.8'
+  const avgWaitMin = systemAvgWaitSec ? (systemAvgWaitSec / 60).toFixed(1) : '0.0'
+
+  const assistedCount = activeQueues.filter(q => q.laneType !== 'SELF_CHECKOUT').length
+  const selfCount = activeQueues.filter(q => q.laneType === 'SELF_CHECKOUT').length
+  const openLaneCodes = activeQueues.map(q => `C${q.laneNumber}`).join(', ')
+  const closedLanes = Array.isArray(queues) ? queues.filter(q => q.status === 'CLOSED').map(q => `C${q.laneNumber}`).join(', ') : ''
+
+  const avgQueueLength = activeCount > 0 ? (activeQueues.reduce((acc, q) => acc + q.currentQueueLength, 0) / activeCount).toFixed(1) : '0.0'
+  
+  const customersServedHr = activeQueues.reduce((acc, q) => acc + Math.round(q.processingRateItemsPerMinute * 1.5), 0)
+
+  const highestRiskQueue = activeQueues.reduce((prev, curr) => (curr.currentWaitTimeSeconds > prev.currentWaitTimeSeconds) ? curr : prev, activeQueues[0] || null)
+  const highestRiskWaitMin = highestRiskQueue ? (highestRiskQueue.currentWaitTimeSeconds / 60).toFixed(1) : '0'
 
 
   return (
@@ -35,11 +48,11 @@ export const QueueKpiRow: React.FC = () => {
           <div className="text-2xl font-bold text-white tracking-tight">
             {activeCount}/{totalCount}
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">3 Assisted, 1 Self</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">{assistedCount} Assisted, {selfCount} Self</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-cyan-400">C1, C2, C4 Open</span>
-          <span className="text-amber-400">C3 Standby</span>
+          <span className="text-cyan-400">{openLaneCodes || 'None'} Open</span>
+          <span className="text-amber-400">{closedLanes ? `${closedLanes} Standby` : ''}</span>
         </div>
       </div>
 
@@ -55,7 +68,7 @@ export const QueueKpiRow: React.FC = () => {
         </div>
         <div>
           <div className="text-2xl font-bold text-white tracking-tight flex items-baseline gap-1">
-            <span>4.2</span>
+            <span>{avgQueueLength}</span>
             <span className="text-xs text-slate-400 font-normal">people</span>
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">Across active lanes</div>
@@ -104,12 +117,12 @@ export const QueueKpiRow: React.FC = () => {
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-blue-300 tracking-tight">128</div>
+          <div className="text-2xl font-bold text-blue-300 tracking-tight">{customersServedHr}</div>
           <div className="text-[10px] text-slate-400 mt-0.5">Peak Capacity: 180/hr</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
           <span className="text-emerald-400 flex items-center gap-0.5">
-            <ArrowUpRight className="h-3 w-3" /> +14/hr
+            <ArrowUpRight className="h-3 w-3" /> Live
           </span>
           <span className="text-slate-500 text-[9px]">Throughput</span>
         </div>
@@ -127,18 +140,18 @@ export const QueueKpiRow: React.FC = () => {
         </div>
         <div>
           <div className="text-2xl font-bold text-rose-400 tracking-tight">
-            Counter C1
+            Counter C{highestRiskQueue?.laneNumber || 1}
           </div>
           <div className="text-[10px] text-rose-300/90 font-medium mt-0.5">
-            Queue: 8 • Wait: 5.4 min
+            Queue: {highestRiskQueue?.currentQueueLength || 0} • Wait: {highestRiskWaitMin} min
           </div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
           <span className="text-rose-400 font-semibold flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
-            92% Congestion Risk
+            {highestRiskQueue?.status === 'CONGESTED' ? 'High' : 'Normal'} Congestion Risk
           </span>
-          <span className="text-cyan-400">Action Ready</span>
+          <span className="text-cyan-400">Monitoring</span>
         </div>
       </div>
     </div>

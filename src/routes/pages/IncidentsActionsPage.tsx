@@ -51,11 +51,22 @@ export const IncidentsActionsPage: React.FC = () => {
     searchQuery: '',
   })
 
-  // Derived counts
-  const criticalCount = incidents.filter((i) => i.severity === 'CRITICAL' && i.status !== 'RESOLVED').length
-  const highCount = incidents.filter((i) => i.severity === 'HIGH' && i.status !== 'RESOLVED').length
+  // Derived counts and dynamic messages
+  const activeCritical = incidents.filter((i) => i.severity === 'CRITICAL' && i.status !== 'RESOLVED')
+  const activeHigh = incidents.filter((i) => i.severity === 'HIGH' && i.status !== 'RESOLVED')
+  
+  const criticalCount = activeCritical.length
+  const highCount = activeHigh.length
   const activeCount = incidents.filter((i) => i.status !== 'RESOLVED').length
   const resolvedTodayCount = CANONICAL_RESOLUTIONS.length + incidents.filter((i) => i.status === 'RESOLVED').length + 15
+
+  const latestCriticalMessage = activeCritical.length > 0
+    ? `${activeCritical[0].title} · ${activeCritical[0].zone}`
+    : 'No critical incidents'
+
+  const latestHighMessage = activeHigh.length > 0
+    ? `${activeHigh[0].title} · ${activeHigh[0].zone}`
+    : 'No high severity incidents'
 
   // Filtered Incidents
   const filteredIncidents = useMemo(() => {
@@ -152,6 +163,8 @@ export const IncidentsActionsPage: React.FC = () => {
         highCount={highCount}
         activeCount={activeCount}
         resolvedTodayCount={resolvedTodayCount}
+        latestCriticalMessage={latestCriticalMessage}
+        latestHighMessage={latestHighMessage}
       />
 
       {/* 3. Filter Toolbar */}

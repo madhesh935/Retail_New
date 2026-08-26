@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { CheckoutQueue } from '@/types'
 import {
   ListOrdered,
   Users,
@@ -36,27 +37,39 @@ export interface OperationalLaneData {
 }
 
 interface OperationalCounterCardsProps {
+  lanes: OperationalLaneData[]
   selectedLaneCode: string
   onSelectLane: (laneCode: string) => void
   onOpenWhy: (data: WhyDialogData) => void
   onOpenCamera: (cameraCode: string, laneName: string) => void
 }
 
-export const OPERATIONAL_LANES: OperationalLaneData[] = [
+export const getOperationalLanes = (
+  ipCameraUrls: Record<string, string>,
+  queues: CheckoutQueue[]
+): OperationalLaneData[] => {
+  const getQueue = (laneNum: number) => queues.find(q => q.laneNumber === laneNum)
+  
+  const q1 = getQueue(1)
+  const q2 = getQueue(2)
+  const q3 = getQueue(3)
+  const q4 = getQueue(4)
+
+  return [
   // 1. COUNTER C1 (CRITICAL)
   {
     id: 'lane-1',
     code: 'C1',
     name: 'Counter C1 • Express Billing',
-    status: 'CRITICAL',
-    queueLength: 8,
-    estimatedWaitMinutes: 5.4,
-    arrivalRate: 2.8,
-    serviceRate: 1.5,
-    forecast3Min: 10,
-    forecast5Min: 13,
-    congestionProbability: 92,
-    cashierName: 'Elena Rostova (EMP-401)',
+    status: q1?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY',
+    queueLength: q1?.currentQueueLength || 0,
+    estimatedWaitMinutes: q1 ? Number((q1.currentWaitTimeSeconds / 60).toFixed(1)) : 0,
+    arrivalRate: q1 ? Number(((q1.currentQueueLength * 0.25) + (q1.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 2.8,
+    serviceRate: q1 ? Number(((q1.processingRateItemsPerMinute * 0.08) - (q1.currentQueueLength * 0.05)).toFixed(1)) : 1.5,
+    forecast3Min: q1 ? Math.round(q1.currentQueueLength + (q1.currentQueueLength * 0.3)) : 10,
+    forecast5Min: q1 ? Math.round(q1.currentQueueLength + (q1.currentQueueLength * 0.6)) : 13,
+    congestionProbability: q1 ? Math.min(100, Math.max(15, q1.currentQueueLength * 12)) : 15,
+    cashierName: q1?.assignedStaffName || 'Elena Rostova (EMP-401)',
     aiRecommendation: 'Open Counter C3',
     cameraCode: 'CAM-06',
     whyData: {
@@ -83,15 +96,15 @@ export const OPERATIONAL_LANES: OperationalLaneData[] = [
     id: 'lane-2',
     code: 'C2',
     name: 'Counter C2 • Cash & Card',
-    status: 'HEALTHY',
-    queueLength: 2,
-    estimatedWaitMinutes: 1.4,
-    arrivalRate: 1.2,
-    serviceRate: 1.8,
-    forecast3Min: 3,
-    forecast5Min: 3,
-    congestionProbability: 12,
-    cashierName: 'Marcus Vance (EMP-402)',
+    status: ipCameraUrls['C2'] ? (q2?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY') : 'CLOSED',
+    queueLength: ipCameraUrls['C2'] ? (q2?.currentQueueLength || 0) : 0,
+    estimatedWaitMinutes: ipCameraUrls['C2'] ? (q2 ? Number((q2.currentWaitTimeSeconds / 60).toFixed(1)) : 0) : 0,
+    arrivalRate: q2 ? Number(((q2.currentQueueLength * 0.25) + (q2.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 1.2,
+    serviceRate: q2 ? Number(((q2.processingRateItemsPerMinute * 0.08) - (q2.currentQueueLength * 0.05)).toFixed(1)) : 1.8,
+    forecast3Min: q2 ? Math.round(q2.currentQueueLength + (q2.currentQueueLength * 0.3)) : 3,
+    forecast5Min: q2 ? Math.round(q2.currentQueueLength + (q2.currentQueueLength * 0.6)) : 3,
+    congestionProbability: q2 ? Math.min(100, Math.max(12, q2.currentQueueLength * 12)) : 12,
+    cashierName: q2?.assignedStaffName || 'Marcus Vance (EMP-402)',
     cameraCode: 'CAM-06',
   },
   // 3. COUNTER C3 (CLOSED / STANDBY)
@@ -99,15 +112,15 @@ export const OPERATIONAL_LANES: OperationalLaneData[] = [
     id: 'lane-3',
     code: 'C3',
     name: 'Counter C3 • Standby Lane',
-    status: 'CLOSED',
-    queueLength: 0,
-    estimatedWaitMinutes: 0,
-    arrivalRate: 0,
-    serviceRate: 2.2,
-    forecast3Min: 0,
-    forecast5Min: 0,
-    congestionProbability: 0,
-    cashierName: 'Unassigned (Standby)',
+    status: ipCameraUrls['C3'] ? (q3?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY') : 'CLOSED',
+    queueLength: ipCameraUrls['C3'] ? (q3?.currentQueueLength || 0) : 0,
+    estimatedWaitMinutes: ipCameraUrls['C3'] ? (q3 ? Number((q3.currentWaitTimeSeconds / 60).toFixed(1)) : 0) : 0,
+    arrivalRate: q3 ? Number(((q3.currentQueueLength * 0.25) + (q3.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 0,
+    serviceRate: q3 ? Number(((q3.processingRateItemsPerMinute * 0.08) - (q3.currentQueueLength * 0.05)).toFixed(1)) : 2.2,
+    forecast3Min: q3 ? Math.round(q3.currentQueueLength + (q3.currentQueueLength * 0.3)) : 0,
+    forecast5Min: q3 ? Math.round(q3.currentQueueLength + (q3.currentQueueLength * 0.6)) : 0,
+    congestionProbability: q3 ? Math.min(100, Math.max(0, q3.currentQueueLength * 12)) : 0,
+    cashierName: q3?.assignedStaffName || 'Unassigned (Standby)',
     aiRecommendation: 'Recommended to open within approximately 2 minutes.',
     cameraCode: 'CAM-06',
   },
@@ -116,20 +129,22 @@ export const OPERATIONAL_LANES: OperationalLaneData[] = [
     id: 'lane-4',
     code: 'C4',
     name: 'Counter C4 • Self-Checkout Hub',
-    status: 'HEALTHY',
-    queueLength: 5,
-    estimatedWaitMinutes: 1.2,
-    arrivalRate: 1.8,
-    serviceRate: 2.5,
-    forecast3Min: 5,
-    forecast5Min: 6,
-    congestionProbability: 18,
-    cashierName: 'Autonomous AI Supervisor',
+    status: ipCameraUrls['C4'] ? (q4?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY') : 'CLOSED',
+    queueLength: ipCameraUrls['C4'] ? (q4?.currentQueueLength || 0) : 0,
+    estimatedWaitMinutes: ipCameraUrls['C4'] ? (q4 ? Number((q4.currentWaitTimeSeconds / 60).toFixed(1)) : 0) : 0,
+    arrivalRate: q4 ? Number(((q4.currentQueueLength * 0.25) + (q4.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 1.8,
+    serviceRate: q4 ? Number(((q4.processingRateItemsPerMinute * 0.08) - (q4.currentQueueLength * 0.05)).toFixed(1)) : 2.5,
+    forecast3Min: q4 ? Math.round(q4.currentQueueLength + (q4.currentQueueLength * 0.3)) : 5,
+    forecast5Min: q4 ? Math.round(q4.currentQueueLength + (q4.currentQueueLength * 0.6)) : 6,
+    congestionProbability: q4 ? Math.min(100, Math.max(18, q4.currentQueueLength * 12)) : 18,
+    cashierName: q4?.assignedStaffName || 'Autonomous AI Supervisor',
     cameraCode: 'CAM-06',
   },
 ]
+}
 
 export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = ({
+  lanes,
   selectedLaneCode,
   onSelectLane,
   onOpenWhy,
@@ -143,7 +158,7 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 select-none font-mono">
-      {OPERATIONAL_LANES.map((lane) => {
+      {lanes.map((lane) => {
         const isSelected = selectedLaneCode === lane.code
         const isCritical = lane.status === 'CRITICAL'
         const isClosed = lane.status === 'CLOSED'
@@ -255,22 +270,18 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
                     <span className="text-slate-500">Service Rate (Î¼):</span>
                     <strong>{lane.serviceRate} cust/min</strong>
                   </div>
-                  {isCritical && (
-                    <>
-                      <div className="flex justify-between pt-1 border-t border-[#1E293B]">
-                        <span className="text-slate-500">Forecast +3 min:</span>
-                        <strong className="text-amber-400">{lane.forecast3Min} shoppers</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Forecast +5 min:</span>
-                        <strong className="text-rose-400">{lane.forecast5Min} shoppers</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Congestion Prob:</span>
-                        <strong className="text-rose-400 font-bold">{lane.congestionProbability}%</strong>
-                      </div>
-                    </>
-                  )}
+                  <div className="flex justify-between pt-1 border-t border-[#1E293B]">
+                    <span className="text-slate-500">Forecast +3 min:</span>
+                    <strong className={isCritical ? "text-amber-400" : "text-slate-400"}>{isCritical ? `${lane.forecast3Min} shoppers` : '--'}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Forecast +5 min:</span>
+                    <strong className={isCritical ? "text-rose-400" : "text-slate-400"}>{isCritical ? `${lane.forecast5Min} shoppers` : '--'}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Congestion Prob:</span>
+                    <strong className={cn("font-bold", isCritical ? "text-rose-400" : "text-slate-400")}>{isCritical ? `${lane.congestionProbability}%` : '--'}</strong>
+                  </div>
                 </div>
               )}
 

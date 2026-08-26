@@ -111,6 +111,14 @@ export const NAV_MAIN_ITEMS = [
     badgeKey: null,
     shortcut: '9',
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    path: '/settings',
+    iconName: 'Settings',
+    badgeKey: null,
+    shortcut: '0',
+  },
 ]
 
 export const NAV_SYSTEM_ITEMS: {

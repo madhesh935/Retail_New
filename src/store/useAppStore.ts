@@ -9,6 +9,7 @@ import { IncidentSlice, createIncidentSlice } from './slices/incidentSlice'
 import { SystemSlice, createSystemSlice } from './slices/systemSlice'
 import { PredictionSlice, createPredictionSlice } from './slices/predictionSlice'
 import { UiSlice, createUiSlice } from './slices/uiSlice'
+import { SettingsSlice, createSettingsSlice } from './slices/settingsSlice'
 import { WebSocketMessage } from '@/types'
 import { mockDemoAdapter } from '@/services/mock/mockAdapter'
 import { storeService } from '@/services/api/store.service'
@@ -30,7 +31,8 @@ export type AppState = StoreSlice &
   IncidentSlice &
   SystemSlice &
   PredictionSlice &
-  UiSlice & {
+  UiSlice &
+  SettingsSlice & {
     handleWebSocketMessage: (msg: WebSocketMessage) => void
     fetchStoreData: (storeId?: string) => Promise<void>
   }
@@ -46,6 +48,7 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
   ...createSystemSlice(set, get, api),
   ...createPredictionSlice(set, get, api),
   ...createUiSlice(set, get, api),
+  ...createSettingsSlice(set, get, api),
 
   handleWebSocketMessage: (msg: WebSocketMessage) => {
     const { event, payload, timestamp } = msg

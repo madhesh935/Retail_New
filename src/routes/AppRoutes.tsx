@@ -33,6 +33,9 @@ const CopilotWorkspacePage = lazy(() =>
 const ReportsInsightsPage = lazy(() =>
   import('./pages/ReportsInsightsPage').then((m) => ({ default: m.ReportsInsightsPage }))
 )
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+)
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -72,6 +75,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/copilot" element={<CopilotWorkspacePage />} />
           <Route path="/reports-insights" element={<ReportsInsightsPage />} />
           <Route path="/reports" element={<ReportsInsightsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
