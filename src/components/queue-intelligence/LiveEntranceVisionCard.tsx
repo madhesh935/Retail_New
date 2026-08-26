@@ -15,12 +15,10 @@ export const LiveEntranceVisionCard: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null)
   
   const [totalEntered, setTotalEntered] = useState(0)
-  const prevEnteredRef = useRef<number>(0)
+  const [totalExited, setTotalExited] = useState(0)
+  const [currentOccupancy, setCurrentOccupancy] = useState(0)
   
-  // Use the global store's occupancy count directly for the KPI
-  const currentOccupancy = useAppStore(s => s.storeInfo?.currentOccupancy || 0)
-  
-  // Get the update function
+  // Update global occupancy when it changes here
   const updateOccupancy = useAppStore(s => s.updateOccupancy)
 
   useEffect(() => {
@@ -43,16 +41,12 @@ export const LiveEntranceVisionCard: React.FC = () => {
 
         wsRef.current.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          setTotalEntered(data.total_entered);
+          setTotalExited(data.total_exited);
+          setCurrentOccupancy(data.current_occupancy);
           
-          const currentEntered = data.total_entered || 0;
-          if (currentEntered > prevEnteredRef.current) {
-            const diff = currentEntered - prevEnteredRef.current;
-            const globalOccupancy = useAppStore.getState().storeInfo?.currentOccupancy || 0;
-            // ONLY add the delta to the global store, so we don't overwrite checkout decrements
-            useAppStore.getState().updateOccupancy(globalOccupancy + diff, 0);
-            prevEnteredRef.current = currentEntered;
-          }
-          setTotalEntered(currentEntered);
+          // Sync with Zustand store
+          updateOccupancy(data.current_occupancy, 0, 0); // Assuming rate calculation is done elsewhere or ignored for now
         };
       } catch (err) {
         console.error("Error accessing camera:", err);
@@ -127,7 +121,7 @@ export const LiveEntranceVisionCard: React.FC = () => {
           <span className="text-[11px] text-slate-400 font-mono font-normal">Live Inflow (Occupancy):</span>
           <span className="px-2.5 py-0.5 rounded bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm shadow-cyan-500/20">
             <Users className="h-3.5 w-3.5 text-cyan-400" />
-            <span>{currentOccupancy} Shoppers</span>
+            <span>{currentOccupancy || totalEntered} Shoppers</span>
           </span>
         </div>
       </div>

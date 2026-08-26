@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { LiveEntranceVisionCard } from '@/components/queue-intelligence/LiveEntranceVisionCard'
 import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
 import { useAppStore } from '@/store/useAppStore'
 
