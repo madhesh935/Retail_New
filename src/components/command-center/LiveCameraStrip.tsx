@@ -9,6 +9,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { LiveEntranceVisionCard } from '@/components/queue-intelligence/LiveEntranceVisionCard'
+import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
 
 interface CameraFeed {
   id: string
@@ -207,29 +209,37 @@ export const LiveCameraStrip: React.FC = () => {
             </DialogHeader>
 
             <div className="space-y-3 pt-2">
-              <div className="relative w-full h-56 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-3">
-                <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
-                  <span>Stream: Hardware-Accelerated</span>
-                  <span>Latency: {selectedCamera.latencyMs}ms</span>
-                </div>
+              {selectedCamera.code === 'C01' ? (
+                <LiveEntranceVisionCard />
+              ) : selectedCamera.code === 'C05' ? (
+                <LiveQueueVisionCard laneCode="C1" laneName="Checkout 1" />
+              ) : (
+                <>
+                  <div className="relative w-full h-56 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-3">
+                    <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
+                      <span>Stream: Hardware-Accelerated</span>
+                      <span>Latency: {selectedCamera.latencyMs}ms</span>
+                    </div>
 
-                <div className="self-center text-center">
-                  <Camera className="h-10 w-10 text-cyan-400/50 mx-auto mb-2" />
-                  <p className="text-xs font-mono text-slate-400">
-                    Live Feed Active • {selectedCamera.resolution}
-                  </p>
-                </div>
+                    <div className="self-center text-center">
+                      <Camera className="h-10 w-10 text-cyan-400/50 mx-auto mb-2" />
+                      <p className="text-xs font-mono text-slate-400">
+                        Live Feed Active • {selectedCamera.resolution}
+                      </p>
+                    </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-                  <span>Detection: Active</span>
-                  <span className="text-emerald-400">Inference Nominal</span>
-                </div>
-              </div>
+                    <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                      <span>Detection: Active</span>
+                      <span className="text-emerald-400">Inference Nominal</span>
+                    </div>
+                  </div>
 
-              <div className="p-3 rounded-lg bg-[#090D14] border border-[#1E293B] space-y-1">
-                <span className="text-xs font-semibold text-white block">Current AI Detection Summary</span>
-                <p className="text-xs text-slate-300">{selectedCamera.summary}</p>
-              </div>
+                  <div className="p-3 rounded-lg bg-[#090D14] border border-[#1E293B] space-y-1">
+                    <span className="text-xs font-semibold text-white block">Current AI Detection Summary</span>
+                    <p className="text-xs text-slate-300">{selectedCamera.summary}</p>
+                  </div>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>

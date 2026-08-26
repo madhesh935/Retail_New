@@ -46,6 +46,20 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
   const connectionState = useAppStore((s) => s.connectionState)
   const isLive = connectionState === 'CONNECTED'
 
+  // Live queue data from YOLO model
+  const queues = useAppStore((s) => s.queues)
+  const getQueue = (laneNum: number) => Array.isArray(queues) ? queues.find((q) => q.laneNumber === laneNum) : null
+  const q1 = getQueue(1)
+  const q2 = getQueue(2)
+  const q3 = getQueue(3)
+  const q4 = getQueue(4)
+
+  const fmtLane = (q: typeof q1) => q
+    ? `${q.currentQueueLength} • ${(q.currentWaitTimeSeconds / 60).toFixed(1)}m`
+    : '0 • 0.0m'
+  const bestLane = [q1, q2, q4].filter(Boolean).sort((a, b) => (a!.currentWaitTimeSeconds) - (b!.currentWaitTimeSeconds))[0]
+  const bestLaneStr = bestLane ? `C${bestLane.laneNumber} (~${(bestLane.currentWaitTimeSeconds / 60).toFixed(1)} min wait)` : 'C2 (~1.4m wait)'
+
   // Layer toggles state
   const [layers, setLayers] = useState({
     people: true,
@@ -548,7 +562,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               </div>
 
               <span className="text-[10.5px] font-mono text-emerald-400 font-semibold">
-                Best: C2 (~1.4m wait)
+                Best: {bestLaneStr}
               </span>
             </div>
 
@@ -564,16 +578,16 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                       id: 'lane-1',
                       name: 'Counter C1',
                       code: 'C1',
-                      data: { queueLength: 8, waitTime: '5.4 min', predictedIn5m: 13, status: 'CRITICAL', staffName: 'Elena Rostova' },
+                      data: { queueLength: q1?.currentQueueLength || 0, waitTime: `${((q1?.currentWaitTimeSeconds || 0) / 60).toFixed(1)} min`, predictedIn5m: Math.round((q1?.currentQueueLength || 0) * 1.6), status: q1?.status === 'CONGESTED' ? 'CRITICAL' : 'ACTIVE', staffName: q1?.assignedStaffName || 'Elena Rostova' },
                     })
                   }}
                   className={cn(
                     'p-1.5 rounded bg-[#070A10] border text-center transition-colors cursor-pointer',
-                    selectedFixtureId === 'lane-1' ? 'border-rose-400 ring-1 ring-rose-400 bg-rose-950/40' : 'border-rose-500/70 hover:border-rose-400'
+                    selectedFixtureId === 'lane-1' ? 'border-rose-400 ring-1 ring-rose-400 bg-rose-950/40' : `${q1?.status === 'CONGESTED' ? 'border-rose-500/70 hover:border-rose-400' : 'border-[#1E293B] hover:border-emerald-400'}`
                   )}
                 >
                   <div className="text-[9.5px] text-slate-400">C1 (Elena)</div>
-                  <div className="text-rose-400 font-bold text-xs">8 • 5.4m</div>
+                  <div className={`font-bold text-xs ${q1?.status === 'CONGESTED' ? 'text-rose-400' : 'text-emerald-400'}`}>{fmtLane(q1)}</div>
                 </div>
 
                 {/* C2 */}
@@ -585,7 +599,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                       id: 'lane-2',
                       name: 'Counter C2',
                       code: 'C2',
-                      data: { queueLength: 3, waitTime: '1.4 min', status: 'HEALTHY', staffName: 'Marcus Vance' },
+                      data: { queueLength: q2?.currentQueueLength || 0, waitTime: `${((q2?.currentWaitTimeSeconds || 0) / 60).toFixed(1)} min`, status: q2?.status || 'ACTIVE', staffName: q2?.assignedStaffName || 'Marcus Vance' },
                     })
                   }}
                   className={cn(
@@ -594,7 +608,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                   )}
                 >
                   <div className="text-[9.5px] text-slate-400">C2 (Marcus)</div>
-                  <div className="text-emerald-400 font-bold text-xs">3 • 1.4m</div>
+                  <div className="text-emerald-400 font-bold text-xs">{fmtLane(q2)}</div>
                 </div>
 
                 {/* C3 */}
@@ -627,7 +641,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                       id: 'lane-4',
                       name: 'Counter C4',
                       code: 'C4',
-                      data: { queueLength: 5, waitTime: '2.0 min', status: 'ACTIVE' },
+                      data: { queueLength: q4?.currentQueueLength || 0, waitTime: `${((q4?.currentWaitTimeSeconds || 0) / 60).toFixed(1)} min`, status: q4?.status || 'ACTIVE' },
                     })
                   }}
                   className={cn(
@@ -636,7 +650,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                   )}
                 >
                   <div className="text-[9.5px] text-slate-400">C4 (Self)</div>
-                  <div className="text-cyan-300 font-bold text-xs">5 • 2.0m</div>
+                  <div className="text-cyan-300 font-bold text-xs">{fmtLane(q4)}</div>
                 </div>
               </div>
             )}

@@ -10,6 +10,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
 
 export interface ActionHistoryRecord {
   id: string
@@ -91,10 +92,19 @@ export const ACTION_HISTORY_RECORDS: ActionHistoryRecord[] = [
 ]
 
 export const ActionHistoryBeforeAfter: React.FC = () => {
-  const [selectedId, setSelectedId] = useState<string>('act-01')
+  // Merge live action log (from store) with static historical records
+  // Live entries appear first — they are created when managers activate counters
+  const liveActionLog = useAppStore((s) => s.queueActionLog)
+
+  const allRecords: ActionHistoryRecord[] = [
+    ...liveActionLog,   // real-time entries prepended
+    ...ACTION_HISTORY_RECORDS,
+  ]
+
+  const [selectedId, setSelectedId] = useState<string>(allRecords[0]?.id || 'act-01')
 
   const activeRecord =
-    ACTION_HISTORY_RECORDS.find((r) => r.id === selectedId) || ACTION_HISTORY_RECORDS[0]
+    allRecords.find((r) => r.id === selectedId) || allRecords[0]
 
   return (
     <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none font-mono h-full min-h-[440px]">
@@ -120,7 +130,7 @@ export const ActionHistoryBeforeAfter: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
         {/* Left 6 cols: Action Log List */}
         <div className="md:col-span-6 space-y-2">
-          {ACTION_HISTORY_RECORDS.map((rec) => {
+          {allRecords.map((rec) => {
             const isSelected = rec.id === selectedId
 
             return (

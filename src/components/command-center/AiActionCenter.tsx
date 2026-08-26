@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { WhyDialogData } from './WhyRecommendationDialog'
 import { SelectedEntity } from './StoreMapDigitalTwin'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
 
 interface AiActionCenterProps {
   onOpenWhy: (data: WhyDialogData) => void
@@ -27,28 +28,49 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
   const navigate = useNavigate()
   const [dispatchedActions, setDispatchedActions] = useState<Record<string, boolean>>({})
 
+  // ── Live queue data from YOLO model via Zustand store ──────────────────────
+  const queues = useAppStore((s) => s.queues)
+  const activeQueues = Array.isArray(queues) ? queues.filter((l) => l.status !== 'CLOSED' && l.status !== 'STANDBY') : []
+  const congestedLane = activeQueues.reduce(
+    (prev, curr) => (curr.currentQueueLength > (prev?.currentQueueLength || 0) ? curr : prev),
+    activeQueues[0] || null
+  )
+
+  const liveQ = congestedLane?.currentQueueLength || 8
+  const liveWaitMin = congestedLane ? (congestedLane.currentWaitTimeSeconds / 60).toFixed(1) : '5.4'
+  const liveForecast5 = congestedLane ? Math.round(liveQ + liveQ * 0.6) : 13
+  const liveArrivalRate = congestedLane
+    ? Number(((congestedLane.currentQueueLength * 0.25) + (congestedLane.processingRateItemsPerMinute * 0.05)).toFixed(1))
+    : 2.8
+  const liveServiceRate = congestedLane
+    ? Number(((congestedLane.processingRateItemsPerMinute * 0.08) - (congestedLane.currentQueueLength * 0.05)).toFixed(1))
+    : 1.5
+  const liveCongestedCode = congestedLane ? `C${congestedLane.laneNumber}` : 'C1'
+  const congestionPct = congestedLane ? Math.min(99, Math.max(15, liveQ * 12)) : 92
+  const isCongested = liveQ >= 5
+
   const handleActionDispatch = (actionKey: string) => {
     setDispatchedActions((prev) => ({ ...prev, [actionKey]: true }))
   }
 
-  // ACTION 1 WHY DATA (Queue)
+  // ACTION 1 WHY DATA (Queue) — built from live metrics
   const queueWhyData: WhyDialogData = {
-    title: 'Checkout Congestion (Counter C1)',
+    title: `Checkout Congestion (Counter ${liveCongestedCode})`,
     actionType: 'QUEUE',
-    targetEntity: 'Counter C1',
+    targetEntity: `Counter ${liveCongestedCode}`,
     signals: [
-      { label: 'Current Queue', value: '8 shoppers', highlight: true },
-      { label: 'Arrival Rate (λ)', value: '2.8 / min' },
-      { label: 'Service Rate (μ)', value: '1.5 / min' },
-      { label: 'Predicted +5min', value: '13 shoppers', highlight: true },
-      { label: 'Wait Time Forecast', value: '5.4 min' },
-      { label: 'Congestion Probability', value: '92%' },
+      { label: 'Current Queue', value: `${liveQ} shoppers`, highlight: true },
+      { label: 'Arrival Rate (λ)', value: `${liveArrivalRate} / min` },
+      { label: 'Service Rate (μ)', value: `${liveServiceRate} / min` },
+      { label: 'Predicted +5min', value: `${liveForecast5} shoppers`, highlight: true },
+      { label: 'Wait Time Forecast', value: `${liveWaitMin} min` },
+      { label: 'Congestion Probability', value: `${congestionPct}%` },
     ],
-    mathFormula: 'Q(t + 5) = Q(t) + 5 × (λ - μ) = 8 + 5 × (2.8 - 1.5) = 14.5 ≈ 13 shoppers',
+    mathFormula: `Q(t + 5) = Q(t) + 5 × (λ - μ) = ${liveQ} + 5 × (${liveArrivalRate} - ${liveServiceRate}) = ${liveForecast5} shoppers`,
     threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
-    confidence: '92%',
+    confidence: `${congestionPct}%`,
     conclusion: 'Opening Counter C3 is recommended before queue depth exceeds threshold.',
-    edgeModel: 'Queue Inference Engine',
+    edgeModel: 'Queue Inference Engine (YOLO)',
   }
 
   // ACTION 2 WHY DATA (Shelf B4)
@@ -132,15 +154,15 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
           <div className="grid grid-cols-3 gap-2 bg-[#090D14] p-2 rounded border border-[#1E293B] text-center font-mono">
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Queue</span>
-              <span className="text-white font-bold text-xs">8 → 13</span>
+              <span className="text-white font-bold text-xs">{liveQ} → {liveForecast5}</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Wait Time</span>
-              <span className="text-amber-400 font-bold text-xs">5.4 min</span>
+              <span className={`font-bold text-xs ${Number(liveWaitMin) > 3 ? 'text-amber-400' : 'text-emerald-400'}`}>{liveWaitMin} min</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Confidence</span>
-              <span className="text-rose-400 font-bold text-xs">92%</span>
+              <span className={`font-bold text-xs ${congestionPct >= 80 ? 'text-rose-400' : 'text-amber-400'}`}>{congestionPct}%</span>
             </div>
           </div>
 
@@ -178,16 +200,16 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
                 onClick={() =>
                   onViewEntity({
                     type: 'checkout',
-                    id: 'lane-1',
-                    name: 'Counter C1',
-                    code: 'C1',
+                    id: `lane-${congestedLane?.laneNumber || 1}`,
+                    name: `Counter ${liveCongestedCode}`,
+                    code: liveCongestedCode,
                     data: {
-                      queueLength: 8,
-                      waitTime: '5.4 min',
-                      predictedIn5m: 13,
-                      risk: '92%',
-                      staffName: 'Elena Rostova',
-                      status: 'CONGESTED',
+                      queueLength: liveQ,
+                      waitTime: `${liveWaitMin} min`,
+                      predictedIn5m: liveForecast5,
+                      risk: `${congestionPct}%`,
+                      staffName: congestedLane?.assignedStaffName || 'Elena Rostova',
+                      status: isCongested ? 'CONGESTED' : 'ACTIVE',
                     },
                   })
                 }

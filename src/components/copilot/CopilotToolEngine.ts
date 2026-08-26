@@ -1,4 +1,5 @@
 import { WhyDialogData } from '@/components/command-center/WhyRecommendationDialog'
+import { useAppStore } from '@/store/useAppStore'
 
 export interface CopilotAction {
   type: 'NAVIGATE' | 'VIEW_TWIN' | 'VIEW_CAMERA' | 'ASSIGN_STAFF' | 'CREATE_TASK' | 'OPEN_WHY'
@@ -48,13 +49,28 @@ export const CopilotTools = {
   },
 
   get_queue_status: () => {
+    // Read live state from Zustand store
+    const state = useAppStore.getState()
+    const queues = Array.isArray(state.queues) ? state.queues : []
+    const activeQueues = queues.filter((l) => l.status !== 'CLOSED' && l.status !== 'STANDBY')
+    const congestedLane = activeQueues.reduce(
+      (prev, curr) => (curr.currentQueueLength > (prev?.currentQueueLength || 0) ? curr : prev),
+      activeQueues[0] || null
+    )
+    const avgWaitSec = state.systemAverageWaitTimeSeconds || 0
+    const avgWaitMin = (avgWaitSec / 60).toFixed(1)
+    const congestedCode = congestedLane ? `C${congestedLane.laneNumber}` : 'C1'
+    const congestedQ = congestedLane?.currentQueueLength || 0
+    const congestedWaitMin = congestedLane ? (congestedLane.currentWaitTimeSeconds / 60).toFixed(1) : '0.0'
+    const forecast5 = congestedLane ? Math.round(congestedQ + congestedQ * 0.6) : 0
+    const openLanes = activeQueues.map((q) => `C${q.laneNumber}`).join(', ')
+
     return {
-      activeCounters: '3 / 4 (C1, C2, C4 Active; C3 Standby)',
-      criticalCounter: 'Counter C1 (Queue: 8 shoppers, Est. Wait: 5.4 min)',
-      arrivalRate: '2.8 customers/min',
-      serviceRate: '1.5 customers/min',
-      forecast5Min: '13 shoppers (+62% surge)',
-      recommendedAction: 'Open Counter C3 immediately',
+      activeCounters: `${activeQueues.length} / ${queues.length} (${openLanes} Active)`,
+      criticalCounter: `Counter ${congestedCode} (Queue: ${congestedQ} shoppers, Est. Wait: ${congestedWaitMin} min)`,
+      avgWaitTime: `${avgWaitMin} min (system average)`,
+      forecast5Min: `${forecast5} shoppers (projected +5min)`,
+      recommendedAction: congestedQ >= 5 ? 'Open a standby counter immediately' : 'Queue levels within normal range',
       suggestedStaff: 'S02 Marcus Vance',
     }
   },

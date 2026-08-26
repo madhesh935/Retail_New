@@ -7,9 +7,27 @@ import {
 } from 'lucide-react'
 import { FootfallTrendChart } from './charts/FootfallTrendChart'
 import { Button } from '@/components/ui/button'
+import { useAppStore } from '@/store/useAppStore'
 
 export const BottomIntelligenceGrid: React.FC = () => {
   const [refillTriggered, setRefillTriggered] = useState<Record<string, boolean>>({})
+
+  // Live queue data from the model
+  const queues = useAppStore((s) => s.queues)
+  const activeQueues = Array.isArray(queues) ? queues.filter((l) => l.status !== 'CLOSED' && l.status !== 'STANDBY') : []
+  const congestedLane = activeQueues.reduce(
+    (prev, curr) => (curr.currentQueueLength > (prev?.currentQueueLength || 0) ? curr : prev),
+    activeQueues[0] || null
+  )
+
+  const liveCurrentQ = congestedLane?.currentQueueLength || 0
+  const liveWaitSec = congestedLane?.currentWaitTimeSeconds || 0
+  const liveForecast5 = congestedLane ? Math.round(liveCurrentQ + liveCurrentQ * 0.6) : 0
+  const liveForecast10 = congestedLane ? Math.round(liveCurrentQ + liveCurrentQ * 1.0) : 0
+  const currentPct = Math.min(100, (liveCurrentQ / 20) * 100)
+  const forecast5Pct = Math.min(100, (liveForecast5 / 20) * 100)
+  const forecast10Pct = Math.min(100, (liveForecast10 / 20) * 100)
+  const congestedCode = congestedLane ? `C${congestedLane.laneNumber}` : 'C1'
 
   const handleQuickRefill = (skuCode: string) => {
     setRefillTriggered((prev) => ({ ...prev, [skuCode]: true }))
@@ -56,36 +74,40 @@ export const BottomIntelligenceGrid: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-slate-400 w-14">Current</span>
               <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-cyan-400" style={{ width: '80%' }} />
+                <div className="h-full bg-cyan-400" style={{ width: `${currentPct}%` }} />
               </div>
             </div>
-            <span className="text-white font-bold font-mono text-xs">8 shoppers</span>
+            <span className="text-white font-bold font-mono text-xs">{liveCurrentQ} shoppers</span>
           </div>
 
-          <div className="flex items-center justify-between p-2 rounded bg-[#15110A] border border-amber-500/40">
+          <div className={`flex items-center justify-between p-2 rounded border ${liveForecast5 >= 10 ? 'bg-[#15110A] border-amber-500/40' : 'bg-[#090D14] border-[#1E293B]'}`}>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-amber-300 w-14 font-medium">+5 min</span>
+              <span className={`text-[11px] w-14 font-medium ${liveForecast5 >= 10 ? 'text-amber-300' : 'text-slate-400'}`}>+5 min</span>
               <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-400" style={{ width: '100%' }} />
+                <div className={`h-full ${liveForecast5 >= 10 ? 'bg-amber-400' : 'bg-slate-600'}`} style={{ width: `${forecast5Pct}%` }} />
               </div>
             </div>
-            <span className="text-amber-300 font-bold font-mono text-xs">13 predicted</span>
+            <span className={`font-bold font-mono text-xs ${liveForecast5 >= 10 ? 'text-amber-300' : 'text-slate-400'}`}>
+              {liveForecast5} predicted
+            </span>
           </div>
 
-          <div className="flex items-center justify-between p-2 rounded bg-[#150A0E] border border-rose-500/40">
+          <div className={`flex items-center justify-between p-2 rounded border ${liveForecast10 >= 13 ? 'bg-[#150A0E] border-rose-500/40' : 'bg-[#090D14] border-[#1E293B]'}`}>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-rose-300 w-14 font-medium">+10 min</span>
+              <span className={`text-[11px] w-14 font-medium ${liveForecast10 >= 13 ? 'text-rose-300' : 'text-slate-400'}`}>+10 min</span>
               <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-rose-500" style={{ width: '100%' }} />
+                <div className={`h-full ${liveForecast10 >= 13 ? 'bg-rose-500' : 'bg-slate-600'}`} style={{ width: `${forecast10Pct}%` }} />
               </div>
             </div>
-            <span className="text-rose-400 font-bold font-mono text-xs">16 (unmanaged)</span>
+            <span className={`font-bold font-mono text-xs ${liveForecast10 >= 13 ? 'text-rose-400' : 'text-slate-400'}`}>
+              {liveForecast10} {liveForecast10 >= 13 ? '(unmanaged)' : 'projected'}
+            </span>
           </div>
         </div>
 
         <div className="pt-2 border-t border-[#1E293B] text-[11px] text-slate-400 flex items-center justify-between">
-          <span>Action: Open Counter C3</span>
-          <span className="text-cyan-400 font-semibold font-mono">Staff: S02</span>
+          <span>Congested: {congestedCode} • {(liveWaitSec / 60).toFixed(1)} min wait</span>
+          <span className="text-cyan-400 font-semibold font-mono">Live Model</span>
         </div>
       </div>
 

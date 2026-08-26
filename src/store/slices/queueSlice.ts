@@ -2,6 +2,23 @@ import { StateCreator } from 'zustand'
 import { CheckoutQueue, QueueAnalyticsPayload } from '@/types'
 import { MOCK_QUEUES } from '@/services/mock/mockData'
 
+// ── Queue Action Log (for Reports page before/after history) ──────────────────
+export interface QueueActionEntry {
+  id: string
+  time: string          // e.g. "18:42"
+  actionTitle: string
+  targetEntity: string
+  category: 'QUEUE' | 'INVENTORY' | 'STAFF' | 'SAFETY'
+  summaryResult: string
+  assignedStaff: string
+  beforeMetricLabel: string
+  beforeValue: string
+  afterMetricLabel: string
+  afterValue: string
+  operationalGain: string
+  verificationMethod: string
+}
+
 export interface QueueSlice {
   queues: CheckoutQueue[]
   systemAverageWaitTimeSeconds: number
@@ -10,9 +27,13 @@ export interface QueueSlice {
   predictedWaitTimeCurve: { time: string; regularAvgSec: number; expressAvgSec: number }[]
   isLoadingQueues: boolean
 
+  // Live action log written when counters are opened/actioned
+  queueActionLog: QueueActionEntry[]
+
   setQueuesPayload: (payload: QueueAnalyticsPayload) => void
   updateLaneQueue: (laneId: string, queueLength: number, waitSeconds: number, status?: CheckoutQueue['status']) => void
   setLoadingQueues: (loading: boolean) => void
+  addQueueAction: (entry: QueueActionEntry) => void
 }
 
 export const createQueueSlice: StateCreator<QueueSlice, [], [], QueueSlice> = (set) => ({
@@ -22,6 +43,7 @@ export const createQueueSlice: StateCreator<QueueSlice, [], [], QueueSlice> = (s
   congestedLanesCount: MOCK_QUEUES.congestedLanesCount,
   predictedWaitTimeCurve: MOCK_QUEUES.predictedWaitTimeCurve,
   isLoadingQueues: false,
+  queueActionLog: [],
 
   setQueuesPayload: (payload) =>
     set({
@@ -31,6 +53,7 @@ export const createQueueSlice: StateCreator<QueueSlice, [], [], QueueSlice> = (s
       congestedLanesCount: payload.lanes.filter((l) => l.status === 'CONGESTED').length,
       predictedWaitTimeCurve: payload.predictedWaitTimeCurve,
     }),
+
   updateLaneQueue: (laneId, queueLength, waitSeconds, status) =>
     set((state) => {
       const updated = state.queues.map((lane) =>
@@ -54,5 +77,11 @@ export const createQueueSlice: StateCreator<QueueSlice, [], [], QueueSlice> = (s
         congestedLanesCount: updated.filter((l) => l.status === 'CONGESTED').length,
       }
     }),
+
   setLoadingQueues: (isLoadingQueues) => set({ isLoadingQueues }),
+
+  addQueueAction: (entry) =>
+    set((state) => ({
+      queueActionLog: [entry, ...state.queueActionLog].slice(0, 20), // keep latest 20
+    })),
 })
