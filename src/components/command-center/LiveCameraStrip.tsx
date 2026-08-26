@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { LiveEntranceVisionCard } from '@/components/queue-intelligence/LiveEntranceVisionCard'
-import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
 
 interface CameraFeed {
   id: string
@@ -211,8 +210,6 @@ export const LiveCameraStrip: React.FC = () => {
             <div className="space-y-3 pt-2">
               {selectedCamera.code === 'C01' ? (
                 <LiveEntranceVisionCard />
-              ) : selectedCamera.code === 'C05' ? (
-                <LiveQueueVisionCard laneCode="C1" laneName="Checkout 1" />
               ) : (
                 <>
                   <div className="relative w-full h-56 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-3">

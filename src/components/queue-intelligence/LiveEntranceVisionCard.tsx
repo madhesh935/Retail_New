@@ -15,12 +15,10 @@ export const LiveEntranceVisionCard: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null)
   
   const [totalEntered, setTotalEntered] = useState(0)
-  const prevEnteredRef = useRef<number>(0)
+  const [totalExited, setTotalExited] = useState(0)
+  const [currentOccupancy, setCurrentOccupancy] = useState(0)
   
-  // Use the global store's occupancy count directly for the KPI
-  const currentOccupancy = useAppStore(s => s.storeInfo?.currentOccupancy || 0)
-  
-  // Get the update function
+  // Update global occupancy when it changes here
   const updateOccupancy = useAppStore(s => s.updateOccupancy)
 
   useEffect(() => {
@@ -43,16 +41,12 @@ export const LiveEntranceVisionCard: React.FC = () => {
 
         wsRef.current.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          setTotalEntered(data.total_entered);
+          setTotalExited(data.total_exited);
+          setCurrentOccupancy(data.current_occupancy);
           
-          const currentEntered = data.total_entered || 0;
-          if (currentEntered > prevEnteredRef.current) {
-            const diff = currentEntered - prevEnteredRef.current;
-            const globalOccupancy = useAppStore.getState().storeInfo?.currentOccupancy || 0;
-            // ONLY add the delta to the global store, so we don't overwrite checkout decrements
-            useAppStore.getState().updateOccupancy(globalOccupancy + diff, 0);
-            prevEnteredRef.current = currentEntered;
-          }
-          setTotalEntered(currentEntered);
+          // Sync with Zustand store
+          updateOccupancy(data.current_occupancy, 0, 0); // Assuming rate calculation is done elsewhere or ignored for now
         };
       } catch (err) {
         console.error("Error accessing camera:", err);
@@ -118,8 +112,8 @@ export const LiveEntranceVisionCard: React.FC = () => {
       {/* KPI Row */}
       <div className="flex justify-center mb-3">
         <div className="w-1/2 bg-[#131D31] rounded p-2 border border-[#1E293B] flex flex-col items-center justify-center">
-          <span className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><ArrowUp className="w-3 h-3 text-cyan-400"/> ENTERED (OCCUPANCY)</span>
-          <span className="text-xl font-bold text-cyan-400">{currentOccupancy}</span>
+          <span className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><ArrowUp className="w-3 h-3 text-cyan-400"/> ENTERED</span>
+          <span className="text-xl font-bold text-cyan-400">{totalEntered}</span>
         </div>
       </div>
 
