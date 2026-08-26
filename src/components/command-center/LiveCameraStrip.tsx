@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { LiveEntranceVisionCard } from '@/components/queue-intelligence/LiveEntranceVisionCard'
 import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
+import { useAppStore } from '@/store/useAppStore'
 
 interface CameraFeed {
   id: string
@@ -22,6 +23,391 @@ interface CameraFeed {
   resolution: string
   fps: number
   latencyMs: number
+}
+
+// Sub-component for Entrance Camera (C01) inside Fullscreen Modal
+const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
+  const videoRef = React.useRef<HTMLVideoElement>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+  const wsRef = React.useRef<WebSocket | null>(null)
+  const currentOccupancy = useAppStore((s) => s.storeInfo?.currentOccupancy || 142)
+
+  React.useEffect(() => {
+    let intervalId: number
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+
+        const wsUrl = `ws://127.0.0.1:8000/api/v1/entrance/stream`
+        wsRef.current = new WebSocket(wsUrl)
+
+        wsRef.current.onopen = () => {
+          intervalId = window.setInterval(captureAndSendFrame, 500)
+        }
+
+        wsRef.current.onmessage = (event) => {
+          const data = JSON.parse(event.data)
+          if (data.total_entered) {
+            const globalOccupancy = useAppStore.getState().storeInfo?.currentOccupancy || 142
+            useAppStore.getState().updateOccupancy(globalOccupancy + 1, 0)
+          }
+        }
+      } catch (err) {
+        console.error('Error accessing entrance camera:', err)
+      }
+    }
+
+    startCamera()
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+      if (wsRef.current) wsRef.current.close()
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+        tracks.forEach((t) => t.stop())
+      }
+    }
+  }, [])
+
+  const captureAndSendFrame = () => {
+    if (!canvasRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    if (!video || video.videoWidth === 0) return
+
+    const context = canvas.getContext('2d')
+    if (context) {
+      if (canvas.width !== video.videoWidth) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+      }
+      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        if (blob && wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(blob)
+        }
+      }, 'image/jpeg', 0.6)
+    }
+  }
+
+  return (
+    <div className="space-y-3 font-mono">
+      <div className="relative w-full h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-4 shadow-inner">
+        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-70" />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        {/* Scanline pattern */}
+        <div
+          className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+          }}
+        />
+
+        {/* Counting Line Overlay */}
+        <div className="absolute left-0 right-0 border-t-2 border-dashed border-cyan-400 pointer-events-none" style={{ top: '50%' }} />
+        <div className="absolute left-4 text-[10px] text-cyan-400 font-bold bg-[#0B1322]/80 px-2 py-0.5 rounded border border-cyan-500/40" style={{ top: 'calc(50% - 24px)' }}>
+          ENTRY THRESHOLD
+        </div>
+
+        {/* Top HUD */}
+        <div className="flex items-center justify-between text-xs text-cyan-300 z-10">
+          <span className="flex items-center gap-2 font-bold">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>RTSP STREAM • CAM-01 (Main Entrance)</span>
+          </span>
+          <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded-md border border-cyan-500/40 text-cyan-300 font-bold flex items-center gap-1.5 shadow-sm">
+            <span>Occupancy:</span>
+            <span className="text-white">{currentOccupancy} Shoppers</span>
+          </span>
+        </div>
+
+        {/* Bottom HUD */}
+        <div className="flex items-center justify-between text-xs text-slate-300 z-10 pt-2 border-t border-[#1E293B]/60 mt-auto bg-[#070A0F]/60 -mx-4 -mb-4 p-4">
+          <span>Inference: <strong className="text-emerald-400">YOLOv8 Edge Line-Crossing</strong></span>
+          <span className="text-emerald-400 font-bold">100% On-Device Neural Processing</span>
+        </div>
+      </div>
+
+      {/* Bottom Telemetry Summary */}
+      <div className="p-3.5 rounded-xl bg-[#090D14] border border-[#1E293B] flex items-center justify-between">
+        <div>
+          <span className="text-xs font-bold text-white block">Real-Time Telemetry Summary</span>
+          <p className="text-xs text-slate-300 mt-0.5">{feed.summary}</p>
+        </div>
+        <span className="text-xs font-mono px-2 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
+          STREAM NOMINAL
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// Sub-component for Checkout Camera (C05) inside Fullscreen Modal
+const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
+  const videoRef = React.useRef<HTMLVideoElement>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+  const wsRef = React.useRef<WebSocket | null>(null)
+  const [liveQueueCount, setLiveQueueCount] = React.useState(8)
+  const [liveWaitTime, setLiveWaitTime] = React.useState('5.4 min')
+  const currentRoi = useAppStore((s) => s.cameraRois['C1'] || { x: 0, y: 0, width: 1, height: 1 })
+
+  React.useEffect(() => {
+    let intervalId: number
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+
+        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream`
+        wsRef.current = new WebSocket(wsUrl)
+
+        wsRef.current.onopen = () => {
+          intervalId = window.setInterval(captureAndSendFrame, 500)
+        }
+
+        wsRef.current.onmessage = (event) => {
+          const data = JSON.parse(event.data)
+          if (data.people_count !== undefined) {
+            setLiveQueueCount(data.people_count)
+            setLiveWaitTime(`${(data.average_wait_time_seconds / 60).toFixed(1)} min`)
+          }
+        }
+      } catch (err) {
+        console.error('Error accessing checkout camera:', err)
+      }
+    }
+
+    startCamera()
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+      if (wsRef.current) wsRef.current.close()
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+        tracks.forEach((t) => t.stop())
+      }
+    }
+  }, [])
+
+  const captureAndSendFrame = () => {
+    if (!canvasRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    if (!video || video.videoWidth === 0) return
+
+    const context = canvas.getContext('2d')
+    if (context) {
+      if (canvas.width !== video.videoWidth) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+      }
+      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        if (blob && wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(blob)
+        }
+      }, 'image/jpeg', 0.6)
+    }
+  }
+
+  return (
+    <div className="space-y-3 font-mono">
+      <div className="relative w-full h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-4 shadow-inner">
+        <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-70" />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        {/* Scanline pattern */}
+        <div
+          className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+          }}
+        />
+
+        {/* ROI Box Overlay */}
+        <div 
+          className="absolute border-2 border-cyan-500/50 bg-cyan-500/10 rounded pointer-events-none flex items-start justify-start p-1 transition-all duration-300"
+          style={{
+            left: `${currentRoi.x * 100}%`,
+            top: `${currentRoi.y * 100}%`,
+            width: `${currentRoi.width * 100}%`,
+            height: `${currentRoi.height * 100}%`
+          }}
+        >
+          <div className="bg-[#0F172A] px-1.5 py-0.5 rounded border border-cyan-500/60 text-[9px] text-cyan-300 font-bold whitespace-nowrap">
+            ROI: C1 (Register 1)
+          </div>
+        </div>
+
+        {/* Top HUD */}
+        <div className="flex items-center justify-between text-xs text-cyan-300 z-10">
+          <span className="flex items-center gap-2 font-bold">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>RTSP STREAM • CAM-06 (Overhead Checkout C1)</span>
+          </span>
+          <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded-md border border-rose-500/40 text-rose-300 font-bold flex items-center gap-1.5 shadow-sm">
+            <span>Detected Queue:</span>
+            <span className="text-white">{liveQueueCount} Shoppers ({liveWaitTime})</span>
+          </span>
+        </div>
+
+        {/* Bottom HUD */}
+        <div className="flex items-center justify-between text-xs text-slate-300 z-10 pt-2 border-t border-[#1E293B]/60 mt-auto bg-[#070A0F]/60 -mx-4 -mb-4 p-4">
+          <span>Target Counter: <strong className="text-white">C1 (Elena Rostova)</strong> • 2 FPS</span>
+          <span className="text-emerald-400 font-bold">100% On-Device Neural Processing</span>
+        </div>
+      </div>
+
+      {/* Bottom Telemetry Summary */}
+      <div className="p-3.5 rounded-xl bg-[#090D14] border border-[#1E293B] flex items-center justify-between">
+        <div>
+          <span className="text-xs font-bold text-white block">Real-Time Telemetry Summary</span>
+          <p className="text-xs text-slate-300 mt-0.5">{feed.summary}</p>
+        </div>
+        <span className="text-xs font-mono px-2 py-1 rounded bg-rose-950/80 text-rose-300 border border-rose-500/40 font-bold">
+          ALERT: CONGESTED
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// Mini Live Stream for Entrance Camera Card
+const LiveEntranceMiniStream: React.FC = () => {
+  const videoRef = React.useRef<HTMLVideoElement>(null)
+
+  React.useEffect(() => {
+    let stream: MediaStream | null = null
+    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
+      stream = s
+      if (videoRef.current) {
+        videoRef.current.srcObject = s
+      }
+    }).catch(console.warn)
+
+    return () => {
+      if (stream) stream.getTracks().forEach((t) => t.stop())
+    }
+  }, [])
+
+  return (
+    <div className="relative w-full h-full bg-[#050810] overflow-hidden">
+      <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-75" />
+      {/* Scanline pattern */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+        }}
+      />
+      {/* Counting Line Overlay */}
+      <div className="absolute left-0 right-0 border-t border-dashed border-cyan-400 pointer-events-none" style={{ top: '50%' }} />
+      <div className="absolute left-2 text-[8px] text-cyan-300 font-bold bg-[#0B1322]/85 px-1 py-0.2 rounded border border-cyan-500/40" style={{ top: 'calc(50% - 13px)' }}>
+        ENTRY LINE
+      </div>
+    </div>
+  )
+}
+
+// Mini Live Stream for Checkout Camera Card
+const LiveCheckoutMiniStream: React.FC = () => {
+  const videoRef = React.useRef<HTMLVideoElement>(null)
+  const currentRoi = useAppStore((s) => s.cameraRois['C1'] || { x: 0.08, y: 0.08, width: 0.84, height: 0.84 })
+
+  React.useEffect(() => {
+    let stream: MediaStream | null = null
+    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
+      stream = s
+      if (videoRef.current) {
+        videoRef.current.srcObject = s
+      }
+    }).catch(console.warn)
+
+    return () => {
+      if (stream) stream.getTracks().forEach((t) => t.stop())
+    }
+  }, [])
+
+  return (
+    <div className="relative w-full h-full bg-[#050810] overflow-hidden">
+      <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-75" />
+      {/* Scanline pattern */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+        }}
+      />
+      {/* ROI Box Overlay */}
+      <div 
+        className="absolute border border-cyan-400/80 bg-cyan-500/10 rounded pointer-events-none p-0.5"
+        style={{
+          left: `${currentRoi.x * 100}%`,
+          top: `${currentRoi.y * 100}%`,
+          width: `${currentRoi.width * 100}%`,
+          height: `${currentRoi.height * 100}%`
+        }}
+      >
+        <span className="text-[8px] font-bold text-cyan-300 bg-[#0F172A]/90 px-1 py-0.2 rounded border border-cyan-500/40">
+          ROI: C1
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// Mini Simulated High-Tech Camera Feed for Produce & Beverages
+const LiveSimulatedMiniStream: React.FC<{ code: string; name: string; isAlert?: boolean }> = ({ code, name, isAlert }) => {
+  return (
+    <div className="relative w-full h-full bg-[#070B14] overflow-hidden flex flex-col justify-between p-2 font-mono select-none">
+      {/* Background surveillance optics with dynamic grid */}
+      <div 
+        className="absolute inset-0 opacity-20 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(56,189,248,0.2), transparent 75%), repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`
+        }}
+      />
+
+      {/* Simulated AI Object Detection Bounding Boxes */}
+      {code === 'C02' ? (
+        <>
+          {/* Person 1 Box */}
+          <div className="absolute top-[24%] left-[20%] w-[28%] h-[52%] border border-emerald-400/80 bg-emerald-500/10 rounded-xs flex flex-col justify-between p-0.5 animate-pulse pointer-events-none">
+            <span className="text-[7px] text-emerald-300 font-bold bg-black/85 px-1 py-0.2 rounded w-fit border border-emerald-500/30">
+              shopper: 96%
+            </span>
+          </div>
+          {/* Produce Shelf Target Box */}
+          <div className="absolute top-[32%] right-[16%] w-[34%] h-[46%] border border-cyan-400/70 bg-cyan-500/10 rounded-xs flex flex-col justify-between p-0.5 pointer-events-none">
+            <span className="text-[7px] text-cyan-300 font-bold bg-black/85 px-1 py-0.2 rounded w-fit border border-cyan-500/30">
+              fresh_aisle_A1
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Stock Alert Box */}
+          <div className="absolute top-[18%] left-[26%] w-[48%] h-[60%] border border-rose-500/90 bg-rose-500/15 rounded-xs flex flex-col justify-between p-0.5 animate-pulse pointer-events-none">
+            <span className="text-[7px] text-rose-300 font-bold bg-rose-950/90 px-1 py-0.2 rounded w-fit border border-rose-500/40">
+              low_stock: B4 (3 left)
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* Center Lens Marker */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center justify-center opacity-40">
+        <Camera className="w-6 h-6 text-cyan-400 mb-0.5" />
+        <span className="text-[8px] text-cyan-300 tracking-widest">{code} SPATIAL</span>
+      </div>
+    </div>
+  )
 }
 
 export const LiveCameraStrip: React.FC = () => {
@@ -134,34 +520,34 @@ export const LiveCameraStrip: React.FC = () => {
                 </div>
               </div>
 
-              {/* Viewport Frame */}
-              <div className="relative w-full h-24 rounded bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-2.5">
-                <div
-                  className="absolute inset-0 opacity-10 pointer-events-none"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, #38BDF8 1px, transparent 1px), linear-gradient(to bottom, #38BDF8 1px, transparent 1px)`,
-                    backgroundSize: '18px 18px',
-                  }}
-                />
-
-                <div className="z-10 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {feed.fps} FPS
-                  </span>
-                  {isCritical ? (
-                    <span className="px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/50 text-[9px] font-mono font-bold flex items-center gap-1">
-                      <AlertOctagon className="h-2.5 w-2.5" /> ALERT
-                    </span>
+              {/* Viewport Frame - Increased Size & Live Video Feed */}
+              <div className="relative w-full h-44 sm:h-48 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-2 shadow-inner group-hover:border-cyan-500/50 transition-all">
+                {/* Live Video Feed Element */}
+                <div className="absolute inset-0">
+                  {feed.code === 'C01' ? (
+                    <LiveEntranceMiniStream />
+                  ) : feed.code === 'C05' ? (
+                    <LiveCheckoutMiniStream />
                   ) : (
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[9px] font-mono flex items-center gap-1">
-                      <CheckCircle2 className="h-2.5 w-2.5" /> OPTIMAL
-                    </span>
+                    <LiveSimulatedMiniStream code={feed.code} name={feed.name} isAlert={isCritical} />
                   )}
                 </div>
 
-                <div className="z-10 flex items-center justify-between text-[10px] font-mono text-slate-400">
-                  <span>{feed.latencyMs}ms latency</span>
-                  <span className="text-slate-500">{feed.resolution}</span>
+                {/* Card Top HUD */}
+                <div className="z-10 flex items-center justify-between pointer-events-none">
+                  <span className="text-[10px] text-cyan-300 font-mono font-bold bg-[#070A0F]/85 px-1.5 py-0.5 rounded border border-cyan-500/30 flex items-center gap-1 shadow-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {feed.fps} FPS
+                  </span>
+                  {isCritical ? (
+                    <span className="px-1.5 py-0.5 rounded bg-rose-950/90 text-rose-300 border border-rose-500/50 text-[9px] font-mono font-bold flex items-center gap-1 shadow-sm">
+                      <AlertOctagon className="h-2.5 w-2.5" /> ALERT
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-1 shadow-sm">
+                      <CheckCircle2 className="h-2.5 w-2.5" /> OPTIMAL
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -189,56 +575,99 @@ export const LiveCameraStrip: React.FC = () => {
         })}
       </div>
 
-      {/* Feed Detail Modal Dialog */}
+      {/* Full-Screen Feed Detail Modal Dialog */}
       {selectedCamera && (
         <Dialog open={!!selectedCamera} onOpenChange={() => setSelectedCamera(null)}>
-          <DialogContent className="max-w-xl bg-[#0F172A] border-[#1E293B] text-white p-5 font-sans">
-            <DialogHeader className="border-b border-[#1E293B] pb-3">
-              <DialogTitle className="text-base font-bold flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-cyan-300 bg-[#131D31] px-2 py-0.5 rounded border border-cyan-500/30 text-xs">
-                    {selectedCamera.code}
-                  </span>
-                  <span>{selectedCamera.name} • Live Stream</span>
+          <DialogContent className="w-[95vw] max-w-6xl h-[88vh] max-h-[860px] bg-[#0A0F1D] border border-[#1E293B] text-white p-4 sm:p-6 flex flex-col overflow-hidden rounded-2xl shadow-2xl font-sans">
+            {/* Modal Header */}
+            <DialogHeader className="border-b border-[#1E293B] pb-3 shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-400">
+                    <Camera className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2 font-mono">
+                      <span className="text-cyan-300 bg-[#131D31] px-2 py-0.5 rounded border border-cyan-500/30 text-xs">
+                        {selectedCamera.code}
+                      </span>
+                      <span>{selectedCamera.name} • Live Stream Feed</span>
+                    </DialogTitle>
+                    <p className="text-xs text-slate-400 font-sans mt-0.5">
+                      Edge-AI Jetson Vision Stream • {selectedCamera.resolution} • {selectedCamera.latencyMs}ms latency
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 font-bold">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE (30 FPS)
-                </span>
-              </DialogTitle>
+
+                {/* Camera Selector Tabs in Header */}
+                <div className="flex items-center gap-1.5 bg-[#090D16] p-1 rounded-lg border border-[#1E293B]">
+                  {feeds.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setSelectedCamera(f)}
+                      className={cn(
+                        'px-2.5 py-1 rounded text-xs font-mono font-medium transition-all cursor-pointer flex items-center gap-1.5',
+                        selectedCamera.id === f.id
+                          ? 'bg-cyan-600 text-white shadow-sm font-bold'
+                          : 'text-slate-400 hover:text-white hover:bg-[#131D31]'
+                      )}
+                    >
+                      <span>{f.code}</span>
+                      <span className="hidden md:inline">{f.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </DialogHeader>
 
-            <div className="space-y-3 pt-2">
+            {/* Modal Body - Full Responsive Height */}
+            <div className="flex-1 py-3 overflow-y-auto min-h-0 space-y-3">
               {selectedCamera.code === 'C01' ? (
-                <LiveEntranceVisionCard />
+                <LiveEntranceModalStream feed={selectedCamera} />
               ) : selectedCamera.code === 'C05' ? (
-                <LiveQueueVisionCard laneCode="C1" laneName="Checkout 1" />
+                <LiveCheckoutModalStream feed={selectedCamera} />
               ) : (
-                <>
-                  <div className="relative w-full h-56 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-3">
-                    <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
-                      <span>Stream: Hardware-Accelerated</span>
-                      <span>Latency: {selectedCamera.latencyMs}ms</span>
+                <div className="space-y-3 font-mono">
+                  <div className="relative w-full h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-4 shadow-inner">
+                    <div className="flex items-center justify-between text-xs font-mono text-cyan-400 z-10">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Stream: Hardware-Accelerated RTSP</span>
+                      </span>
+                      <span>Latency: {selectedCamera.latencyMs}ms • {selectedCamera.fps} FPS</span>
                     </div>
 
-                    <div className="self-center text-center">
-                      <Camera className="h-10 w-10 text-cyan-400/50 mx-auto mb-2" />
-                      <p className="text-xs font-mono text-slate-400">
-                        Live Feed Active • {selectedCamera.resolution}
+                    <div className="self-center text-center my-auto">
+                      <Camera className="h-14 w-14 text-cyan-400/40 mx-auto mb-3 animate-pulse" />
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                        {selectedCamera.name} Section ({selectedCamera.code})
+                      </h4>
+                      <p className="text-xs font-mono text-slate-400 mt-1">
+                        Active Spatial Vision Tracking • {selectedCamera.resolution}
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-                      <span>Detection: Active</span>
-                      <span className="text-emerald-400">Inference Nominal</span>
+                    <div className="flex items-center justify-between text-xs text-slate-300 font-mono z-10 pt-2 border-t border-[#1E293B]/60">
+                      <span>Detection Model: YOLOv8-Retail-Edge</span>
+                      <span className="text-emerald-400 font-bold">100% On-Device Neural Processing</span>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-[#090D14] border border-[#1E293B] space-y-1">
-                    <span className="text-xs font-semibold text-white block">Current AI Detection Summary</span>
-                    <p className="text-xs text-slate-300">{selectedCamera.summary}</p>
+                  <div className="p-3.5 rounded-xl bg-[#090D14] border border-[#1E293B] flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Real-Time Telemetry Summary</span>
+                      <p className="text-xs text-slate-300 mt-0.5">{selectedCamera.summary}</p>
+                    </div>
+                    <span className={cn(
+                      'text-xs font-mono px-2 py-1 rounded font-bold',
+                      selectedCamera.status === 'CRITICAL'
+                        ? 'bg-rose-950/80 text-rose-300 border border-rose-500/40'
+                        : 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
+                    )}>
+                      {selectedCamera.status === 'CRITICAL' ? 'ALERT' : 'STREAM NOMINAL'}
+                    </span>
                   </div>
-                </>
+                </div>
               )}
             </div>
           </DialogContent>

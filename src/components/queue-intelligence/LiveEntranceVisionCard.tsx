@@ -99,7 +99,7 @@ export const LiveEntranceVisionCard: React.FC = () => {
   return (
     <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none font-mono">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1E293B] mb-2.5">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-400">
             <Camera className="h-3.5 w-3.5" />
@@ -115,16 +115,25 @@ export const LiveEntranceVisionCard: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Row */}
-      <div className="flex justify-center mb-3">
-        <div className="w-1/2 bg-[#131D31] rounded p-2 border border-[#1E293B] flex flex-col items-center justify-center">
-          <span className="text-[10px] text-slate-400 mb-1 flex items-center gap-1"><ArrowUp className="w-3 h-3 text-cyan-400"/> ENTERED (OCCUPANCY)</span>
-          <span className="text-xl font-bold text-cyan-400">{currentOccupancy}</span>
+      {/* RTSP Stream Status & Occupancy Count Bar (Above Video) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-md bg-[#070D18] border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-3 shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="tracking-wide text-white">RTSP STREAM • CAM-01 (Main Entrance)</span>
+        </div>
+        
+        {/* Occupancy Count Badge Above Video */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-400 font-mono font-normal">Live Inflow (Occupancy):</span>
+          <span className="px-2.5 py-0.5 rounded bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm shadow-cyan-500/20">
+            <Users className="h-3.5 w-3.5 text-cyan-400" />
+            <span>{currentOccupancy} Shoppers</span>
+          </span>
         </div>
       </div>
 
       {/* Live Video Player */}
-      <div className="relative h-64 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden p-3 flex flex-col justify-between shadow-inner touch-none">
+      <div className="relative h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden p-3 flex flex-col justify-between shadow-inner touch-none">
         <video 
           ref={videoRef} 
           autoPlay 

@@ -8,6 +8,7 @@ import {
   ASSIST_TYPE_CONFIGS,
 } from '../types/customerAssist.types'
 import { useCustomerShopping } from './CustomerShoppingContext'
+import { realStoreApi } from '@/services/api/realStoreApi'
 
 const LOCAL_STORAGE_KEY = 're_customer_assist_active_req'
 const ANONYMOUS_SESSION_KEY = 're_anonymous_shopper_id'
@@ -136,6 +137,22 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
         },
       ],
       messages: [],
+    }
+
+    // Submit real task to backend database
+    try {
+      await realStoreApi.submitCustomerAssist({
+        request_type: input.requestType,
+        urgency: input.accessibilityNeed ? 'URGENT' : 'NORMAL',
+        customer_name: 'Customer',
+        location_zone: input.zoneName,
+        shelf_code: input.shelfCode,
+        product_id: input.product?.id,
+        product_name: input.product?.name,
+        customer_notes: input.message,
+      })
+    } catch (e) {
+      console.warn('Backend assist submission notice:', e)
     }
 
     saveRequestState(newRequest)

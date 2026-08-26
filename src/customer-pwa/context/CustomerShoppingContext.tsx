@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react'
+import { realStoreApi } from '@/services/api/realStoreApi'
 
 export interface CustomerProduct {
   id: string
@@ -414,6 +415,16 @@ export const CustomerShoppingProvider: React.FC<{
   const [useCrowdAlternativeRoute, setUseCrowdAlternativeRoute] = useState(false)
   const [outOfStockProduct, setOutOfStockProduct] = useState<CustomerProduct | null>(null)
   const [activeStepIndex, setActiveStepIndex] = useState(1)
+
+  const [catalog, setCatalog] = useState<CustomerProduct[]>(STORE_CATALOG)
+
+  React.useEffect(() => {
+    realStoreApi.getCustomerCatalog().then((prods) => {
+      if (prods && prods.length > 0) {
+        setCatalog(prods)
+      }
+    }).catch(console.warn)
+  }, [])
 
   // Copilot Conversation Messages
   const initialCopilotMessages: CopilotMessage[] = [

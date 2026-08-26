@@ -8,6 +8,6 @@ export const storeService = {
   },
 
   async getState(storeId?: string): Promise<ApiResponse<StoreState>> {
-    return apiClient.get<StoreState>(API_ENDPOINTS.STORE_STATE, storeId ? { storeId } : undefined)
+    return apiClient.get<StoreState>(API_ENDPOINTS.STORE_STATUS, storeId ? { storeId } : undefined)
   },
 }

@@ -24,8 +24,8 @@ export class StoreWebSocketClient {
     this.updateState('CONNECTING')
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = import.meta.env.VITE_WS_HOST || window.location.host
-    const wsUrl = `${protocol}//${host}/ws/store/${storeId}`
+    const host = import.meta.env.VITE_WS_HOST || '127.0.0.1:8000'
+    const wsUrl = `${protocol}//${host}/api/v1/entrance/stream`
 
     try {
       this.ws = new WebSocket(wsUrl)
