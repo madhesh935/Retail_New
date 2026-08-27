@@ -143,7 +143,10 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
 
         {/* Bottom Stream Status */}
         <div className="flex items-center justify-between text-xs text-slate-200 z-10 bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-700 font-mono mt-auto">
-          <span>Updated 1 sec ago</span>
+          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Live Stream
+          </span>
           <span className="font-medium text-slate-200">
             Shelf Availability: <strong className="text-rose-400 font-bold">{availability}%</strong> ({visibleUnits} units visible)
           </span>

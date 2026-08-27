@@ -10,8 +10,11 @@ export interface CameraRoi {
 export interface SettingsSlice {
   ipCameraUrls: Record<string, string>
   cameraRois: Record<string, CameraRoi>
+  /** Substring match for USB webcam label — default prefers DroidCam */
+  preferredCameraLabel: string
   setIpCameraUrl: (laneCode: string, url: string) => void
   setCameraRoi: (laneCode: string, roi: CameraRoi) => void
+  setPreferredCameraLabel: (label: string) => void
 }
 
 export const createSettingsSlice: StateCreator<SettingsSlice, [], [], SettingsSlice> = (set) => ({
@@ -27,6 +30,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice, [], [], SettingsSl
     'C3': { x: 0, y: 0, width: 1, height: 1 },
     'C4': { x: 0, y: 0, width: 1, height: 1 },
   },
+  preferredCameraLabel: 'DroidCam',
   setIpCameraUrl: (laneCode, url) =>
     set((state) => ({
       ipCameraUrls: { ...state.ipCameraUrls, [laneCode]: url },
@@ -35,4 +39,5 @@ export const createSettingsSlice: StateCreator<SettingsSlice, [], [], SettingsSl
     set((state) => ({
       cameraRois: { ...state.cameraRois, [laneCode]: roi },
     })),
+  setPreferredCameraLabel: (preferredCameraLabel) => set({ preferredCameraLabel }),
 })

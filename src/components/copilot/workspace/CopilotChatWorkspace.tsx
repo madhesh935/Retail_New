@@ -30,6 +30,7 @@ import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawe
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { CopilotRichText } from '../CopilotRichText'
+import { sendCopilotChat } from '@/services/api/chat.service'
 
 export interface WorkspaceChatMessage {
   id: string
@@ -124,53 +125,51 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
     }
 
     const apiMessages = [...messages, userMsg].map((m) => ({
-      role: m.sender === 'USER' ? 'user' : 'assistant',
-      content: m.text || (m.structured && m.structured.observation ? m.structured.observation : '')
+      role: (m.sender === 'USER' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: m.text || (m.structured && m.structured.observation ? m.structured.observation : '') || '',
     }))
 
-    fetch('http://127.0.0.1:8000/api/v1/chat/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        messages: apiMessages,
-        system_prompt: 'You are an intelligent retail assistant chatbot. Your responses should be strictly related to shop content, retail operations, store management, inventory, and customer service. Be helpful and concise.'
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const structRes = executeCopilotQuery(text, {
+    sendCopilotChat({
+      persona: 'manager',
+      messages: apiMessages,
+      context: {
+        surface: 'manager_copilot_workspace',
         page: 'copilot',
         activeStore: 'Store 01 — Chennai Central',
-      })
-      
-      const replyText = data.reply || (data.detail ? `Error: ${data.detail}` : "Error: Received empty response");
-      
-      const botMsg: WorkspaceChatMessage = {
-        id: `copilot-${Date.now()}`,
-        sender: 'COPILOT',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: replyText,
-        structured: structRes,
-        specialType,
-      }
+      },
+    })
+      .then(({ reply }) => {
+        const structRes = executeCopilotQuery(text, {
+          page: 'copilot',
+          activeStore: 'Store 01 — Chennai Central',
+        })
 
-      setMessages((prev) => [...prev, botMsg])
-    })
-    .catch(err => {
-      console.error(err);
-      const errorMsg: WorkspaceChatMessage = {
-        id: `copilot-${Date.now()}`,
-        sender: 'COPILOT',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: "Sorry, I encountered an error connecting to the intelligence server."
-      }
-      setMessages((prev) => [...prev, errorMsg])
-    })
-    .finally(() => {
-      setIsThinking(false)
-    })
+        const botMsg: WorkspaceChatMessage = {
+          id: `copilot-${Date.now()}`,
+          sender: 'COPILOT',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: reply,
+          structured: structRes,
+          specialType,
+        }
+
+        setMessages((prev) => [...prev, botMsg])
+      })
+      .catch((err) => {
+        const botMsg: WorkspaceChatMessage = {
+          id: `copilot-${Date.now()}`,
+          sender: 'COPILOT',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text:
+            err instanceof Error
+              ? `Sorry — ${err.message}`
+              : 'Sorry, I could not reach Store AI. Is the backend running?',
+        }
+        setMessages((prev) => [...prev, botMsg])
+      })
+      .finally(() => {
+        setIsThinking(false)
+      })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

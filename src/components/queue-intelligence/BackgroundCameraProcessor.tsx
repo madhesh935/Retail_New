@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useAppStore } from '@/store/useAppStore'
+import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
 
 interface BackgroundCameraProcessorProps {
   laneCode: string
@@ -14,9 +15,11 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
   const imgRef = useRef<HTMLImageElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
 
   useEffect(() => {
     let intervalId: number
+    let mediaStream: MediaStream | null = null
 
     const laneNum = parseInt(laneCode.replace('C', '')) || 1
     const laneId = `lane-${laneNum}`
@@ -24,7 +27,10 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
     const startBackgroundCamera = async () => {
       try {
         if (!ipUrl) {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+          const { stream } = await openPreferredCameraStream({
+            preferredLabel: preferredCameraLabel,
+          })
+          mediaStream = stream
           if (videoRef.current) {
             videoRef.current.srcObject = stream
           }
@@ -53,12 +59,10 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
     return () => {
       if (intervalId) clearInterval(intervalId)
       if (wsRef.current) wsRef.current.close()
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
-        tracks.forEach(track => track.stop())
-      }
+      stopMediaStream(mediaStream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
-  }, [laneCode, ipUrl])
+  }, [laneCode, ipUrl, preferredCameraLabel])
 
   const captureAndSendFrame = () => {
     if (!canvasRef.current || !wsRef.current) return

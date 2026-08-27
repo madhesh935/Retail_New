@@ -1,15 +1,10 @@
 import React from 'react'
 import {
   Search,
-  Camera,
-  Radio,
-  Cpu,
-  ShieldCheck,
   Menu,
   Bell,
   ChevronDown,
-  Server,
-  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { StoreSelector } from './StoreSelector'
@@ -23,26 +18,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { formatTimeAgo } from '@/lib/utils'
 
 export const TopHeader: React.FC = () => {
-  const cameraSummary = useAppStore((s) => s.cameraSummary)
-  const cloudSync = useAppStore((s) => s.cloudSync)
-  const edgeDevice = useAppStore((s) => s.edgeDevice)
   const connectionState = useAppStore((s) => s.connectionState)
   const lastTimestamp = useAppStore((s) => s.lastTelemetryTimestamp)
   const unreadCount = useAppStore((s) => s.unreadNotificationCount)
   const setMobileNavOpen = useAppStore((s) => s.setMobileNavOpen)
   const setGlobalSearchOpen = useAppStore((s) => s.setGlobalSearchOpen)
   const setNotificationDrawerOpen = useAppStore((s) => s.setNotificationDrawerOpen)
-
-  const onlineCameras = cameraSummary?.onlineCameras ?? 4
-  const totalCameras = cameraSummary?.totalCameras ?? 4
 
   // Real connection status computation
   const isConnected = connectionState === 'CONNECTED'
@@ -81,7 +64,7 @@ export const TopHeader: React.FC = () => {
           ) : isReconnecting ? (
             <>
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-              <span className="font-bold text-amber-700">Reconnecting</span>
+              <span className="font-bold text-amber-700">Connecting</span>
             </>
           ) : isStale ? (
             <>
@@ -94,71 +77,6 @@ export const TopHeader: React.FC = () => {
               <span className="font-bold text-rose-700">Offline</span>
             </>
           )}
-        </div>
-      </div>
-
-      {/* Middle Operational Status Elements */}
-      <div className="hidden lg:flex items-center gap-2.5 text-xs text-slate-600 shrink-0 whitespace-nowrap">
-        {/* Cameras Status */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/90 shadow-[0_1px_2px_rgb(15_23_42/0.04)]">
-          <Camera className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-          <span>
-            <strong className="text-slate-900 font-mono">{onlineCameras}/{totalCameras}</strong> Cameras Online
-          </span>
-        </div>
-
-        {/* Edge Node Online - Popover for hardware infrastructure */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/90 hover:border-sky-300 hover:text-sky-800 transition-colors cursor-pointer text-xs shadow-[0_1px_2px_rgb(15_23_42/0.04)]">
-              <Cpu className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-              <span className="font-medium">Edge Node Online</span>
-              <ChevronDown className="h-3 w-3 text-slate-400" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="center" className="w-68 bg-white border-slate-200 p-3.5 shadow-xl text-xs space-y-2.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <Server className="h-4 w-4 text-sky-600" />
-                <span className="font-bold text-slate-900">Edge Node Telemetry</span>
-              </div>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                Connected
-              </span>
-            </div>
-            <div className="space-y-1.5 text-slate-600 text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Edge Device:</span>
-                <span className="font-medium text-slate-900">{edgeDevice?.deviceName || edgeDevice?.model || 'NVIDIA Jetson Orin NX'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Processing:</span>
-                <span className="text-sky-700 font-medium">Local TensorRT & DeepStream</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Total Throughput:</span>
-                <span className="font-mono text-emerald-700 font-bold">{typeof edgeDevice?.fpsTotalInference === 'number' ? edgeDevice.fpsTotalInference.toFixed(0) : '178'} FPS</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Last Heartbeat:</span>
-                <span className="text-slate-700">{lastTimestamp ? formatTimeAgo(lastTimestamp) : '2 sec ago'}</span>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Local Processing */}
-        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-600">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-          <span>Local Processing</span>
-        </div>
-
-        {/* Cloud Sync */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200">
-          <Radio className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-          <span>
-            Cloud Sync <strong className="font-mono text-sky-700">{cloudSync?.latencyMs ?? 14.2}ms</strong>
-          </span>
         </div>
       </div>
 

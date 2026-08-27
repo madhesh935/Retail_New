@@ -145,23 +145,13 @@ export const IncidentsActionsPage: React.FC = () => {
       {/* ======================================================= */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         {/* Title */}
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
-              <ShieldAlert className="h-4.5 w-4.5" />
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
-                Incidents &amp; Actions
-              </h1>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono">
-                Live Incident Feed
-              </span>
-            </div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+            <ShieldAlert className="h-4.5 w-4.5" />
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-1">
-            Real-time computer vision anomaly detection, queue bottlenecks, spills, and staff dispatch
-          </p>
+          <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
+            Incidents &amp; Actions
+          </h1>
         </div>
 
         {/* Enhanced Top Controls Bar (Search + Dropdowns + Time Filter + Reset) */}

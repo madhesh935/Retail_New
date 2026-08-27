@@ -61,20 +61,6 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
           </Button>
         </div>
       </div>
-
-      {/* Sub-header Single Compact Connection Status Row */}
-      <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-500 pt-0.5">
-        <span className="flex items-center gap-1.5 font-bold text-emerald-700">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Live Store Data</span>
-        </span>
-        <span>•</span>
-        <span>Edge Node Online</span>
-        <span>•</span>
-        <span>6/6 Cameras Online</span>
-        <span>•</span>
-        <span className="text-slate-400">Updated 2 sec ago</span>
-      </div>
     </div>
   )
 }

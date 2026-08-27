@@ -8,6 +8,7 @@ import {
   ArrowDown,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
+import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
 
 export const LiveEntranceVisionCard: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -17,16 +18,23 @@ export const LiveEntranceVisionCard: React.FC = () => {
   const [totalEntered, setTotalEntered] = useState(0)
   const [totalExited, setTotalExited] = useState(0)
   const [currentOccupancy, setCurrentOccupancy] = useState(0)
+  const [cameraLabel, setCameraLabel] = useState('Camera')
   
   // Update global occupancy when it changes here
   const updateOccupancy = useAppStore(s => s.updateOccupancy)
+  const preferredCameraLabel = useAppStore(s => s.preferredCameraLabel)
 
   useEffect(() => {
     let intervalId: number;
+    let mediaStream: MediaStream | null = null
 
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const { stream, deviceLabel } = await openPreferredCameraStream({
+          preferredLabel: preferredCameraLabel,
+        });
+        mediaStream = stream
+        setCameraLabel(deviceLabel)
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -58,12 +66,10 @@ export const LiveEntranceVisionCard: React.FC = () => {
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (wsRef.current) wsRef.current.close();
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
-      }
+      stopMediaStream(mediaStream)
+      if (videoRef.current) videoRef.current.srcObject = null
     };
-  }, [updateOccupancy]);
+  }, [updateOccupancy, preferredCameraLabel]);
 
   const captureAndSendFrame = () => {
     if (!canvasRef.current || !wsRef.current) return;
@@ -141,7 +147,7 @@ export const LiveEntranceVisionCard: React.FC = () => {
         <div className="flex items-center justify-between text-[10px] text-cyan-300 z-10">
           <span className="flex items-center gap-1 font-bold">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>RTSP STREAM • CAM-01</span>
+            <span>LIVE • {cameraLabel.includes('Droid') ? 'DROIDCAM' : 'WEBCAM'} • CAM-01</span>
           </span>
         </div>
 

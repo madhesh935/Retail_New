@@ -1,7 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import logging
 from app.services.entrance_intelligence import entrance_monitor
-import asyncio
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -15,18 +14,24 @@ async def websocket_entrance_stream(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("Client connected to Entrance WebSocket stream.")
-    
+    entrance_monitor.initialize_model()
+
     try:
         while True:
-            # Receive frame as bytes
-            image_bytes = await websocket.receive_bytes()
-            
-            # Process frame using YOLO and line crossing
+            message = await websocket.receive()
+            msg_type = message.get("type")
+
+            if msg_type == "websocket.disconnect":
+                break
+
+            image_bytes = message.get("bytes")
+            if not image_bytes:
+                # Ignore text/control frames (e.g. browser pings)
+                continue
+
             status = entrance_monitor.process_frame(image_bytes)
-            
-            # Send results back
             await websocket.send_json(status)
-            
+
     except WebSocketDisconnect:
         logger.info("Client disconnected from Entrance WebSocket stream.")
     except Exception as e:

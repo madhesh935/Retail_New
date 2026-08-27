@@ -150,7 +150,7 @@ export const API_ENDPOINTS = {
   STAFF_MEMBERS: '/api/v1/staff/members',
   STAFF_TASKS: '/api/v1/staff/tasks',
   INCIDENTS: '/api/v1/incidents',
-  COPILOT_QUERY: '/api/v1/customer/assist',
+  COPILOT_QUERY: '/api/v1/chat/',
   REPORTS: '/api/v1/store/status',
   SYSTEM_HEALTH: '/api/v1/system/health',
   PREDICTIONS: '/api/v1/queue/status',

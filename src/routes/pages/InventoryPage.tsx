@@ -155,24 +155,14 @@ export const InventoryPage: React.FC = () => {
       {/* 1. HEADER WITH DROPDOWN PLACED DIRECTLY ON THE RIGHT */}
       {/* ======================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-        {/* Left Side: Title & Description */}
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
-              <PackageCheck className="h-4.5 w-4.5" />
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
-                Inventory Intelligence
-              </h1>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono">
-                Vision + Multi-Batch System
-              </span>
-            </div>
+        {/* Left Side: Title */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+            <PackageCheck className="h-4.5 w-4.5" />
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-1">
-            Real-time shelf depletion tracking, planogram verification, and automated FEFO expiry rotation
-          </p>
+          <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
+            Inventory Intelligence
+          </h1>
         </div>
 
         {/* Right Side: Section Selector Dropdown Dialog (Placed where Live + Copilot were) */}

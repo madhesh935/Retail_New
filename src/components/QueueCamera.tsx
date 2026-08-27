@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera';
+import { useAppStore } from '@/store/useAppStore';
 
 interface QueueStats {
   people_count: number;
@@ -13,14 +15,19 @@ const QueueCamera: React.FC = () => {
   const [stats, setStats] = useState<QueueStats | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel);
 
   // Initialize camera and WebSocket
   useEffect(() => {
     let intervalId: number;
+    let mediaStream: MediaStream | null = null;
 
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const { stream } = await openPreferredCameraStream({
+          preferredLabel: preferredCameraLabel,
+        });
+        mediaStream = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -53,7 +60,7 @@ const QueueCamera: React.FC = () => {
 
       } catch (err) {
         console.error("Error accessing camera:", err);
-        setError("Failed to access camera. Please allow permissions.");
+        setError("Failed to access DroidCam/webcam. Allow camera permission and keep DroidCam open.");
       }
     };
 
@@ -63,12 +70,10 @@ const QueueCamera: React.FC = () => {
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (wsRef.current) wsRef.current.close();
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
-      }
+      stopMediaStream(mediaStream);
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, []);
+  }, [preferredCameraLabel]);
 
   const captureAndSendFrame = () => {
     if (!videoRef.current || !canvasRef.current || !wsRef.current) return;

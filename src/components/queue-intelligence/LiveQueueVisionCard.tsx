@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/useAppStore'
 import { CameraRoi } from '@/store/slices/settingsSlice'
+import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
 
 interface LiveQueueVisionCardProps {
   laneCode?: string
@@ -36,6 +37,7 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
   
   const ipCameraUrls = useAppStore((s) => s.ipCameraUrls)
   const currentIpCameraUrl = ipCameraUrls[laneCode]
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
 
   const [liveQueueCount, setLiveQueueCount] = useState(initialQueueCount)
   const [liveWaitTime, setLiveWaitTime] = useState(initialWaitTime)
@@ -106,11 +108,15 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
   // Initialize camera and WebSocket
   useEffect(() => {
     let intervalId: number;
+    let mediaStream: MediaStream | null = null;
 
     const startCamera = async () => {
       try {
         if (!currentIpCameraUrl) {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const { stream } = await openPreferredCameraStream({
+            preferredLabel: preferredCameraLabel,
+          });
+          mediaStream = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
           }
@@ -151,12 +157,10 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (wsRef.current) wsRef.current.close();
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
-      }
+      stopMediaStream(mediaStream);
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [currentIpCameraUrl, laneCode]);
+  }, [currentIpCameraUrl, laneCode, preferredCameraLabel]);
 
   const captureAndSendFrame = () => {
     if (!canvasRef.current || !wsRef.current) return;

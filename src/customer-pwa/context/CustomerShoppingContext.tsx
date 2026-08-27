@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useMemo } from 'react'
+import React, { createContext, useContext, useState, useMemo, useRef } from 'react'
 import { realStoreApi } from '@/services/api/realStoreApi'
 import type { NavigationPlan } from '../types/navigation'
+import { sendCopilotChat } from '@/services/api/chat.service'
+import { buildCustomerCopilotEnrichment } from '@/customer-pwa/lib/customerCopilotEnrichment'
 
 export interface CustomerProduct {
   id: string
@@ -464,12 +466,14 @@ export const CustomerShoppingProvider: React.FC<{
     {
       id: 'c-welcome',
       sender: 'COPILOT',
-      text: `Hello! I'm your in-store Shopping Copilot. I can build multi-item meal plans, find shelf locations, recommend optimal pack quantities, or calculate your fastest route!`,
+      text: `Hello! I'm your Shopping Copilot for ${storeName === 'Velachery Mall' ? 'Velachery Mall' : 'Chennai Central'}. Ask for products, meal plans, aisle locations, or the fastest checkout — I'll guide you as a shopper.`,
       timestamp: 'Just now',
     },
   ]
   const [copilotMessages, setCopilotMessages] = useState<CopilotMessage[]>(initialCopilotMessages)
   const [copilotIsTyping, setCopilotIsTyping] = useState(false)
+  const copilotRequestIdRef = useRef(0)
+  const copilotBusyRef = useRef(false)
 
   const showToast = (msg: string) => {
     setToastMessage(msg)
@@ -563,229 +567,96 @@ export const CustomerShoppingProvider: React.FC<{
     setCopilotMessages(initialCopilotMessages)
   }
 
-  // Grounded natural language query processor for Copilot
+  // Live Shopping Copilot — one request at a time (never fire async inside setState)
   const sendCopilotMessage = (text: string) => {
-    if (!text.trim()) return
+    const trimmed = text.trim()
+    if (!trimmed || copilotBusyRef.current) return
+
+    copilotBusyRef.current = true
+    const requestId = ++copilotRequestIdRef.current
 
     const userMsg: CopilotMessage = {
       id: `user-${Date.now()}`,
       sender: 'USER',
-      text,
+      text: trimmed,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
 
     setCopilotMessages((prev) => [...prev, userMsg])
     setCopilotIsTyping(true)
 
-    setTimeout(() => {
-      const q = text.toLowerCase()
-      let replyText = ''
-      let plan: CopilotShoppingPlan | undefined
-      let matchedProds: CustomerProduct[] | undefined
-      let altProds: CustomerProduct[] | undefined
-      let showRoute = false
-      let showCheckout = false
-      let singleLoc: { product: CustomerProduct; aisle: string; shelf: string } | undefined
+    const enrichment = buildCustomerCopilotEnrichment(
+      trimmed,
+      catalog.length ? catalog : STORE_CATALOG
+    )
 
-      let showStaffAssist = false
-      let staffPrefill: any = undefined
-      let isEmergency = false
+    const history = [...copilotMessages, userMsg]
+      .filter((m) => m.id !== 'c-welcome')
+      .slice(-12)
+      .map((m) => ({
+        role: (m.sender === 'USER' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.text,
+      }))
 
-      // 0. Safety / Emergency Check
-      if (q.includes('emergency') || q.includes('fire') || q.includes('injury') || q.includes('danger') || q.includes('hurt')) {
-        isEmergency = true
-        replyText = "⚠️ For immediate danger, medical emergencies, or safety incidents, please alert store staff in person or contact emergency services immediately."
-      }
-      // 0.1 Direct Staff Help Request
-      else if (q.includes('need staff') || q.includes('call staff') || q.includes('need help') || q.includes('someone help') || q.includes('can someone help') || q.includes('associate')) {
-        showStaffAssist = true
-        staffPrefill = {
-          requestType: 'GENERAL_ASSISTANCE',
-          zoneName: 'Store Floor',
-        }
-        replyText = "I can dispatch an on-shift store associate directly to your location. Tap below to choose your assistance request:"
-      }
-      // 0.2 Cannot find product / Shelf empty / Backroom request
-      else if (q.includes('backroom') || q.includes('stockroom') || (q.includes('bring') && q.includes('back'))) {
-        const cola = STORE_CATALOG.find((p) => p.id === 'prod-cola')!
-        showStaffAssist = true
-        staffPrefill = {
-          requestType: 'BACKROOM_REQUEST',
-          product: cola,
-          zoneName: 'Beverages',
-          shelfCode: 'B4',
-        }
-        replyText = "We have 14 units of Sparkling Cola Zero available in the backroom. Would you like a store associate to bring one out for you?"
-      }
-      else if (q.includes("can't find") || q.includes("cannot find") || q.includes("not on shelf") || q.includes("empty shelf")) {
-        const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
-        showStaffAssist = true
-        staffPrefill = {
-          requestType: 'SHELF_ASSISTANCE',
-          product: milk,
-          zoneName: 'Dairy & Chilled',
-          shelfCode: 'C2',
-        }
-        replyText = "If you're at the shelf and the item is missing or out of reach, tap below to request immediate staff assistance:"
-      }
-      // 1. Breakfast for N people
-      if (q.includes('breakfast')) {
-        const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
-        const bread = STORE_CATALOG.find((p) => p.id === 'prod-bread')!
-        const butter = STORE_CATALOG.find((p) => p.id === 'prod-amul-100')!
-        const tea = STORE_CATALOG.find((p) => p.id === 'prod-tea')!
+    void (async () => {
+      try {
+        const { reply } = await sendCopilotChat({
+          persona: 'customer',
+          messages: history,
+          context: {
+            surface: 'customer_pwa',
+            storeName,
+            listItemCount: shoppingList.length,
+            listPreview: shoppingList.slice(0, 8).map((i) => `${i.name} x${i.quantity}`),
+            sampleCatalog: (catalog.length ? catalog : STORE_CATALOG).slice(0, 20).map((p) => ({
+              name: p.name,
+              aisle: p.aisle,
+              shelf: p.shelf,
+              price: p.price,
+              available: p.isAvailable,
+            })),
+          },
+        })
 
-        const items: CopilotShoppingPlanItem[] = [
-          { product: milk, suggestedQty: 2 },
-          { product: bread, suggestedQty: 1 },
-          { product: butter, suggestedQty: 1 },
-          { product: tea, suggestedQty: 1 },
-        ]
+        if (requestId !== copilotRequestIdRef.current) return
 
-        const total = items.reduce((s, i) => s + i.product.priceNum * i.suggestedQty, 0)
-
-        plan = {
-          title: 'Breakfast Planning Pack (4 People)',
-          subtitle: 'Balanced breakfast essentials available in Dairy, Bakery & Beverages',
-          items,
-          totalEstimated: total,
-        }
-        replyText = `Here is a curated breakfast plan for 4 people with currently in-stock items:`
-      }
-      // 2. Tea, Milk, Biscuits for N people
-      else if (q.includes('tea') && (q.includes('milk') || q.includes('biscuit'))) {
-        const tea = STORE_CATALOG.find((p) => p.id === 'prod-tea')!
-        const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
-        const biscuits = STORE_CATALOG.find((p) => p.id === 'prod-marie-gold')!
-
-        const items: CopilotShoppingPlanItem[] = [
-          { product: tea, suggestedQty: 1 },
-          { product: milk, suggestedQty: 2 },
-          { product: biscuits, suggestedQty: 2 },
-        ]
-        const total = items.reduce((s, i) => s + i.product.priceNum * i.suggestedQty, 0)
-
-        plan = {
-          title: 'Evening Tea Basket (6 People)',
-          subtitle: 'Fresh tea leaves, whole milk, and crisp Marie Gold biscuits',
-          items,
-          totalEstimated: total,
-        }
-        replyText = `I built a 3-item tea plan for 6 people using in-stock products:`
-      }
-      // 3. Snacks under budget (e.g. under ₹500)
-      else if (q.includes('snack') || q.includes('under 500') || q.includes('under ₹500')) {
-        const chips = STORE_CATALOG.find((p) => p.id === 'prod-lays')!
-        const bhujia = STORE_CATALOG.find((p) => p.id === 'prod-haldirams')!
-        const biscuits = STORE_CATALOG.find((p) => p.id === 'prod-marie-gold')!
-        const juice = STORE_CATALOG.find((p) => p.id === 'prod-juice')!
-
-        const items: CopilotShoppingPlanItem[] = [
-          { product: chips, suggestedQty: 3 }, // 3 x 20 = 60
-          { product: bhujia, suggestedQty: 1 }, // 1 x 95 = 95
-          { product: biscuits, suggestedQty: 2 }, // 2 x 55 = 110
-          { product: juice, suggestedQty: 1 }, // 1 x 110 = 110
-        ]
-        const total = items.reduce((s, i) => s + i.product.priceNum * i.suggestedQty, 0) // 375
-        const budget = 500
-
-        plan = {
-          title: 'Snack Party Basket',
-          subtitle: 'Crowd-favorite snacks within your ₹500 budget',
-          budget,
-          items,
-          totalEstimated: total,
-          remainingBudget: budget - total,
-        }
-        replyText = `Here is an optimized snack basket for 5 people within your ₹500 budget (₹${total} total, ₹${budget - total} remaining):`
-      }
-      // 4. Pasta ingredients
-      else if (q.includes('pasta')) {
-        const pasta = STORE_CATALOG.find((p) => p.id === 'prod-pasta')!
-        const sauce = STORE_CATALOG.find((p) => p.id === 'prod-pasta-sauce')!
-        const cheese = STORE_CATALOG.find((p) => p.id === 'prod-cheese')!
-
-        const items: CopilotShoppingPlanItem[] = [
-          { product: pasta, suggestedQty: 1 },
-          { product: sauce, suggestedQty: 1 },
-          { product: cheese, suggestedQty: 1 },
-        ]
-        const total = items.reduce((s, i) => s + i.product.priceNum * i.suggestedQty, 0)
-
-        plan = {
-          title: 'Italian Pasta Night Kit',
-          subtitle: 'Durum wheat penne, traditional tomato-herb sauce & cheese',
-          items,
-          totalEstimated: total,
-        }
-        replyText = `Here are the essential ingredients for making pasta tonight:`
-      }
-      // 5. Dove / Shampoo alternatives
-      else if (q.includes('similar to dove') || q.includes('dove alternative') || (q.includes('shampoo') && q.includes('alternative'))) {
-        const sunsilk = STORE_CATALOG.find((p) => p.id === 'prod-sunsilk')!
-        const pantene = STORE_CATALOG.find((p) => p.id === 'prod-pantene')!
-        altProds = [sunsilk, pantene]
-        replyText = `Here are nearby in-stock shampoo alternatives on Aisle 6:`
-      }
-      // 6. Milk lookup with location & mini map preview
-      else if (q.includes('where is milk') || q === 'milk' || (q.includes('milk') && !q.includes('bread'))) {
-        const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
-        const aavin = STORE_CATALOG.find((p) => p.id === 'prod-aavin-milk')!
-        const amul = STORE_CATALOG.find((p) => p.id === 'prod-amul-taaza')!
-        matchedProds = [milk, aavin, amul]
-        singleLoc = {
-          product: milk,
-          aisle: 'Aisle 2',
-          shelf: 'Shelf C2',
-        }
-        replyText = `Heritage Fresh Whole Milk (1L) is available in Dairy & Chilled (Aisle 2, Shelf C2) with 18 units on shelf.`
-      }
-      // 7. Route / Navigation check
-      else if (q.includes('route') || q.includes('navigate') || q.includes('how to reach')) {
-        showRoute = true
-        replyText = `Your Smart Route is calculated with 4 items over 182 meters:`
-      }
-      // 8. Fastest Checkout
-      else if (q.includes('checkout') || q.includes('fastest') || q.includes('pay') || q.includes('queue')) {
-        showCheckout = true
-        replyText = `Counter C2 is currently the fastest checkout lane (~1.8 min wait with 2 customers waiting).`
-      }
-      // 9. Generic Catalog Search
-      else {
-        const prods = searchCatalog(text)
-        if (prods.length > 0) {
-          matchedProds = prods.slice(0, 3)
-          replyText = `I found ${prods.length} matching products available in the store:`
-        } else {
-          replyText = `I searched our live floor catalog for "${text}". Would you like to check similar categories or ask for assistance?`
+        setCopilotMessages((cur) => [
+          ...cur,
+          {
+            id: `copilot-${Date.now()}`,
+            sender: 'COPILOT',
+            text: reply,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            ...enrichment,
+          },
+        ])
+      } catch (err) {
+        if (requestId !== copilotRequestIdRef.current) return
+        const detail = err instanceof Error ? err.message : 'Could not reach Store AI'
+        setCopilotMessages((cur) => [
+          ...cur,
+          {
+            id: `copilot-${Date.now()}`,
+            sender: 'COPILOT',
+            text: `Sorry — ${detail}. Please try again in a moment.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            ...enrichment,
+          },
+        ])
+      } finally {
+        if (requestId === copilotRequestIdRef.current) {
+          copilotBusyRef.current = false
+          setCopilotIsTyping(false)
         }
       }
-
-      const botMsg: CopilotMessage = {
-        id: `copilot-${Date.now()}`,
-        sender: 'COPILOT',
-        text: replyText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        shoppingPlan: plan,
-        matchedProducts: matchedProds,
-        alternativeProducts: altProds,
-        showRoutePreview: showRoute,
-        showCheckoutRecommendation: showCheckout,
-        singleProductLocation: singleLoc,
-        showStaffAssistButton: showStaffAssist,
-        staffAssistPrefill: staffPrefill,
-        isEmergencyAlert: isEmergency,
-      }
-
-      setCopilotMessages((prev) => [...prev, botMsg])
-      setCopilotIsTyping(false)
-    }, 280)
+    })()
   }
 
   const searchCatalog = (query: string): CustomerProduct[] => {
-    if (!query.trim()) return catalog
+    const source = catalog.length ? catalog : STORE_CATALOG
+    if (!query.trim()) return source
     const q = query.toLowerCase()
-    return catalog.filter(
+    return source.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||

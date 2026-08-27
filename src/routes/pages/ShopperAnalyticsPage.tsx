@@ -33,22 +33,12 @@ export const ShopperAnalyticsPage: React.FC = () => {
       {/* ======================================================= */}
       {/* 1. PAGE HEADER */}
       {/* ======================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
-              <Users className="h-4 w-4 text-sky-600" />
-              <span>Shopper Analytics</span>
-            </h1>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-mono">
-              Live Flow &amp; Density
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Updated 2 sec ago</span>
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
+            <Users className="h-4 w-4 text-sky-600" />
+            <span>Shopper Analytics</span>
+          </h1>
         </div>
       </div>
 

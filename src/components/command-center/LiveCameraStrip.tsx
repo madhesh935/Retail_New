@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
 import { useAppStore } from '@/store/useAppStore'
+import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
 
 interface CameraFeed {
   id: string
@@ -33,9 +34,12 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
 
   React.useEffect(() => {
     let intervalId: number
+    let mediaStream: MediaStream | null = null
+    const preferredLabel = useAppStore.getState().preferredCameraLabel
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        const { stream } = await openPreferredCameraStream({ preferredLabel })
+        mediaStream = stream
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
@@ -64,10 +68,8 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
     return () => {
       if (intervalId) clearInterval(intervalId)
       if (wsRef.current) wsRef.current.close()
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
-        tracks.forEach((t) => t.stop())
-      }
+      stopMediaStream(mediaStream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
   }, [])
 
@@ -156,9 +158,12 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
 
   React.useEffect(() => {
     let intervalId: number
+    let mediaStream: MediaStream | null = null
+    const preferredLabel = useAppStore.getState().preferredCameraLabel
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        const { stream } = await openPreferredCameraStream({ preferredLabel })
+        mediaStream = stream
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
@@ -187,10 +192,8 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
     return () => {
       if (intervalId) clearInterval(intervalId)
       if (wsRef.current) wsRef.current.close()
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
-        tracks.forEach((t) => t.stop())
-      }
+      stopMediaStream(mediaStream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
   }, [])
 
@@ -283,15 +286,19 @@ const LiveEntranceMiniStream: React.FC = () => {
 
   React.useEffect(() => {
     let stream: MediaStream | null = null
-    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
-      stream = s
-      if (videoRef.current) {
-        videoRef.current.srcObject = s
-      }
-    }).catch(console.warn)
+    const preferredLabel = useAppStore.getState().preferredCameraLabel
+    openPreferredCameraStream({ preferredLabel })
+      .then(({ stream: s }) => {
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = s
+        }
+      })
+      .catch(console.warn)
 
     return () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop())
+      stopMediaStream(stream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
   }, [])
 
@@ -321,15 +328,19 @@ const LiveCheckoutMiniStream: React.FC = () => {
 
   React.useEffect(() => {
     let stream: MediaStream | null = null
-    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
-      stream = s
-      if (videoRef.current) {
-        videoRef.current.srcObject = s
-      }
-    }).catch(console.warn)
+    const preferredLabel = useAppStore.getState().preferredCameraLabel
+    openPreferredCameraStream({ preferredLabel })
+      .then(({ stream: s }) => {
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = s
+        }
+      })
+      .catch(console.warn)
 
     return () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop())
+      stopMediaStream(stream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
   }, [])
 

@@ -18,7 +18,6 @@ import { Button } from '@/components/ui/button'
 import { CopilotSuggestedChips } from './CopilotSuggestedChips'
 import { CopilotMessageBubble, ChatMessage } from './CopilotMessageBubble'
 import {
-  executeCopilotQuery,
   CopilotAction,
   CopilotContext,
 } from './CopilotToolEngine'
@@ -27,6 +26,7 @@ import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawe
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
+import { sendCopilotChat } from '@/services/api/chat.service'
 
 interface StoreAiCopilotDrawerProps {
   isOpen: boolean
@@ -154,44 +154,43 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
     setIsThinking(true)
 
     const apiMessages = [...messages, userMsg].map((m) => ({
-      role: m.sender === 'USER' ? 'user' : 'assistant',
-      content: m.text || (m.structured ? m.structured.observation : '')
+      role: (m.sender === 'USER' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: m.text || (m.structured ? m.structured.observation : '') || '',
     }))
 
-    fetch('http://127.0.0.1:8000/api/v1/chat/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    sendCopilotChat({
+      persona: 'manager',
+      messages: apiMessages,
+      context: {
+        surface: 'manager_dashboard',
+        ...(copilotContext as unknown as Record<string, unknown>),
       },
-      body: JSON.stringify({
-        messages: apiMessages,
-        system_prompt: `You are an intelligent retail assistant chatbot. Your responses should be strictly related to shop content, retail operations, store management, inventory, and customer service. You are aware of the current context: ${JSON.stringify(copilotContext)}. Be helpful and concise.`
+    })
+      .then(({ reply }) => {
+        const copilotMsg: ChatMessage = {
+          id: `copilot-${Date.now()}`,
+          sender: 'COPILOT',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: reply,
+        }
+        setMessages((prev) => [...prev, copilotMsg])
       })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const replyText = data.reply || (data.detail ? `Error: ${data.detail}` : "Error: Received empty response");
-      const copilotMsg: ChatMessage = {
-        id: `copilot-${Date.now()}`,
-        sender: 'COPILOT',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: replyText
-      }
-      setMessages((prev) => [...prev, copilotMsg])
-    })
-    .catch(err => {
-      console.error(err);
-      const errorMsg: ChatMessage = {
-        id: `copilot-${Date.now()}`,
-        sender: 'COPILOT',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: "Sorry, I encountered an error connecting to the intelligence server."
-      }
-      setMessages((prev) => [...prev, errorMsg])
-    })
-    .finally(() => {
-      setIsThinking(false)
-    })
+      .catch((err) => {
+        console.error(err)
+        const errorMsg: ChatMessage = {
+          id: `copilot-${Date.now()}`,
+          sender: 'COPILOT',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text:
+            err instanceof Error
+              ? `Sorry — ${err.message}`
+              : 'Sorry, I encountered an error connecting to the intelligence server.',
+        }
+        setMessages((prev) => [...prev, errorMsg])
+      })
+      .finally(() => {
+        setIsThinking(false)
+      })
   }
 
   const handleTriggerAction = (action: CopilotAction) => {

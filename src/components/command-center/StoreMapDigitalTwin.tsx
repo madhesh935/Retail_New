@@ -167,9 +167,9 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-[10.5px] font-mono text-slate-500">
-            <span className={cn('h-1.5 w-1.5 rounded-full', isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
-            <span>{isLive ? 'Updated 2s ago' : 'Stale'}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs">
+            <span className={cn('h-2 w-2 rounded-full', isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
+            <span>{isLive ? 'Live Floor' : 'Offline'}</span>
           </div>
         </div>
       </div>
