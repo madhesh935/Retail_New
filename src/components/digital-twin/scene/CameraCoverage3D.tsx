@@ -146,48 +146,35 @@ export const CameraCoverage3D: React.FC<CameraCoverage3DProps> = ({
               <meshStandardMaterial color="#475569" metalness={0.8} />
             </mesh>
 
-            {/* Camera Body Dome / Box */}
             <mesh position={[0, 0, 0]} castShadow>
-              <boxGeometry args={[0.3, 0.2, 0.35]} />
+              <boxGeometry args={[0.28, 0.18, 0.32]} />
               <meshStandardMaterial
-                color={isHovered ? '#38BDF8' : '#0F172A'}
-                metalness={0.7}
-                roughness={0.3}
+                color={isHovered ? '#64748B' : '#475569'}
+                metalness={0.65}
+                roughness={0.35}
               />
             </mesh>
 
-            {/* Status LED Pill */}
-            <mesh position={[0, -0.08, 0.18]}>
-              <sphereGeometry args={[0.04, 8, 8]} />
-              <meshBasicMaterial color="#10B981" />
+            <mesh position={[0, -0.06, 0.16]}>
+              <sphereGeometry args={[0.035, 8, 8]} />
+              <meshBasicMaterial color="#22C55E" />
             </mesh>
 
-            {/* Semi-transparent 3D FOV Coverage Cone */}
-            <group position={[0, -cam.fovConeLength / 2, 0]}>
-              <mesh>
-                <coneGeometry args={[cam.fovConeRadius, cam.fovConeLength, 16, 1, true]} />
-                <meshBasicMaterial
-                  color="#06B6D4"
-                  transparent
-                  opacity={isHovered ? 0.18 : 0.06}
-                  side={THREE.DoubleSide}
-                  depthWrite={false}
-                />
-              </mesh>
-            </group>
-
-            {/* Floor Projected Coverage Polygon Ring */}
-            <mesh
-              rotation={[-Math.PI / 2, 0, 0]}
-              position={[0, -cam.position[1] + 0.03, 0]}
-            >
-              <ringGeometry args={[cam.fovConeRadius * 0.95, cam.fovConeRadius, 24]} />
-              <meshBasicMaterial
-                color="#06B6D4"
-                transparent
-                opacity={isHovered ? 0.6 : 0.2}
-              />
-            </mesh>
+            {/* FOV cone only while hovered — not permanently shown */}
+            {isHovered && (
+              <group position={[0, -cam.fovConeLength / 2, 0]}>
+                <mesh>
+                  <coneGeometry args={[cam.fovConeRadius, cam.fovConeLength, 16, 1, true]} />
+                  <meshBasicMaterial
+                    color="#64748B"
+                    transparent
+                    opacity={0.12}
+                    side={THREE.DoubleSide}
+                    depthWrite={false}
+                  />
+                </mesh>
+              </group>
+            )}
           </group>
         )
       })}

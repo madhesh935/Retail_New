@@ -66,7 +66,7 @@ export const Sidebar: React.FC = () => {
     }
     if (key === 'aiCopilotActive') {
       return (
-        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">
           AI
         </span>
       )
@@ -113,24 +113,24 @@ export const Sidebar: React.FC = () => {
       <NavLink
         to={item.path}
         className={cn(
-          'flex items-center rounded-lg text-xs transition-all duration-150 relative group cursor-pointer font-sans select-none',
+          'flex items-center rounded-xl text-[13px] transition-all duration-200 relative group cursor-pointer font-sans select-none',
           isSidebarCollapsed
             ? 'h-10 w-10 mx-auto justify-center'
-            : 'gap-3 px-3 py-2',
+            : 'gap-3 px-3 py-2.5',
           isActive
-            ? 'bg-sky-50 text-sky-700 font-semibold border border-sky-200 shadow-xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ? 'erp-nav-active font-semibold'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-transparent'
         )}
       >
-        {/* Left active sky indicator */}
+        {/* Left active brand indicator */}
         {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-sky-600 rounded-r-full shadow-xs" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-sky-600 rounded-r-full" />
         )}
 
         <Icon
           className={cn(
             'h-4 w-4 shrink-0 transition-colors',
-            isActive ? 'text-sky-600' : 'text-slate-500 group-hover:text-slate-800'
+            isActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-sky-700'
           )}
         />
 
@@ -170,36 +170,36 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col bg-white border-r border-slate-200 h-full transition-all duration-200 ease-in-out shrink-0 select-none z-20 shadow-xs',
+        'hidden md:flex flex-col erp-shell-sidebar h-full transition-all duration-200 ease-in-out shrink-0 select-none z-20',
         isSidebarCollapsed ? 'w-16' : 'w-60'
       )}
     >
       {/* Brand Header */}
       <div
         className={cn(
-          'border-b border-slate-200 flex items-center transition-all duration-200',
+          'border-b border-slate-200/80 flex items-center transition-all duration-200',
           isSidebarCollapsed ? 'h-14 justify-center' : 'p-4 justify-between'
         )}
       >
         {!isSidebarCollapsed ? (
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-7 w-7 min-w-7 min-h-7 aspect-square rounded-lg bg-gradient-to-tr from-sky-600 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 font-mono">
+            <div className="h-8 w-8 min-w-8 min-h-8 aspect-square rounded-xl erp-brand-mark text-white flex items-center justify-center font-extrabold text-[11px] shrink-0 tracking-tight">
               RE
             </div>
             <div className="min-w-0">
-              <h1 className="text-xs font-bold text-slate-900 tracking-wide uppercase truncate">
-                Retail Edge OS
+              <h1 className="text-[13px] font-extrabold text-slate-900 tracking-tight truncate">
+                Retail Edge
               </h1>
-              <div className="text-[10px] text-sky-600 font-mono flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>v2.4.0 · Enterprise</span>
+              <div className="text-[10px] text-sky-700 font-semibold flex items-center gap-1.5 mt-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.25)]" />
+                <span>Enterprise · Live</span>
               </div>
             </div>
           </div>
         ) : (
           <button
             onClick={toggleSidebar}
-            className="h-8 w-8 min-w-8 min-h-8 rounded-lg bg-gradient-to-tr from-sky-600 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs font-mono hover:scale-105 transition-transform cursor-pointer"
+            className="h-8 w-8 min-w-8 min-h-8 rounded-xl erp-brand-mark text-white flex items-center justify-center font-extrabold text-[11px] hover:scale-105 transition-transform cursor-pointer"
             title="Expand Sidebar (Click to expand)"
             aria-label="Expand sidebar"
           >
@@ -210,7 +210,7 @@ export const Sidebar: React.FC = () => {
         {!isSidebarCollapsed && (
           <button
             onClick={toggleSidebar}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer hidden lg:block shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer hidden lg:block shrink-0"
             aria-label="Collapse sidebar"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -219,9 +219,9 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto px-2 py-2.5 space-y-1 font-sans">
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 font-sans">
         {!isSidebarCollapsed && (
-          <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
             Operations
           </div>
         )}
@@ -229,14 +229,14 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Footer Edge Telemetry Status */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50/70">
+      <div className="p-3 border-t border-slate-200/80 bg-gradient-to-t from-slate-50 to-transparent">
         {!isSidebarCollapsed ? (
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
+          <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 px-1">
             <span className="flex items-center gap-1.5">
-              <Radio className="h-3 w-3 text-sky-600" />
-              <span>Edge AI Node</span>
+              <Radio className="h-3.5 w-3.5 text-sky-600" />
+              <span>Edge Node</span>
             </span>
-            <span className="text-emerald-700 font-bold">178 FPS Total</span>
+            <span className="text-emerald-700 font-bold font-mono tabular-nums">178 FPS</span>
           </div>
         ) : (
           <div className="flex justify-center">

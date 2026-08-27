@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { Bot } from 'lucide-react'
 import { CopilotRobotIcon } from './components/CopilotRobotIcon'
 import { useAppStore } from '@/store/useAppStore'
 import { StaffTopBar } from './components/StaffTopBar'
 import { StaffBottomNav, StaffNavTab } from './components/StaffBottomNav'
 import { StaffTodayPage } from './pages/StaffTodayPage'
 import { StaffAssistPage } from './pages/StaffAssistPage'
+import { StaffScanPage } from './pages/StaffScanPage'
 import { StaffWorkPage } from './pages/StaffWorkPage'
 import { StaffMorePage } from './pages/StaffMorePage'
 
@@ -24,10 +26,11 @@ import { CustomerHelpRequest } from '@/store/slices/customerRequestSlice'
 export const StaffPwaLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const params = useParams()
 
   const { authenticatedStaff, attendanceState, blockStaffTask } = useAppStore()
 
-  // Active Tab state (4 primary operations tabs)
+  // Active Tab state
   const [activeTab, setActiveTab] = useState<StaffNavTab>('today')
 
   // Modals state
@@ -84,7 +87,7 @@ export const StaffPwaLayout: React.FC = () => {
   // Don't render companion shell on login or attendance screens
   if (location.pathname === '/staff/login' || location.pathname === '/staff/attendance') {
     return (
-      <div className="w-full max-w-md mx-auto relative shadow-2xl h-screen bg-slate-50 overflow-hidden font-sans">
+      <div className="w-full max-w-md mx-auto relative shadow-2xl h-screen bg-slate-900 overflow-hidden font-sans">
         <Outlet />
       </div>
     )
@@ -122,19 +125,19 @@ export const StaffPwaLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden w-full max-w-md mx-auto relative shadow-2xl border-x border-slate-200 select-none">
+    <div className="flex flex-col h-screen bg-[#F4F6F8] text-slate-900 font-sans overflow-hidden w-full max-w-md mx-auto relative shadow-2xl border-x border-slate-200 select-none">
       {/* 1. Top Mobile Bar */}
       <StaffTopBar
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         storeName={authenticatedStaff?.storeName || 'Chennai Central • Store 01'}
       />
 
-      {/* 2. Main Content Area per Tab (4 Core Operations) */}
+      {/* 2. Main Content Area per Tab */}
       <main className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
         {activeTab === 'today' && (
           <StaffTodayPage
             onOpenTaskDetails={handleOpenTaskDetails}
-            onNavigateTab={(tab) => setActiveTab(tab as StaffNavTab)}
+            onNavigateTab={(tab) => setActiveTab(tab)}
             onOpenHandover={() => setIsHandoverOpen(true)}
           />
         )}
@@ -142,6 +145,12 @@ export const StaffPwaLayout: React.FC = () => {
           <StaffAssistPage
             onOpenAssistDetails={handleOpenAssistDetails}
             onOpenMap={(zone, shelf) => handleOpenMap(`Customer in ${zone}`, zone, shelf)}
+          />
+        )}
+        {activeTab === 'scan' && (
+          <StaffScanPage
+            onOpenMap={handleOpenMap}
+            onOpenReportIssue={() => setIsReportIssueOpen(true)}
           />
         )}
         {activeTab === 'work' && (
@@ -164,7 +173,7 @@ export const StaffPwaLayout: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsCopilotOpen(true)}
-          className="w-12 h-12 rounded-full bg-white hover:bg-slate-50 text-blue-600 shadow-[0_6px_20px_rgba(37,99,235,0.18)] border-2 border-blue-500 flex items-center justify-center transition-all active:scale-90 group hover:ring-4 hover:ring-blue-100 cursor-pointer"
+          className="w-12 h-12 rounded-full bg-white hover:bg-slate-50 text-sky-700 shadow-[0_6px_20px_rgba(15,118,110,0.18)] border-2 border-sky-600 flex items-center justify-center transition-all active:scale-90 group hover:ring-4 hover:ring-sky-100"
           aria-label="Store Copilot"
           title="Store Copilot"
         >
@@ -172,7 +181,7 @@ export const StaffPwaLayout: React.FC = () => {
         </button>
       </div>
 
-      {/* 4. Bottom 4-Destination Navigation */}
+      {/* 4. Bottom 5-Destination Navigation */}
       <StaffBottomNav activeTab={activeTab} onSelectTab={(tab) => setActiveTab(tab)} />
 
       {/* 5. Shared Modals & Drawers */}
@@ -220,13 +229,13 @@ export const StaffPwaLayout: React.FC = () => {
       <NotificationsSheet
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
-        onNavigateTab={(tab) => setActiveTab(tab as StaffNavTab)}
+        onNavigateTab={(tab) => setActiveTab(tab)}
       />
 
       <StaffCopilotModal
         isOpen={isCopilotOpen}
         onClose={() => setIsCopilotOpen(false)}
-        onNavigateTab={(tab) => setActiveTab(tab as StaffNavTab)}
+        onNavigateTab={(tab) => setActiveTab(tab)}
         onOpenTaskDetails={(taskId) => {
           const t = useAppStore.getState().pendingTasks.find((item) => item.id === taskId)
           if (t) handleOpenTaskDetails(t)

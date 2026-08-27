@@ -38,7 +38,7 @@ export const FootfallTrendEChart: React.FC = () => {
           type: 'line',
           smooth: true,
           data: [120, 240, 310, 420, 520, 380],
-          lineStyle: { color: '#0284C7', width: 2 },
+          lineStyle: { color: '#0F766E', width: 2 },
           areaStyle: {
             color: {
               type: 'linear',

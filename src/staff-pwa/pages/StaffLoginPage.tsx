@@ -79,7 +79,7 @@ export const StaffLoginPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 justify-between p-6 select-none font-sans max-w-md mx-auto relative overflow-hidden shadow-2xl">
+    <div className="flex flex-col min-h-screen bg-[#F4F6F8] text-slate-900 justify-between p-6 select-none font-sans max-w-md mx-auto relative overflow-hidden shadow-2xl">
       {/* Top Header Bar */}
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-2">

@@ -74,7 +74,7 @@ export const CustomerCopilotQuickDrawer: React.FC = () => {
         <div className="flex items-start justify-between pb-2 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center font-bold shadow-2xs">
-              <CopilotRobotIcon className="h-5.5 w-5.5" stroke="#0284C7" />
+              <CopilotRobotIcon className="h-5.5 w-5.5" stroke="#0F766E" />
             </div>
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 leading-tight">

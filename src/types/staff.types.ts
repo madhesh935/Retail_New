@@ -20,7 +20,20 @@ export interface StaffMember {
 
 export type TaskStatus = 'PENDING' | 'DISPATCHED' | 'ASSIGNED' | 'ACCEPTED' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED' | 'VERIFIED' | 'CANCELLED'
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL'
-export type TaskCategory = 'RESTOCK' | 'QUEUE_SUPPORT' | 'SPILL_CLEANUP' | 'SECURITY_CHECK' | 'PLANOGRAM_AUDIT' | 'CUSTOMER_ASSISTANCE' | 'SHELF_INSPECTION' | 'FACILITY'
+export type TaskCategory =
+  | 'RESTOCK'
+  | 'QUEUE_SUPPORT'
+  | 'SPILL_CLEANUP'
+  | 'SECURITY_CHECK'
+  | 'PLANOGRAM_AUDIT'
+  | 'CUSTOMER_ASSISTANCE'
+  | 'SHELF_INSPECTION'
+  | 'FACILITY'
+  | 'EXPIRY_CHECK'
+  | 'STOCK_ROTATION'
+  | 'MARKDOWN_APPLICATION'
+  | 'REMOVE_EXPIRED'
+  | 'WASTE_RECORDING'
 
 export interface TaskSopStep {
   id: string
@@ -74,6 +87,14 @@ export interface StaffTask {
   verifiedAt?: string
   isOptimizedRun?: boolean
   runSequence?: number
+  // Expiry & Waste fields
+  batchId?: string
+  batchNumber?: string
+  expiryDate?: string
+  markdownPrice?: number
+  originalPrice?: number
+  discountPercent?: number
+  wasteQuantity?: number
 }
 
 export interface OptimizedWorkRun {

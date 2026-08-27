@@ -1,8 +1,8 @@
 import React from 'react'
-import { Calendar, HandHelping, ClipboardList, MoreHorizontal } from 'lucide-react'
+import { Calendar, HandHelping, ScanBarcode, ClipboardList, MoreHorizontal } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
-export type StaffNavTab = 'today' | 'assist' | 'work' | 'more'
+export type StaffNavTab = 'today' | 'assist' | 'scan' | 'work' | 'more'
 
 interface StaffBottomNavProps {
   activeTab: StaffNavTab
@@ -16,51 +16,60 @@ export const StaffBottomNav: React.FC<StaffBottomNavProps> = ({ activeTab, onSel
   const activeWorkCount = pendingTasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS').length
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-4 pb-safe pt-1.5 z-40 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
-      <div className="grid grid-cols-4 items-center h-14 gap-1">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 pb-safe pt-1 z-40 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
+      <div className="flex items-center justify-between h-14">
         {/* 1. TODAY */}
         <button
           type="button"
           onClick={() => onSelectTab('today')}
-          className={`flex flex-col items-center justify-center gap-1 h-full rounded-2xl transition-all cursor-pointer ${
-            activeTab === 'today'
-              ? 'text-blue-600 bg-blue-50/70 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium'
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full rounded-xl transition-all ${
+            activeTab === 'today' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <Calendar className={`w-5 h-5 ${activeTab === 'today' ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-          <span className="text-[11px] tracking-tight">Today</span>
+          <span className="text-[10px] tracking-tight uppercase font-bold">Today</span>
         </button>
 
         {/* 2. ASSIST */}
         <button
           type="button"
           onClick={() => onSelectTab('assist')}
-          className={`flex flex-col items-center justify-center gap-1 h-full rounded-2xl transition-all cursor-pointer relative ${
-            activeTab === 'assist'
-              ? 'text-blue-600 bg-blue-50/70 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium'
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full rounded-xl transition-all relative ${
+            activeTab === 'assist' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <div className="relative">
             <HandHelping className={`w-5 h-5 ${activeTab === 'assist' ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
             {pendingAssistCount > 0 && (
-              <span className="absolute -top-1 -right-2 px-1 min-w-[14px] h-[14px] rounded-full bg-blue-600 text-white text-[8px] font-black flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-2 px-1 min-w-[14px] h-[14px] rounded-full bg-blue-600 text-white text-[8px] font-black flex items-center justify-center">
                 {pendingAssistCount}
               </span>
             )}
           </div>
-          <span className="text-[11px] tracking-tight">Assist</span>
+          <span className="text-[10px] tracking-tight uppercase font-bold">Assist</span>
         </button>
 
-        {/* 3. WORK */}
+        {/* 3. SCAN (Centerpiece - Bright Blue) */}
+        <div className="flex-1 flex items-center justify-center -mt-5">
+          <button
+            type="button"
+            onClick={() => onSelectTab('scan')}
+            className={`w-13 h-13 rounded-2xl flex flex-col items-center justify-center shadow-lg transition-all active:scale-95 bg-blue-600 text-white ring-4 ring-white shadow-blue-500/30 hover:bg-blue-700 ${
+              activeTab === 'scan' ? 'ring-blue-100 ring-offset-2 ring-offset-white' : ''
+            }`}
+            aria-label="Scan Product or Shelf"
+          >
+            <ScanBarcode className="w-5.5 h-5.5 stroke-[2.25]" />
+            <span className="text-[8px] font-black uppercase tracking-wider mt-0.5">Scan</span>
+          </button>
+        </div>
+
+        {/* 4. WORK */}
         <button
           type="button"
           onClick={() => onSelectTab('work')}
-          className={`flex flex-col items-center justify-center gap-1 h-full rounded-2xl transition-all cursor-pointer relative ${
-            activeTab === 'work'
-              ? 'text-blue-600 bg-blue-50/70 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium'
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full rounded-xl transition-all relative ${
+            activeTab === 'work' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <div className="relative">
@@ -71,21 +80,19 @@ export const StaffBottomNav: React.FC<StaffBottomNavProps> = ({ activeTab, onSel
               </span>
             )}
           </div>
-          <span className="text-[11px] tracking-tight">Work</span>
+          <span className="text-[10px] tracking-tight uppercase font-bold">Work</span>
         </button>
 
-        {/* 4. MORE */}
+        {/* 5. MORE */}
         <button
           type="button"
           onClick={() => onSelectTab('more')}
-          className={`flex flex-col items-center justify-center gap-1 h-full rounded-2xl transition-all cursor-pointer ${
-            activeTab === 'more'
-              ? 'text-blue-600 bg-blue-50/70 font-bold'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium'
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full rounded-xl transition-all ${
+            activeTab === 'more' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <MoreHorizontal className={`w-5 h-5 ${activeTab === 'more' ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-          <span className="text-[11px] tracking-tight">More</span>
+          <span className="text-[10px] tracking-tight uppercase font-bold">More</span>
         </button>
       </div>
     </nav>

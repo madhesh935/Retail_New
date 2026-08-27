@@ -102,7 +102,7 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
-            backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+            backgroundImage: `repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`,
           }}
         />
 
@@ -225,7 +225,7 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
-            backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+            backgroundImage: `repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`,
           }}
         />
 
@@ -302,7 +302,7 @@ const LiveEntranceMiniStream: React.FC = () => {
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
-          backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+          backgroundImage: `repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`,
         }}
       />
       {/* Counting Line Overlay */}
@@ -340,7 +340,7 @@ const LiveCheckoutMiniStream: React.FC = () => {
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
-          backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+          backgroundImage: `repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`,
         }}
       />
       {/* ROI Box Overlay */}
@@ -369,7 +369,7 @@ const LiveSimulatedMiniStream: React.FC<{ code: string; name: string; isAlert?: 
       <div 
         className="absolute inset-0 opacity-20 pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(56,189,248,0.2), transparent 75%), repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`
+          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(56,189,248,0.2), transparent 75%), repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`
         }}
       />
 

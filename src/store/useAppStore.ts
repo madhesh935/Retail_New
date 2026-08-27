@@ -12,6 +12,7 @@ import { UiSlice, createUiSlice } from './slices/uiSlice'
 import { SettingsSlice, createSettingsSlice } from './slices/settingsSlice'
 import { AttendanceSlice, createAttendanceSlice } from './slices/attendanceSlice'
 import { CustomerRequestSlice, createCustomerRequestSlice } from './slices/customerRequestSlice'
+import { ExpirySlice, createExpirySlice } from './slices/expirySlice'
 import { WebSocketMessage } from '@/types'
 import { realStoreApi } from '@/services/api/realStoreApi'
 
@@ -27,7 +28,8 @@ export type AppState = StoreSlice &
   UiSlice &
   SettingsSlice &
   AttendanceSlice &
-  CustomerRequestSlice & {
+  CustomerRequestSlice &
+  ExpirySlice & {
     handleWebSocketMessage: (msg: WebSocketMessage) => void
     fetchStoreData: (storeId?: string) => Promise<void>
     dispatchRealTask: (task: any) => Promise<void>
@@ -49,6 +51,7 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
   ...createSettingsSlice(set, get, api),
   ...createAttendanceSlice(set, get, api),
   ...createCustomerRequestSlice(set, get, api),
+  ...createExpirySlice(set, get, api),
 
   handleWebSocketMessage: (msg: WebSocketMessage) => {
     const { event, payload, timestamp } = msg

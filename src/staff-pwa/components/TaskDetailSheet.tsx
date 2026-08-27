@@ -111,8 +111,24 @@ export const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({
           </div>
 
           {/* Operational Metrics Cards */}
-          {(task.shelfAvailabilityPercent !== undefined || task.backroomUnits !== undefined) && (
+          {(task.shelfAvailabilityPercent !== undefined || task.backroomUnits !== undefined || task.batchNumber || task.markdownPrice !== undefined) && (
             <div className="grid grid-cols-3 gap-2">
+              {task.batchNumber && (
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Batch No</span>
+                  <span className="text-xs font-bold font-mono text-slate-900 block truncate">
+                    {task.batchNumber}
+                  </span>
+                </div>
+              )}
+              {task.markdownPrice !== undefined && (
+                <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-center">
+                  <span className="text-[10px] uppercase font-bold text-amber-800 block">Markdown Tag</span>
+                  <span className="text-base font-black font-mono text-emerald-700 block">
+                    ₹{task.markdownPrice}
+                  </span>
+                </div>
+              )}
               {task.shelfAvailabilityPercent !== undefined && (
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block">Shelf Stock</span>

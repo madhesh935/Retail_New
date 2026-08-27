@@ -26,18 +26,18 @@ export const KpiSummaryRow: React.FC = () => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 font-sans">
       {/* 1. Occupancy */}
-      <div className="rounded-xl bg-white border border-slate-200 hover:border-sky-300 p-3.5 shadow-2xs transition-all flex flex-col justify-between select-none">
+      <div className="erp-kpi p-3.5 flex flex-col justify-between select-none cursor-default">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.06em]">
             Occupancy
           </span>
-          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200 shrink-0">
+          <div className="p-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200/80 shrink-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]">
             <Users className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <div className="my-1">
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+          <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight">
             {currentOccupancy}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
@@ -54,18 +54,18 @@ export const KpiSummaryRow: React.FC = () => {
       </div>
 
       {/* 2. Footfall */}
-      <div className="rounded-xl bg-white border border-slate-200 hover:border-sky-300 p-3.5 shadow-2xs transition-all flex flex-col justify-between select-none">
+      <div className="erp-kpi p-3.5 flex flex-col justify-between select-none cursor-default">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.06em]">
             Footfall
           </span>
-          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200 shrink-0">
+          <div className="p-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200/80 shrink-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]">
             <Footprints className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <div className="my-1">
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+          <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight">
             {formatNumber(todaysTotalFootfall)}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
@@ -82,18 +82,18 @@ export const KpiSummaryRow: React.FC = () => {
       </div>
 
       {/* 3. Shelf Health */}
-      <div className="rounded-xl bg-white border border-slate-200 hover:border-amber-300 p-3.5 shadow-2xs transition-all flex flex-col justify-between select-none">
+      <div className="erp-kpi p-3.5 flex flex-col justify-between select-none cursor-default">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.06em]">
             Shelf Health
           </span>
-          <div className="p-1 rounded-md bg-amber-50 text-amber-600 border border-amber-200 shrink-0">
+          <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/80 shrink-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]">
             <PackageCheck className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <div className="my-1">
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+          <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight">
             86%
           </div>
           <div className="text-[11px] text-amber-700 font-semibold mt-0.5 flex items-center gap-1">
@@ -109,18 +109,18 @@ export const KpiSummaryRow: React.FC = () => {
       </div>
 
       {/* 4. Wait Time */}
-      <div className="rounded-xl bg-white border border-slate-200 hover:border-emerald-300 p-3.5 shadow-2xs transition-all flex flex-col justify-between select-none">
+      <div className="erp-kpi p-3.5 flex flex-col justify-between select-none cursor-default">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.06em]">
             Wait Time
           </span>
-          <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200 shrink-0">
+          <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]">
             <Clock className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <div className="my-1">
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight flex items-baseline gap-1">
+          <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight flex items-baseline gap-1">
             <span>{waitMinutes}</span>
             <span className="text-xs text-slate-500 font-normal">min</span>
           </div>
@@ -138,18 +138,18 @@ export const KpiSummaryRow: React.FC = () => {
       </div>
 
       {/* 5. Store Health */}
-      <div className="rounded-xl bg-white border border-slate-200 hover:border-emerald-300 p-3.5 shadow-2xs transition-all flex flex-col justify-between select-none">
+      <div className="erp-kpi p-3.5 flex flex-col justify-between select-none cursor-default">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.06em]">
             Store Health
           </span>
-          <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200 shrink-0">
+          <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]">
             <Activity className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <div className="my-1">
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight flex items-baseline gap-1">
+          <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight flex items-baseline gap-1">
             <span>91</span>
             <span className="text-xs text-slate-400 font-normal">/ 100</span>
           </div>
@@ -166,18 +166,18 @@ export const KpiSummaryRow: React.FC = () => {
       </div>
 
       {/* 6. Alerts */}
-      <div className="rounded-xl bg-white border border-rose-200 hover:border-rose-300 p-3.5 shadow-2xs transition-all flex flex-col justify-between select-none">
+      <div className="erp-kpi p-3.5 flex flex-col justify-between select-none cursor-default border-rose-200/80 hover:border-rose-300">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-semibold text-rose-700 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-rose-700 uppercase tracking-[0.06em]">
             Alerts
           </span>
-          <div className="p-1 rounded-md bg-rose-50 text-rose-600 border border-rose-200 shrink-0">
+          <div className="p-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/80 shrink-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]">
             <AlertOctagon className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <div className="my-1">
-          <div className="text-2xl font-bold font-mono text-rose-600 tracking-tight">
+          <div className="text-[1.65rem] font-extrabold font-mono text-rose-600 tracking-tight">
             {activeIncidentsCount}
           </div>
           <div className="text-[11px] text-rose-600 font-medium mt-0.5">

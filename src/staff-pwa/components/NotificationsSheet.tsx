@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/useAppStore'
 interface NotificationsSheetProps {
   isOpen: boolean
   onClose: () => void
-  onNavigateTab: (tab: 'today' | 'assist' | 'work' | 'more') => void
+  onNavigateTab: (tab: 'today' | 'assist' | 'scan' | 'work' | 'more') => void
 }
 
 export const NotificationsSheet: React.FC<NotificationsSheetProps> = ({

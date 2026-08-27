@@ -25,7 +25,7 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       staffCount: 4,
       status: 'Adequate',
       statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
-      barColor: '#0284C7',
+      barColor: '#0F766E',
       icon: Zap,
     },
     {

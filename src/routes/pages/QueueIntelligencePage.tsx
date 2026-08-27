@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
   ListOrdered,
   Clock,
@@ -10,6 +11,7 @@ import {
   Users,
   BellRing,
   X,
+  Compass,
 } from 'lucide-react'
 import { QueueKpiRow } from '@/components/queue-intelligence/QueueKpiRow'
 import {
@@ -28,8 +30,10 @@ import {
 } from '@/components/command-center/WhyRecommendationDialog'
 import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import { useAppStore } from '@/store/useAppStore'
+import { Button } from '@/components/ui/button'
 
 export const QueueIntelligencePage: React.FC = () => {
+  const navigate = useNavigate()
   const storeInfo = useAppStore((s) => s.storeInfo)
   const ipCameraUrls = useAppStore((s) => s.ipCameraUrls)
   const queues = useAppStore((s) => s.queues)
@@ -123,8 +127,29 @@ export const QueueIntelligencePage: React.FC = () => {
 
       {/* 2. Large Operational Counter Cards (C1 Critical, C2 Healthy, C3 Closed, C4 Self) */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
-          Operational Checkout Registers (C1 — C4)
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
+            Operational Checkout Registers (C1 — C4)
+          </div>
+          <Button
+            variant="outline"
+            size="xs"
+            className="h-7 text-[11px] gap-1 border-slate-200 font-sans"
+            onClick={() => {
+              const laneId =
+                selectedLaneCode === 'C1'
+                  ? 'lane-1'
+                  : selectedLaneCode === 'C2'
+                    ? 'lane-2'
+                    : selectedLaneCode === 'C3'
+                      ? 'lane-3'
+                      : 'lane-4'
+              navigate(`/digital-twin?lane=${laneId}`)
+            }}
+          >
+            <Compass className="h-3 w-3 text-teal-700" />
+            Show {selectedLaneCode} on Twin
+          </Button>
         </div>
         <OperationalCounterCards
           lanes={dynamicLanes}

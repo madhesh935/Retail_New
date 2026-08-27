@@ -71,7 +71,7 @@ export const CustomerCopilotPage: React.FC = () => {
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center font-bold shadow-2xs">
-            <CopilotRobotIcon className="h-5.5 w-5.5" stroke="#0284C7" />
+            <CopilotRobotIcon className="h-5.5 w-5.5" stroke="#0F766E" />
           </div>
           <div>
             <h1 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
@@ -182,7 +182,7 @@ export const CustomerCopilotPage: React.FC = () => {
               <div
                 className={`max-w-[88%] p-3 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${
                   isUser
-                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-xs'
+                    ? 'bg-gradient-to-r from-teal-700 to-teal-600 text-white rounded-tr-xs'
                     : 'bg-white text-slate-800 border border-slate-200 rounded-tl-xs'
                 }`}
               >

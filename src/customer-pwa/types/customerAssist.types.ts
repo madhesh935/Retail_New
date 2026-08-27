@@ -68,7 +68,6 @@ export interface CustomerAssistRequest {
   timeline: CustomerAssistTimelineEvent[]
   messages: CustomerAssistMessage[]
   isBackroomFlow?: boolean
-  backroomItemFound?: boolean
   resolvedInMinutes?: number
 }
 

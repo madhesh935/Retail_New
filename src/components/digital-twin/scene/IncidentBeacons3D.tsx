@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
-import * as THREE from 'three'
+import React, { useMemo, useState } from 'react'
+import { useAppStore } from '@/store/useAppStore'
+import { resolveZonePosition } from '../layout/storeLayout'
+import { RetailPalette } from '../theme/retailPalette'
 import { TooltipData } from '../controls/TwinTooltip'
 
 interface IncidentBeacons3DProps {
   showIncidents: boolean
-  onSelectIncident?: (incident: any) => void
+  onSelectIncident?: (incident: unknown) => void
   onHoverIncident?: (data: TooltipData | null) => void
 }
 
@@ -13,110 +15,77 @@ export const IncidentBeacons3D: React.FC<IncidentBeacons3DProps> = ({
   onSelectIncident,
   onHoverIncident,
 }) => {
-  const [hoveredIncident, setHoveredIncident] = useState<string | null>(null)
+  const incidents = useAppStore((s) => s.incidents)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const incidents = [
-    {
-      id: 'inc-01',
-      title: 'Cooler 2 Floor Spill',
-      location: 'Cold Beverages Aisle (near Cooler 2)',
-      severity: 'HIGH',
-      assignedTo: 'Sarah Jenkins',
-      status: 'In Progress (Cone Deployed)',
-      position: [11.5, 0, -6.5] as [number, number, number],
-      actionRequired: 'Mop & floor dry in progress',
-    },
-  ]
-
-  const handlePointerOver = (inc: typeof incidents[0], e: any) => {
-    e.stopPropagation()
-    setHoveredIncident(inc.id)
-    if (onHoverIncident) {
-      onHoverIncident({
-        type: 'incident',
-        title: inc.title,
-        subtitle: inc.location,
-        status: inc.severity,
-        statusColor: 'amber',
-        metrics: [
-          { label: 'Severity', value: inc.severity, highlight: true },
-          { label: 'Assigned Associate', value: inc.assignedTo },
-          { label: 'Status', value: inc.status },
-        ],
-        alert: inc.actionRequired,
-        actionHint: 'Click to open safety workspace',
-        screenX: e.clientX,
-        screenY: e.clientY,
+  const markers = useMemo(() => {
+    if (!incidents?.length) return []
+    return incidents
+      .filter((i) => i.status !== 'RESOLVED' && i.status !== 'DISMISSED')
+      .map((inc) => {
+        const pos = resolveZonePosition(inc.zoneId)
+        if (!pos) return null
+        return {
+          ...inc,
+          position: [pos[0], 0.02, pos[2]] as [number, number, number],
+        }
       })
-    }
-  }
+      .filter(Boolean) as (typeof incidents[0] & { position: [number, number, number] })[]
+  }, [incidents])
 
-  const handlePointerOut = () => {
-    setHoveredIncident(null)
-    if (onHoverIncident) onHoverIncident(null)
-  }
-
-  if (!showIncidents) return null
+  if (!showIncidents || markers.length === 0) return null
 
   return (
     <group>
-      {incidents.map((inc) => {
-        const isHovered = hoveredIncident === inc.id
-
+      {markers.map((inc) => {
+        const critical = inc.severity === 'critical'
+        const color = critical ? RetailPalette.critical : RetailPalette.low
+        const hovered = hoveredId === inc.id
         return (
           <group
             key={inc.id}
             position={inc.position}
             onClick={(e) => {
               e.stopPropagation()
-              if (onSelectIncident) onSelectIncident(inc)
+              onSelectIncident?.(inc)
             }}
-            onPointerOver={(e) => handlePointerOver(inc, e)}
-            onPointerOut={handlePointerOut}
+            onPointerOver={(e) => {
+              e.stopPropagation()
+              setHoveredId(inc.id)
+              onHoverIncident?.({
+                type: 'incident',
+                title: inc.title,
+                subtitle: inc.zoneName || inc.zoneId,
+                status: String(inc.severity).toUpperCase(),
+                statusColor: critical ? 'rose' : 'amber',
+                metrics: [
+                  { label: 'Status', value: String(inc.status) },
+                  { label: 'Assigned', value: inc.assignedToStaffName || 'Unassigned' },
+                ],
+                actionHint: 'Click to open incident',
+                screenX: e.clientX,
+                screenY: e.clientY,
+              })
+            }}
+            onPointerOut={() => {
+              setHoveredId(null)
+              onHoverIncident?.(null)
+            }}
           >
-            {/* 1. Liquid Floor Spill Puddle Graphic */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008, 0]}>
-              <ringGeometry args={[0, 0.65, 16]} />
-              <meshStandardMaterial
-                color="#38BDF8"
-                roughness={0.05}
-                metalness={0.9}
-                transparent
-                opacity={0.4}
-              />
+            {/* Small caution cone */}
+            <mesh position={[0.15, 0.28, 0.15]} castShadow>
+              <coneGeometry args={[0.1, 0.5, 10]} />
+              <meshStandardMaterial color="#EAB308" roughness={0.55} />
             </mesh>
-
-            {/* 2. High-Visibility Safety Caution Wet Floor Cone */}
-            <group position={[0.2, 0, 0.2]}>
-              {/* Yellow Cone Base */}
-              <mesh position={[0, 0.02, 0]} castShadow>
-                <boxGeometry args={[0.3, 0.04, 0.3]} />
-                <meshStandardMaterial color="#EAB308" roughness={0.6} />
-              </mesh>
-              {/* Yellow Cone Body */}
-              <mesh position={[0, 0.3, 0]} castShadow>
-                <coneGeometry args={[0.12, 0.55, 12]} />
-                <meshStandardMaterial color="#FACC15" roughness={0.5} />
-              </mesh>
-              {/* Black Hazard Warning Stripe */}
-              <mesh position={[0, 0.28, 0]}>
-                <cylinderGeometry args={[0.075, 0.085, 0.1, 12]} />
-                <meshStandardMaterial color="#0F172A" roughness={0.8} />
-              </mesh>
-              {/* Cone Top Ring */}
-              <mesh position={[0, 0.56, 0]}>
-                <torusGeometry args={[0.025, 0.008, 8, 12]} />
-                <meshStandardMaterial color="#EAB308" />
-              </mesh>
-            </group>
-
-            {/* Subtle Selection Aura on Hover */}
-            {isHovered && (
-              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-                <ringGeometry args={[0.7, 0.76, 16]} />
-                <meshBasicMaterial color="#F59E0B" transparent opacity={0.7} />
-              </mesh>
-            )}
+            <mesh position={[0.15, 0.02, 0.15]}>
+              <boxGeometry args={[0.22, 0.03, 0.22]} />
+              <meshStandardMaterial color="#CA8A04" />
+            </mesh>
+            {/* Compact severity pin */}
+            <mesh position={[0, hovered ? 1.15 : 1.0, 0]}>
+              <sphereGeometry args={[0.09, 10, 10]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} />
+            </mesh>
           </group>
         )
       })}

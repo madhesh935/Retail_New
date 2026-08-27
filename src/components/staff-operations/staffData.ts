@@ -93,7 +93,7 @@ export const CANONICAL_STAFF: StaffMember[] = [
     shiftStatus: 'ON_SHIFT',
     shiftHours: '14:00–22:00',
     tasksCompletedToday: 5,
-    avatarColor: '#38BDF8',
+    avatarColor: '#2DD4BF',
   },
   {
     id: 'staff-s04',

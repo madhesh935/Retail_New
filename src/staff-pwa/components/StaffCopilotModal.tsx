@@ -18,7 +18,7 @@ import { useAppStore } from '@/store/useAppStore'
 interface StaffCopilotModalProps {
   isOpen: boolean
   onClose: () => void
-  onNavigateTab?: (tab: 'today' | 'assist' | 'work' | 'more') => void
+  onNavigateTab?: (tab: 'today' | 'assist' | 'scan' | 'work' | 'more') => void
   onOpenTaskDetails?: (taskId: string) => void
 }
 
@@ -28,7 +28,7 @@ interface ChatMessage {
   text: string
   timestamp: string
   actionLabel?: string
-  actionTab?: 'today' | 'assist' | 'work' | 'more'
+  actionTab?: 'today' | 'assist' | 'scan' | 'work' | 'more'
   taskId?: string
 }
 
@@ -118,7 +118,7 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
       const q = query.toLowerCase()
       let aiText = ''
       let actionLabel: string | undefined
-      let actionTab: 'today' | 'assist' | 'work' | 'more' | undefined
+      let actionTab: 'today' | 'assist' | 'scan' | 'work' | 'more' | undefined
       let taskId: string | undefined
 
       if (q.includes('next') || q.includes('what should i do') || q.includes('urgent')) {
@@ -126,6 +126,18 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
         actionLabel = 'View B4 Restock Task'
         actionTab = 'work'
         taskId = 'task-b4-replenish'
+      } else if (q.includes('expire') || q.includes('expiry') || q.includes('fefo') || q.includes('rotation')) {
+        aiText = 'Active Expiry & Stock Rotation:\n• **Milk 1L (Batch MILK-0827)** expires tomorrow. Batch MILK-0827 should be moved to the FRONT row on Shelf C2, while newer Batch MILK-0902 remains behind.'
+        actionLabel = 'Open Work Tasks'
+        actionTab = 'work'
+      } else if (q.includes('batch') || q.includes('front')) {
+        aiText = 'FEFO Rule (First Expire, First Out):\n• Always position earliest-expiry batch (MILK-0827) in front.\n• Staged location: Stockroom Bay 3B.\n• Front Shelf: Dairy C2.'
+        actionLabel = 'Scan Batch Barcode'
+        actionTab = 'scan'
+      } else if (q.includes('markdown') || q.includes('discount') || q.includes('price')) {
+        aiText = 'Markdown Status: Greek Yogurt 500g has an approved 15% markdown (₹80 → ₹68). Please replace the shelf tag at Shelf C4 and apply the yellow Save Today sticker.'
+        actionLabel = 'Open Scan Tab'
+        actionTab = 'scan'
       } else if (q.includes('where is b4') || q.includes('locate b4') || q.includes('b4')) {
         aiText = 'Shelf B4 is located in **Aisle 4 (Beverages & Cold Drinks)**, immediately past the chilled juice section on your right.'
         actionLabel = 'Open Store Map'
@@ -172,10 +184,10 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
 
   const QUICK_PROMPTS = [
     'What should I do next?',
-    'Where is Shelf B4?',
-    'Where is backroom stock for Cola?',
-    'Any customer help requests?',
-    'How to clean a spill?',
+    'Which batch goes in front?',
+    'Any expiry tasks assigned?',
+    'Has markdown been approved?',
+    'Where is backroom stock?',
   ]
 
   return (

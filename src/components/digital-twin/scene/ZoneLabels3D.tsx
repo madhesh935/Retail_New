@@ -1,5 +1,10 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import * as THREE from 'three'
+import { useAppStore } from '@/store/useAppStore'
+import type { StoreZone } from '@/types/store.types'
+import type { ZoneTrafficMetric } from '@/types/shopper.types'
+import { ZONE_ANCHORS } from '../layout/storeLayout'
+import { RetailPalette } from '../theme/retailPalette'
 import { TooltipData } from '../controls/TwinTooltip'
 
 export interface Zone3DData {
@@ -24,65 +29,227 @@ interface ZoneLabels3DProps {
   onHoverZone?: (data: TooltipData | null) => void
 }
 
-// Generate high-resolution procedural 3D sign texture
-const createSignTexture = (label: string, count: number, accentColor: string) => {
+/** Zones that always show an architectural hanging sign. */
+const DEFAULT_VISIBLE_IDS = new Set([
+  'zone-2',
+  'zone-3',
+  'zone-4',
+  'zone-6',
+  'zone-7',
+  'zone-stockroom',
+])
+
+type ZoneTemplate = Omit<
+  Zone3DData,
+  'currentShoppers' | 'trafficDensity' | 'avgDwellSeconds' | 'criticalShelvesCount' | 'opportunityRisk'
+> & {
+  defaultShoppers: number
+  defaultDensity: Zone3DData['trafficDensity']
+  defaultDwell: number
+  defaultCritical: number
+  defaultRisk: Zone3DData['opportunityRisk']
+}
+
+const ZONE_TEMPLATES: ZoneTemplate[] = [
+  {
+    id: 'zone-2',
+    code: 'Z02',
+    name: 'Fresh Produce',
+    signLabel: 'FRESH PRODUCE',
+    accentColor: RetailPalette.brandTeal,
+    shelfHealthPercent: 92,
+    position: ZONE_ANCHORS['zone-2'].position,
+    bounds: ZONE_ANCHORS['zone-2'].bounds,
+    defaultShoppers: 28,
+    defaultDensity: 'HIGH',
+    defaultDwell: 134,
+    defaultCritical: 0,
+    defaultRisk: 'LOW',
+  },
+  {
+    id: 'zone-3',
+    code: 'Z03',
+    name: 'Dairy',
+    signLabel: 'DAIRY',
+    accentColor: RetailPalette.brandTeal,
+    shelfHealthPercent: 71,
+    position: ZONE_ANCHORS['zone-3'].position,
+    bounds: ZONE_ANCHORS['zone-3'].bounds,
+    defaultShoppers: 22,
+    defaultDensity: 'MODERATE',
+    defaultDwell: 185,
+    defaultCritical: 1,
+    defaultRisk: 'HIGH',
+  },
+  {
+    id: 'zone-4',
+    code: 'Z04',
+    name: 'Beverages',
+    signLabel: 'BEVERAGES',
+    accentColor: RetailPalette.brandTeal,
+    shelfHealthPercent: 68,
+    position: ZONE_ANCHORS['zone-4'].position,
+    bounds: ZONE_ANCHORS['zone-4'].bounds,
+    defaultShoppers: 24,
+    defaultDensity: 'HIGH',
+    defaultDwell: 85,
+    defaultCritical: 1,
+    defaultRisk: 'HIGH',
+  },
+  {
+    id: 'zone-6',
+    code: 'Z06',
+    name: 'Electronics',
+    signLabel: 'ELECTRONICS',
+    accentColor: RetailPalette.brandTeal,
+    shelfHealthPercent: 95,
+    position: ZONE_ANCHORS['zone-6'].position,
+    bounds: ZONE_ANCHORS['zone-6'].bounds,
+    defaultShoppers: 12,
+    defaultDensity: 'MODERATE',
+    defaultDwell: 240,
+    defaultCritical: 0,
+    defaultRisk: 'LOW',
+  },
+  {
+    id: 'zone-7',
+    code: 'Z07',
+    name: 'Checkout',
+    signLabel: 'CHECKOUT',
+    accentColor: RetailPalette.brandTeal,
+    shelfHealthPercent: 100,
+    position: ZONE_ANCHORS['zone-7'].position,
+    bounds: ZONE_ANCHORS['zone-7'].bounds,
+    defaultShoppers: 23,
+    defaultDensity: 'HIGH',
+    defaultDwell: 150,
+    defaultCritical: 0,
+    defaultRisk: 'HIGH',
+  },
+  {
+    id: 'zone-stockroom',
+    code: 'Z08',
+    name: 'Stockroom',
+    signLabel: 'STOCKROOM',
+    accentColor: RetailPalette.brandTeal,
+    shelfHealthPercent: 100,
+    position: ZONE_ANCHORS['zone-stockroom'].position,
+    bounds: ZONE_ANCHORS['zone-stockroom'].bounds,
+    defaultShoppers: 4,
+    defaultDensity: 'LOW',
+    defaultDwell: 600,
+    defaultCritical: 0,
+    defaultRisk: 'LOW',
+  },
+]
+
+const SIGN_HEIGHT = 3.0
+const WARM_FOOTPRINT = '#D6D0C8'
+
+function normalizeDensity(
+  density?: string
+): Zone3DData['trafficDensity'] {
+  if (density === 'HIGH' || density === 'CONGESTED') return 'HIGH'
+  if (density === 'MODERATE') return 'MODERATE'
+  return 'LOW'
+}
+
+function findStoreZone(zones: StoreZone[], id: string): StoreZone | undefined {
+  return zones.find((z) => z.id === id)
+}
+
+function findMetric(
+  metrics: ZoneTrafficMetric[],
+  id: string
+): ZoneTrafficMetric | undefined {
+  return metrics.find((m) => m.zoneId === id)
+}
+
+/** Clean architectural hanging-sign face — white panel, dark slate type, no count pills. */
+const createSignTexture = (label: string): THREE.CanvasTexture => {
   const canvas = document.createElement('canvas')
   canvas.width = 1024
   canvas.height = 256
   const ctx = canvas.getContext('2d')
+
   if (ctx) {
-    // 1. High-tech dark glass panel background
-    ctx.fillStyle = '#0B1322'
-    ctx.roundRect(14, 14, 996, 228, 24)
-    ctx.fill()
+    // Off-white face
+    ctx.fillStyle = RetailPalette.signFace
+    ctx.fillRect(0, 0, 1024, 256)
 
-    // 2. Glowing outer accent border
-    ctx.lineWidth = 6
-    ctx.strokeStyle = accentColor
-    ctx.roundRect(14, 14, 996, 228, 24)
-    ctx.stroke()
-
-    // 3. Top accent glow band
-    ctx.fillStyle = accentColor
-    ctx.roundRect(14, 14, 996, 44, [24, 24, 0, 0])
-    ctx.fill()
-
-    // 4. White department category indicator
-    ctx.fillStyle = '#0B1322'
-    ctx.font = 'bold 26px Inter, Arial, sans-serif'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('• STORE INTELLIGENCE DEPARTMENT •', 40, 36)
-
-    // 5. Main department title text
+    // Subtle inner inset
     ctx.fillStyle = '#F8FAFC'
-    ctx.font = 'bold 74px Inter, Arial, sans-serif'
+    ctx.fillRect(18, 18, 988, 220)
+
+    // Thin trim frame
+    ctx.strokeStyle = RetailPalette.wallTrim
+    ctx.lineWidth = 6
+    ctx.strokeRect(12, 12, 1000, 232)
+
+    // Centered department name
+    ctx.fillStyle = RetailPalette.signText
+    ctx.font = '600 72px "Segoe UI", system-ui, sans-serif'
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label, 40, 150)
-
-    // 6. Real-time Shopper Count Pill (Right)
-    if (count > 0) {
-      const countText = `${count} shoppers`
-      ctx.font = 'bold 44px Inter, Arial, sans-serif'
-      const textWidth = ctx.measureText(countText).width
-      const pillX = 996 - textWidth - 54
-
-      ctx.fillStyle = '#1E293B'
-      ctx.roundRect(pillX, 90, textWidth + 38, 100, 16)
-      ctx.fill()
-
-      ctx.strokeStyle = accentColor
-      ctx.lineWidth = 3
-      ctx.roundRect(pillX, 90, textWidth + 38, 100, 16)
-      ctx.stroke()
-
-      ctx.fillStyle = '#38BDF8'
-      ctx.fillText(countText, pillX + 19, 142)
-    }
+    ctx.fillText(label, 512, 128)
   }
 
   const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
   texture.needsUpdate = true
   return texture
+}
+
+function buildZones(
+  storeZones: StoreZone[],
+  zoneMetrics: ZoneTrafficMetric[]
+): Zone3DData[] {
+  return ZONE_TEMPLATES.map((template) => {
+    const storeZone = findStoreZone(storeZones, template.id)
+    const metric = findMetric(zoneMetrics, template.id)
+
+    const currentShoppers =
+      storeZone?.currentOccupancy ??
+      (metric && metric.visitorCount < 120 ? metric.visitorCount : undefined) ??
+      template.defaultShoppers
+
+    const trafficDensity = metric
+      ? normalizeDensity(metric.trafficDensity)
+      : template.defaultDensity
+
+    const avgDwellSeconds =
+      storeZone?.avgDwellTimeSeconds ??
+      metric?.avgDwellSeconds ??
+      template.defaultDwell
+
+    const criticalShelvesCount =
+      storeZone && storeZone.alertCount > 0
+        ? storeZone.alertCount
+        : template.defaultCritical
+
+    const opportunityRisk: Zone3DData['opportunityRisk'] =
+      criticalShelvesCount > 0
+        ? 'HIGH'
+        : trafficDensity === 'HIGH'
+          ? 'MEDIUM'
+          : template.defaultRisk
+
+    return {
+      id: template.id,
+      code: storeZone?.code ?? template.code,
+      name: storeZone?.name ?? template.name,
+      signLabel: template.signLabel,
+      accentColor: template.accentColor,
+      currentShoppers,
+      trafficDensity,
+      avgDwellSeconds,
+      shelfHealthPercent: template.shelfHealthPercent,
+      criticalShelvesCount,
+      opportunityRisk,
+      position: template.position,
+      bounds: template.bounds,
+    }
+  })
 }
 
 export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
@@ -92,165 +259,65 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
 }) => {
   const [hoveredZoneId, setHoveredZoneId] = useState<string | null>(null)
 
-  const zones: Zone3DData[] = useMemo(
-    () => [
-      {
-        id: 'zone-1',
-        code: 'Z01',
-        name: 'Bakery & Gourmet Deli',
-        signLabel: 'BAKERY & DELI',
-        accentColor: '#F59E0B',
-        currentShoppers: 16,
-        trafficDensity: 'MODERATE',
-        avgDwellSeconds: 160,
-        shelfHealthPercent: 88,
-        criticalShelvesCount: 0,
-        opportunityRisk: 'LOW',
-        position: [-14, 0.01, 0],
-        bounds: [8.5, 9.5],
-      },
-      {
-        id: 'zone-2',
-        code: 'Z02',
-        name: 'Fresh Produce',
-        signLabel: 'FRESH PRODUCE',
-        accentColor: '#10B981',
-        currentShoppers: 28,
-        trafficDensity: 'HIGH',
-        avgDwellSeconds: 134,
-        shelfHealthPercent: 92,
-        criticalShelvesCount: 0,
-        opportunityRisk: 'LOW',
-        position: [-10, 0.01, -6],
-        bounds: [10.5, 7.5],
-      },
-      {
-        id: 'zone-5',
-        code: 'Z05',
-        name: 'Grocery & Packaged Goods',
-        signLabel: 'GROCERY & PANTRY',
-        accentColor: '#6366F1',
-        currentShoppers: 34,
-        trafficDensity: 'HIGH',
-        avgDwellSeconds: 210,
-        shelfHealthPercent: 93,
-        criticalShelvesCount: 0,
-        opportunityRisk: 'LOW',
-        position: [2.5, 0.01, -1.5],
-        bounds: [11.0, 7.5],
-      },
-      {
-        id: 'zone-3',
-        code: 'Z03',
-        name: 'Dairy & Frozen Foods',
-        signLabel: 'DAIRY & FROZEN',
-        accentColor: '#06B6D4',
-        currentShoppers: 22,
-        trafficDensity: 'MODERATE',
-        avgDwellSeconds: 185,
-        shelfHealthPercent: 71,
-        criticalShelvesCount: 1,
-        opportunityRisk: 'HIGH',
-        position: [0, 0.01, -6],
-        bounds: [9.5, 7.5],
-      },
-      {
-        id: 'zone-4',
-        code: 'Z04',
-        name: 'Cold Beverages & Snacks',
-        signLabel: 'COLD BEVERAGES',
-        accentColor: '#0EA5E9',
-        currentShoppers: 24,
-        trafficDensity: 'HIGH',
-        avgDwellSeconds: 85,
-        shelfHealthPercent: 68,
-        criticalShelvesCount: 1,
-        opportunityRisk: 'HIGH',
-        position: [14, 0.01, -5.5],
-        bounds: [8.5, 8.5],
-      },
-      {
-        id: 'zone-6',
-        code: 'Z06',
-        name: 'Electronics & Smart Tech',
-        signLabel: 'ELECTRONICS',
-        accentColor: '#8B5CF6',
-        currentShoppers: 12,
-        trafficDensity: 'MODERATE',
-        avgDwellSeconds: 240,
-        shelfHealthPercent: 95,
-        criticalShelvesCount: 0,
-        opportunityRisk: 'LOW',
-        position: [3.5, 0.01, 5.0],
-        bounds: [8.5, 6.5],
-      },
-      {
-        id: 'zone-7',
-        code: 'Z07',
-        name: 'Checkout Plaza',
-        signLabel: 'CHECKOUT PLAZA',
-        accentColor: '#F43F5E',
-        currentShoppers: 23,
-        trafficDensity: 'HIGH',
-        avgDwellSeconds: 150,
-        shelfHealthPercent: 100,
-        criticalShelvesCount: 0,
-        opportunityRisk: 'HIGH',
-        position: [15, 0.01, 3.5],
-        bounds: [9.0, 7.5],
-      },
-      {
-        id: 'zone-8',
-        code: 'Z08',
-        name: 'Stockroom Logistics',
-        signLabel: 'STOCKROOM / INVENTORY',
-        accentColor: '#F59E0B',
-        currentShoppers: 4,
-        trafficDensity: 'LOW',
-        avgDwellSeconds: 600,
-        shelfHealthPercent: 100,
-        criticalShelvesCount: 0,
-        opportunityRisk: 'LOW',
-        position: [0, 0.01, 12.5],
-        bounds: [42, 5.0],
-      },
-    ],
-    []
+  const storeZones = useAppStore((s) => s.zones)
+  const zoneMetrics = useAppStore((s) => s.zoneMetrics)
+
+  const zones = useMemo(
+    () => buildZones(storeZones ?? [], zoneMetrics ?? []),
+    [storeZones, zoneMetrics]
   )
 
-  // Memoize textures for performance
+  // Sign faces never change — create once (labels are static template strings)
   const signTextures = useMemo(() => {
     const map = new Map<string, THREE.CanvasTexture>()
-    zones.forEach((z) => {
-      map.set(z.id, createSignTexture(z.signLabel, z.currentShoppers, z.accentColor))
-    })
+    for (const template of ZONE_TEMPLATES) {
+      if (DEFAULT_VISIBLE_IDS.has(template.id)) {
+        map.set(template.id, createSignTexture(template.signLabel))
+      }
+    }
     return map
-  }, [zones])
+  }, [])
 
-  const handlePointerOver = (zone: Zone3DData, e: any) => {
+  useEffect(() => {
+    return () => {
+      signTextures.forEach((t) => t.dispose())
+    }
+  }, [signTextures])
+
+  const handlePointerOver = (
+    zone: Zone3DData,
+    e: { stopPropagation: () => void; clientX: number; clientY: number }
+  ) => {
     e.stopPropagation()
     setHoveredZoneId(zone.id)
-    if (onHoverZone) {
-      const dwellMins = Math.floor(zone.avgDwellSeconds / 60)
-      const dwellSecs = zone.avgDwellSeconds % 60
-      onHoverZone({
-        type: 'zone',
-        title: zone.name,
-        subtitle: `Zone ${zone.code} • Live Spatial Telemetry`,
-        status: `${zone.trafficDensity} TRAFFIC`,
-        statusColor: zone.trafficDensity === 'HIGH' ? 'amber' : 'emerald',
-        metrics: [
-          { label: 'Current Shoppers', value: `${zone.currentShoppers}` },
-          { label: 'Traffic Density', value: zone.trafficDensity },
-          { label: 'Avg Dwell Time', value: `${dwellMins}m ${dwellSecs}s` },
-          { label: 'Shelf Health', value: `${zone.shelfHealthPercent}%`, highlight: zone.shelfHealthPercent < 75 },
-        ],
-        alert: zone.criticalShelvesCount > 0 ? `${zone.criticalShelvesCount} Critical shelf needing attention` : undefined,
-        actionHint: 'Click to open zone overview',
-        screenX: e.clientX,
-        screenY: e.clientY,
-      })
-    }
+    if (!onHoverZone) return
+
+    const dwellMins = Math.floor(zone.avgDwellSeconds / 60)
+    const dwellSecs = zone.avgDwellSeconds % 60
+    onHoverZone({
+      type: 'zone',
+      title: zone.name,
+      subtitle: `Zone ${zone.code}`,
+      status: `${zone.trafficDensity} TRAFFIC`,
+      statusColor: zone.trafficDensity === 'HIGH' ? 'amber' : 'emerald',
+      metrics: [
+        { label: 'Current Shoppers', value: `${zone.currentShoppers}` },
+        { label: 'Traffic Density', value: zone.trafficDensity },
+        { label: 'Avg Dwell Time', value: `${dwellMins}m ${dwellSecs}s` },
+        {
+          label: 'Shelf Health',
+          value: `${zone.shelfHealthPercent}%`,
+          highlight: zone.shelfHealthPercent < 75,
+        },
+      ],
+      alert:
+        zone.criticalShelvesCount > 0
+          ? `${zone.criticalShelvesCount} critical shelf needing attention`
+          : undefined,
+      actionHint: 'Click to open zone overview',
+      screenX: e.clientX,
+      screenY: e.clientY,
+    })
   }
 
   const handlePointerOut = () => {
@@ -264,7 +331,9 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
     <group>
       {zones.map((zone) => {
         const isHovered = hoveredZoneId === zone.id
+        const showSign = DEFAULT_VISIBLE_IDS.has(zone.id)
         const texture = signTextures.get(zone.id)
+        const signWidth = Math.min(3.2, Math.max(2.4, zone.signLabel.length * 0.18))
 
         return (
           <group
@@ -277,72 +346,77 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
             onPointerOver={(e) => handlePointerOver(zone, e)}
             onPointerOut={handlePointerOut}
           >
-            {/* Subtle Floor Zone Footprint Boundary */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]}>
+            {/* Soft warm-gray footprint — hover only */}
+            {isHovered && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]}>
+                <planeGeometry args={zone.bounds} />
+                <meshBasicMaterial
+                  color={WARM_FOOTPRINT}
+                  transparent
+                  opacity={0.12}
+                  depthWrite={false}
+                />
+              </mesh>
+            )}
+
+            {/* Invisible hit plane for easier pointer targeting */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} visible={false}>
               <planeGeometry args={zone.bounds} />
-              <meshBasicMaterial
-                color={zone.accentColor}
-                transparent
-                opacity={isHovered ? 0.15 : 0.04}
-              />
+              <meshBasicMaterial />
             </mesh>
 
-            {/* Perimeter border outline */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
-              <ringGeometry
-                args={[
-                  Math.min(zone.bounds[0], zone.bounds[1]) * 0.44,
-                  Math.min(zone.bounds[0], zone.bounds[1]) * 0.46,
-                  32,
-                ]}
-              />
-              <meshBasicMaterial
-                color={zone.accentColor}
-                transparent
-                opacity={isHovered ? 0.6 : 0.25}
-              />
-            </mesh>
-
-            {/* Physical Overhead Suspended Architectural Department Sign */}
-            <group position={[0, 4.2, 0]}>
-              {/* Suspended Steel Wire Cables */}
-              <mesh position={[-1.4, 0.9, 0]}>
-                <cylinderGeometry args={[0.01, 0.01, 1.8, 8]} />
-                <meshStandardMaterial color="#90A4AE" metalness={0.9} />
-              </mesh>
-              <mesh position={[1.4, 0.9, 0]}>
-                <cylinderGeometry args={[0.01, 0.01, 1.8, 8]} />
-                <meshStandardMaterial color="#90A4AE" metalness={0.9} />
-              </mesh>
-
-              {/* Sign Board Body — dark glass panel */}
-              <mesh castShadow>
-                <boxGeometry args={[3.4, 0.85, 0.1]} />
-                <meshStandardMaterial color="#0B1322" roughness={0.3} metalness={0.6} />
-              </mesh>
-
-              {/* Luminous Department Accent Neon Bottom Strip */}
-              <mesh position={[0, -0.43, 0]}>
-                <boxGeometry args={[3.3, 0.06, 0.12]} />
-                <meshBasicMaterial color={zone.accentColor} />
-              </mesh>
-
-              {/* Front Sign Face (3D Texture - NEVER leaks over UI drawers) */}
-              {texture && (
-                <mesh position={[0, 0, 0.055]}>
-                  <planeGeometry args={[3.3, 0.8]} />
-                  <meshBasicMaterial map={texture} transparent />
+            {showSign && (
+              <group position={[0, SIGN_HEIGHT, 0]}>
+                {/* Suspension cables */}
+                <mesh position={[-signWidth * 0.38, 0.55, 0]}>
+                  <cylinderGeometry args={[0.008, 0.008, 1.1, 6]} />
+                  <meshStandardMaterial
+                    color={RetailPalette.baseboard}
+                    metalness={0.55}
+                    roughness={0.4}
+                  />
                 </mesh>
-              )}
-
-              {/* Back Sign Face (Double Sided) */}
-              {texture && (
-                <mesh position={[0, 0, -0.055]} rotation={[0, Math.PI, 0]}>
-                  <planeGeometry args={[3.3, 0.8]} />
-                  <meshBasicMaterial map={texture} transparent />
+                <mesh position={[signWidth * 0.38, 0.55, 0]}>
+                  <cylinderGeometry args={[0.008, 0.008, 1.1, 6]} />
+                  <meshStandardMaterial
+                    color={RetailPalette.baseboard}
+                    metalness={0.55}
+                    roughness={0.4}
+                  />
                 </mesh>
-              )}
-            </group>
+
+                {/* Thin wall-trim frame behind a white face */}
+                <mesh>
+                  <boxGeometry args={[signWidth + 0.05, 0.56, 0.05]} />
+                  <meshStandardMaterial
+                    color={RetailPalette.wallTrim}
+                    roughness={0.7}
+                    metalness={0.1}
+                  />
+                </mesh>
+                <mesh castShadow>
+                  <boxGeometry args={[signWidth, 0.5, 0.055]} />
+                  <meshStandardMaterial
+                    color={RetailPalette.signFace}
+                    roughness={0.85}
+                    metalness={0.05}
+                  />
+                </mesh>
+
+                {texture && (
+                  <>
+                    <mesh position={[0, 0, 0.03]}>
+                      <planeGeometry args={[signWidth - 0.05, 0.44]} />
+                      <meshBasicMaterial map={texture} toneMapped={false} />
+                    </mesh>
+                    <mesh position={[0, 0, -0.03]} rotation={[0, Math.PI, 0]}>
+                      <planeGeometry args={[signWidth - 0.05, 0.44]} />
+                      <meshBasicMaterial map={texture} toneMapped={false} />
+                    </mesh>
+                  </>
+                )}
+              </group>
+            )}
           </group>
         )
       })}

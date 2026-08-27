@@ -256,7 +256,7 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
                 <svg
                   viewBox="0 0 48 48"
                   fill="none"
-                  stroke="#0284C7"
+                  stroke="#0F766E"
                   strokeWidth="3.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"

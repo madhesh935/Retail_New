@@ -11,7 +11,6 @@ import {
   BarChart3,
   Cpu,
   X,
-  Radio,
   Sparkles,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
@@ -60,11 +59,11 @@ export const MobileNavDrawer: React.FC = () => {
         className={cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all select-none',
           isActive
-            ? 'bg-sky-50 text-sky-700 font-semibold border-l-2 border-sky-600 shadow-xs'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            ? 'erp-nav-active font-semibold'
+            : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 border border-transparent'
         )}
       >
-        <Icon className={cn('h-4 w-4', isActive ? 'text-sky-600' : 'text-slate-400')} />
+        <Icon className={cn('h-4 w-4', isActive ? 'text-sky-700' : 'text-slate-400')} />
         <span className="flex-1 font-sans">{item.label}</span>
         {item.badgeKey === 'activeIncidents' && activeIncidentsCount > 0 && (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200">
@@ -82,7 +81,7 @@ export const MobileNavDrawer: React.FC = () => {
           </span>
         )}
         {item.badgeKey === 'aiCopilotActive' && (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">
             AI
           </span>
         )}
@@ -99,18 +98,18 @@ export const MobileNavDrawer: React.FC = () => {
       />
 
       {/* Drawer Panel */}
-      <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-white border-r border-slate-200 z-10 p-3 shadow-2xl animate-in slide-in-from-left duration-200">
+      <div className="relative flex flex-col w-72 max-w-[80vw] h-full erp-shell-sidebar z-10 p-3 shadow-2xl animate-in slide-in-from-left duration-200">
         {/* Brand Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-md bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
-              <Radio className="h-4 w-4 text-sky-600" />
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl erp-brand-mark text-white flex items-center justify-center font-extrabold text-[11px]">
+              RE
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 font-sans uppercase">
-                Retail Edge OS
+              <div className="text-[13px] font-extrabold text-slate-900 tracking-tight">
+                Retail Edge
               </div>
-              <div className="text-[9px] text-sky-600 font-mono">
+              <div className="text-[10px] text-sky-700 font-semibold">
                 Store Operations Hub
               </div>
             </div>

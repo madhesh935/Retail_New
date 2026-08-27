@@ -52,7 +52,7 @@ export const TopHeader: React.FC = () => {
   const isStale = isConnected && lastPacketAgeMs > 25000
 
   return (
-    <header className="h-14 border-b border-slate-200 bg-white px-4 flex items-center justify-between gap-4 sticky top-0 z-30 select-none font-sans shadow-xs">
+    <header className="h-14 erp-shell-header px-4 flex items-center justify-between gap-4 sticky top-0 z-30 select-none font-sans">
       {/* Left Section: Mobile Menu Trigger, Store Selector & Live Indicator */}
       <div className="flex items-center gap-3 shrink-0">
         <Button
@@ -69,7 +69,7 @@ export const TopHeader: React.FC = () => {
         <StoreSelector />
 
         {/* Real Connection State Badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs shrink-0 whitespace-nowrap">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/90 text-xs shrink-0 whitespace-nowrap shadow-[0_1px_2px_rgb(15_23_42/0.04)]">
           {isConnected && !isStale ? (
             <>
               <span className="relative flex h-2 w-2 shrink-0">
@@ -100,7 +100,7 @@ export const TopHeader: React.FC = () => {
       {/* Middle Operational Status Elements */}
       <div className="hidden lg:flex items-center gap-2.5 text-xs text-slate-600 shrink-0 whitespace-nowrap">
         {/* Cameras Status */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/90 shadow-[0_1px_2px_rgb(15_23_42/0.04)]">
           <Camera className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
           <span>
             <strong className="text-slate-900 font-mono">{onlineCameras}/{totalCameras}</strong> Cameras Online
@@ -110,7 +110,7 @@ export const TopHeader: React.FC = () => {
         {/* Edge Node Online - Popover for hardware infrastructure */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 hover:border-sky-400 hover:text-sky-700 transition-colors cursor-pointer text-xs">
+            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/90 hover:border-sky-300 hover:text-sky-800 transition-colors cursor-pointer text-xs shadow-[0_1px_2px_rgb(15_23_42/0.04)]">
               <Cpu className="h-3.5 w-3.5 text-sky-600 shrink-0" />
               <span className="font-medium">Edge Node Online</span>
               <ChevronDown className="h-3 w-3 text-slate-400" />

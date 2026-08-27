@@ -9,6 +9,7 @@ import {
   Eye,
   AlertTriangle,
   ArrowRight,
+  CalendarClock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { WhyDialogData } from './WhyRecommendationDialog'
@@ -334,35 +335,27 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
           </div>
         </div>
 
-        {/* COMPACT SAFETY NOTICE */}
-        <div className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 shadow-2xs">
+        {/* COMPACT EXPIRY RISK NOTICE */}
+        <div className="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60 flex items-center justify-between gap-2 shadow-2xs">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+            <CalendarClock className="h-4 w-4 text-amber-600 shrink-0" />
             <div>
-              <span className="text-xs font-semibold text-slate-900 block">Cooler 2 Spill</span>
-              <span className="text-[11px] text-slate-500">Sarah assigned • Cone deployed</span>
+              <span className="text-xs font-semibold text-slate-900 block">Expiry Risk</span>
+              <span className="text-[11px] text-amber-800">
+                12 SKUs &lt;72h • 38 units at risk
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => navigate('/incidents')}
-              className="text-xs h-7 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-100 gap-1 shadow-2xs"
-            >
-              <span>View</span>
-              <ArrowRight className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => onOpenWhy(spillWhyData)}
-              className="text-sky-600 hover:text-sky-800 text-xs h-7 px-1.5 font-medium"
-            >
-              Why?
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => navigate('/inventory')}
+            className="text-xs h-7 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-100 gap-1 shadow-2xs shrink-0"
+          >
+            <span>Open Inventory</span>
+            <ArrowRight className="h-3 w-3" />
+          </Button>
         </div>
       </div>
     </div>

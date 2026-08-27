@@ -229,7 +229,7 @@ export const SmartMapRoutePage: React.FC = () => {
             setIsNavigatingToCheckout(false)
             setReachedCheckoutConfirmation(false)
           }}
-          className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-sm h-12 rounded-2xl font-extrabold shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+          className="w-full bg-gradient-to-r from-teal-700 to-teal-600 hover:from-teal-800 hover:to-teal-700 text-white text-sm h-12 rounded-2xl font-extrabold shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
         >
           <Navigation className="h-4.5 w-4.5" />
           <span>START NAVIGATION</span>

@@ -81,7 +81,7 @@ export const FootfallTrendChart: React.FC = () => {
           smooth: true,
           data: actualCounts,
           showSymbol: false,
-          lineStyle: { color: '#0284C7', width: 2.5 },
+          lineStyle: { color: '#0F766E', width: 2.5 },
           areaStyle: {
             color: {
               type: 'linear',

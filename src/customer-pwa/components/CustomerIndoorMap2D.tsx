@@ -180,7 +180,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative flex items-center justify-center">
               <span className="absolute -inset-1 rounded-xl bg-cyan-400 opacity-40 animate-ping" />
-              <div className="relative h-8 w-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+              <div className="relative h-8 w-8 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
                 {currentWaypointIndex >= 5 ? '✓' : currentWaypointIndex}
               </div>
             </div>
@@ -300,12 +300,12 @@ export const CustomerIndoorMap2D: React.FC = () => {
 
             {/* Glowing Active Laser Aura */}
             <filter id="routeGlowFilter" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="4.5" floodColor="#0284C7" floodOpacity="0.8" />
+              <feDropShadow dx="0" dy="0" stdDeviation="4.5" floodColor="#0F766E" floodOpacity="0.8" />
             </filter>
 
             {/* Intense Photon Glow */}
             <filter id="photonGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#38BDF8" floodOpacity="1" />
+              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#2DD4BF" floodOpacity="1" />
             </filter>
 
             {/* Crowd Congestion Heatmap Gradient */}
@@ -346,7 +346,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
           {/* Customer Service Help Desk */}
           <g transform="translate(18, 62)">
             <rect x="0" y="0" width="75" height="55" rx="8" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" filter="url(#gondolaShadow)" />
-            <text x="37.5" y="20" fill="#0284C7" fontSize="8" fontWeight="800" textAnchor="middle">HELP DESK</text>
+            <text x="37.5" y="20" fill="#0F766E" fontSize="8" fontWeight="800" textAnchor="middle">HELP DESK</text>
             <text x="37.5" y="33" fill="#64748B" fontSize="6.5" fontWeight="600" textAnchor="middle">Customer Care</text>
             <text x="37.5" y="44" fill="#94A3B8" fontSize="6" textAnchor="middle">Lost &amp; Found</text>
           </g>
@@ -391,14 +391,14 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="88"
               rx="8"
               fill="#FFFFFF"
-              stroke={activeStepIndex === 1 ? '#0284C7' : '#38BDF8'}
+              stroke={activeStepIndex === 1 ? '#0F766E' : '#2DD4BF'}
               strokeWidth={activeStepIndex === 1 ? '2.5' : '1.5'}
               filter="url(#gondolaShadow)"
             />
             <rect x="0" y="0" width="90" height="22" rx="8" fill="#E0F2FE" />
-            <text x="45" y="15" fill="#0369A1" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 2 • Dairy &amp; Milk</text>
-            <rect x="8" y="28" width="22" height="22" rx="4" fill="#E0F2FE" stroke="#7DD3FC" strokeWidth="1" />
-            <text x="19" y="42" fill="#0284C7" fontSize="7" fontWeight="bold" textAnchor="middle">C1</text>
+            <text x="45" y="15" fill="#0F766E" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 2 • Dairy &amp; Milk</text>
+            <rect x="8" y="28" width="22" height="22" rx="4" fill="#E0F2FE" stroke="#99F6E4" strokeWidth="1" />
+            <text x="19" y="42" fill="#0F766E" fontSize="7" fontWeight="bold" textAnchor="middle">C1</text>
             <rect
               x="34"
               y="28"
@@ -406,13 +406,13 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="22"
               rx="4"
               fill={activeStepIndex === 1 ? '#BAE6FD' : '#E0F2FE'}
-              stroke={activeStepIndex === 1 ? '#0284C7' : '#7DD3FC'}
+              stroke={activeStepIndex === 1 ? '#0F766E' : '#99F6E4'}
               strokeWidth={activeStepIndex === 1 ? '2' : '1'}
             />
-            <text x="45" y="42" fill="#0369A1" fontSize="7" fontWeight="800" textAnchor="middle">C2★</text>
-            <rect x="60" y="28" width="22" height="22" rx="4" fill="#E0F2FE" stroke="#7DD3FC" strokeWidth="1" />
-            <text x="71" y="42" fill="#0284C7" fontSize="7" fontWeight="bold" textAnchor="middle">C3</text>
-            <text x="45" y="62" fill="#0284C7" fontSize="7" fontWeight="bold" textAnchor="middle">REFRIGERATED WALL</text>
+            <text x="45" y="42" fill="#0F766E" fontSize="7" fontWeight="800" textAnchor="middle">C2★</text>
+            <rect x="60" y="28" width="22" height="22" rx="4" fill="#E0F2FE" stroke="#99F6E4" strokeWidth="1" />
+            <text x="71" y="42" fill="#0F766E" fontSize="7" fontWeight="bold" textAnchor="middle">C3</text>
+            <text x="45" y="62" fill="#0F766E" fontSize="7" fontWeight="bold" textAnchor="middle">REFRIGERATED WALL</text>
             <text x="45" y="75" fill="#64748B" fontSize="6.5" textAnchor="middle">Milk, Butter &amp; Yogurt</text>
           </g>
 
@@ -505,7 +505,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="88"
               rx="8"
               fill="#FFFFFF"
-              stroke={activeStepIndex === 4 ? '#0284C7' : '#CBD5E1'}
+              stroke={activeStepIndex === 4 ? '#0F766E' : '#CBD5E1'}
               strokeWidth={activeStepIndex === 4 ? '2.5' : '1.5'}
               filter="url(#gondolaShadow)"
             />
@@ -593,7 +593,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
                     <path
                       d={leg.d}
                       fill="none"
-                      stroke="#0284C7"
+                      stroke="#0F766E"
                       strokeWidth="8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -605,7 +605,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
                     <path
                       d={leg.d}
                       fill="none"
-                      stroke="#0284C7"
+                      stroke="#0F766E"
                       strokeWidth="4.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -624,7 +624,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
                     />
 
                     {/* Layer D: Travelling High-Energy Photon Beads (Moving continuously along path) */}
-                    <circle r="4.5" fill="#38BDF8" filter="url(#photonGlow)">
+                    <circle r="4.5" fill="#2DD4BF" filter="url(#photonGlow)">
                       <animateMotion dur="2.2s" repeatCount="indefinite" path={leg.d} />
                     </circle>
                     <circle r="3" fill="#FFFFFF">
@@ -669,8 +669,8 @@ export const CustomerIndoorMap2D: React.FC = () => {
                 {/* Active Target Multi-Ring Radar Pulses */}
                 {isCurrent && (
                   <>
-                    <circle cx="0" cy="0" r="26" fill="#0284C7" opacity="0.2" className="animate-ping" />
-                    <circle cx="0" cy="0" r="16" fill="#38BDF8" opacity="0.3" className="animate-pulse" />
+                    <circle cx="0" cy="0" r="26" fill="#0F766E" opacity="0.2" className="animate-ping" />
+                    <circle cx="0" cy="0" r="16" fill="#2DD4BF" opacity="0.3" className="animate-pulse" />
                   </>
                 )}
 
@@ -679,7 +679,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
                   cx="0"
                   cy="0"
                   r={isCurrent ? '14' : isVisited ? '10' : '11'}
-                  fill={isCurrent ? '#0284C7' : isVisited ? '#10B981' : '#64748B'}
+                  fill={isCurrent ? '#0F766E' : isVisited ? '#10B981' : '#64748B'}
                   stroke="#FFFFFF"
                   strokeWidth={isCurrent ? '3' : '2'}
                   filter="url(#gondolaShadow)"
@@ -700,8 +700,8 @@ export const CustomerIndoorMap2D: React.FC = () => {
                 {/* Floating Animated Target Badge Flag */}
                 {isCurrent && (
                   <g transform="translate(0, -22)" className="floating-target-pin">
-                    <rect x="-28" y="-14" width="56" height="15" rx="5" fill="#0F172A" stroke="#38BDF8" strokeWidth="1" />
-                    <text x="0" y="-3.5" fill="#38BDF8" fontSize="7.5" fontWeight="900" textAnchor="middle">
+                    <rect x="-28" y="-14" width="56" height="15" rx="5" fill="#0F172A" stroke="#2DD4BF" strokeWidth="1" />
+                    <text x="0" y="-3.5" fill="#2DD4BF" fontSize="7.5" fontWeight="900" textAnchor="middle">
                       {wp.shelf}
                     </text>
                   </g>
@@ -719,17 +719,17 @@ export const CustomerIndoorMap2D: React.FC = () => {
             className="pointer-events-none"
           >
             {/* Triple Layer Pulsing Radar */}
-            <circle cx="0" cy="0" r="28" fill="#0284C7" opacity="0.15" className="animate-ping" />
-            <circle cx="0" cy="0" r="18" fill="#0284C7" opacity="0.25" className="animate-pulse" />
-            <circle cx="0" cy="0" r="11" fill="#0284C7" stroke="#FFFFFF" strokeWidth="2.5" />
+            <circle cx="0" cy="0" r="28" fill="#0F766E" opacity="0.15" className="animate-ping" />
+            <circle cx="0" cy="0" r="18" fill="#0F766E" opacity="0.25" className="animate-pulse" />
+            <circle cx="0" cy="0" r="11" fill="#0F766E" stroke="#FFFFFF" strokeWidth="2.5" />
             <circle cx="0" cy="0" r="4" fill="#FFFFFF" />
 
             {/* Glowing Heading Arrow */}
-            <polygon points="0,-16 -4,-11 4,-11" fill="#0284C7" />
+            <polygon points="0,-16 -4,-11 4,-11" fill="#0F766E" />
 
             {/* YOU Floating Badge */}
             <g transform="translate(0, 14)">
-              <rect x="-16" y="0" width="32" height="13" rx="4" fill="#0284C7" stroke="#FFFFFF" strokeWidth="1" />
+              <rect x="-16" y="0" width="32" height="13" rx="4" fill="#0F766E" stroke="#FFFFFF" strokeWidth="1" />
               <text x="0" y="9" fill="#FFFFFF" fontSize="7.5" fontWeight="900" textAnchor="middle">
                 YOU
               </text>

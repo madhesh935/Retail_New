@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { StoreFloor } from './scene/StoreFloor'
@@ -11,174 +11,264 @@ import { HeatmapFloor3D } from './scene/HeatmapFloor3D'
 import { CameraCoverage3D, Camera3DData } from './scene/CameraCoverage3D'
 import { IncidentBeacons3D } from './scene/IncidentBeacons3D'
 import { ZoneLabels3D, Zone3DData } from './scene/ZoneLabels3D'
+import { TaskMarkers3D } from './scene/TaskMarkers3D'
+import { CustomerRequestMarkers3D } from './scene/CustomerRequestMarkers3D'
 import { TwinLayerState } from './controls/LayerControlPanel'
 import { TwinViewMode } from './controls/TopViewportControls'
 import { TwinTooltip, TooltipData } from './controls/TwinTooltip'
+import {
+  RetailPalette,
+  ISOMETRIC_CAMERA,
+  TOP_CAMERA,
+  CAMERA_TRANSITION_MS,
+} from './theme/retailPalette'
 
 interface CameraControllerProps {
   viewMode: TwinViewMode
   resetTrigger: number
   fitTrigger: number
+  focusTarget?: { position: [number, number, number]; distance?: number } | null
 }
 
+function resolveDefaultPose(viewMode: TwinViewMode) {
+  if (viewMode === 'TOP_VIEW') {
+    return {
+      position: new THREE.Vector3(...TOP_CAMERA.position),
+      target: new THREE.Vector3(...TOP_CAMERA.target),
+      enableRotate: false,
+    }
+  }
+  return {
+    position: new THREE.Vector3(...ISOMETRIC_CAMERA.position),
+    target: new THREE.Vector3(...ISOMETRIC_CAMERA.target),
+    enableRotate: true,
+  }
+}
+
+function resolveFocusPose(
+  focus: { position: [number, number, number]; distance?: number },
+  viewMode: TwinViewMode
+) {
+  const [fx, fy, fz] = focus.position
+  const distance = focus.distance ?? 12
+  const target = new THREE.Vector3(fx, Math.max(fy, 0.6), fz)
+
+  if (viewMode === 'TOP_VIEW') {
+    return {
+      position: new THREE.Vector3(fx, Math.max(distance * 2.2, 18), fz + 0.001),
+      target,
+      enableRotate: false,
+    }
+  }
+
+  // Elevated isometric offset — keep current orbit azimuth feel
+  const offset = new THREE.Vector3(-1.05, 1.25, 1.05).normalize().multiplyScalar(distance)
+  return {
+    position: new THREE.Vector3(fx, fy, fz).add(offset),
+    target,
+    enableRotate: true,
+  }
+}
+
+const ORBIT_MOUSE_BUTTONS = {
+  LEFT: THREE.MOUSE.ROTATE,
+  MIDDLE: THREE.MOUSE.DOLLY,
+  RIGHT: THREE.MOUSE.PAN,
+} as const
+
+const ORBIT_TOUCHES = {
+  ONE: THREE.TOUCH.ROTATE,
+  TWO: THREE.TOUCH.DOLLY_PAN,
+} as const
+
+const HEMI_ARGS: [string, string, number] = [
+  RetailPalette.ambientSky,
+  RetailPalette.ambientGround,
+  0.85,
+]
+const BG_ARGS: [string] = [RetailPalette.sky]
+const KEY_LIGHT_POS: [number, number, number] = [14, 28, 12]
+const FILL_LIGHT_POS: [number, number, number] = [-16, 18, -12]
+
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+/**
+ * OrbitControls owns interaction. Programmatic fly-to only runs while `animating`
+ * is true, and is cancelled immediately when the user starts dragging.
+ */
 const CameraController: React.FC<CameraControllerProps> = ({
   viewMode,
   resetTrigger,
   fitTrigger,
+  focusTarget = null,
 }) => {
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
   const controlsRef = useRef<any>(null)
 
-  useEffect(() => {
-    if (viewMode === 'TOP_VIEW') {
-      camera.position.set(0, 36, 0.001)
-      camera.lookAt(0, 0, 0)
-      if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, 0)
-        controlsRef.current.enableRotate = false
-      }
-    } else {
-      // Cinematic 3D isometric command center view
-      camera.position.set(-6, 22, 27)
-      camera.lookAt(0, 0, -2)
-      if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, -2)
-        controlsRef.current.enableRotate = true
-      }
-    }
-  }, [viewMode, camera])
+  const animating = useRef(false)
+  const animElapsed = useRef(0)
+  const animDuration = useRef(CAMERA_TRANSITION_MS / 1000)
+  const startPos = useRef(new THREE.Vector3())
+  const startTarget = useRef(new THREE.Vector3())
+  const goalPos = useRef(new THREE.Vector3(...ISOMETRIC_CAMERA.position))
+  const goalTarget = useRef(new THREE.Vector3(...ISOMETRIC_CAMERA.target))
+  const lastFocusKey = useRef<string | null>(null)
+  const lastHomeKey = useRef('')
 
-  useEffect(() => {
-    if (resetTrigger > 0) {
-      if (viewMode === 'TOP_VIEW') {
-        camera.position.set(0, 36, 0.001)
-        camera.lookAt(0, 0, 0)
-        if (controlsRef.current) controlsRef.current.target.set(0, 0, 0)
-      } else {
-        camera.position.set(-6, 22, 27)
-        camera.lookAt(0, 0, -2)
-        if (controlsRef.current) controlsRef.current.target.set(0, 0, -2)
-      }
-    }
-  }, [resetTrigger, viewMode, camera])
+  const stopAnimation = useCallback(() => {
+    animating.current = false
+    animElapsed.current = 0
+  }, [])
 
+  const beginTransition = useCallback(
+    (position: THREE.Vector3, target: THREE.Vector3, enableRotate: boolean, durationSec?: number) => {
+      const controls = controlsRef.current
+      startPos.current.copy(camera.position)
+      startTarget.current.copy(controls?.target ?? new THREE.Vector3())
+      goalPos.current.copy(position)
+      goalTarget.current.copy(target)
+      animElapsed.current = 0
+      animDuration.current = durationSec ?? CAMERA_TRANSITION_MS / 1000
+      animating.current = true
+      if (controls) {
+        controls.enableRotate = enableRotate
+        controls.enablePan = true
+        controls.enableZoom = true
+      }
+    },
+    [camera]
+  )
+
+  // Home pose: view mode / reset / fit only
   useEffect(() => {
-    if (fitTrigger > 0) {
-      camera.position.set(-6, 22, 27)
-      camera.lookAt(0, 0, -2)
-      if (controlsRef.current) controlsRef.current.target.set(0, 0, -2)
+    const key = `${viewMode}|${resetTrigger}|${fitTrigger}`
+    if (key === lastHomeKey.current) return
+    lastHomeKey.current = key
+    lastFocusKey.current = null
+    const pose = resolveDefaultPose(viewMode)
+    beginTransition(pose.position, pose.target, pose.enableRotate, 0.75)
+  }, [viewMode, resetTrigger, fitTrigger, beginTransition])
+
+  // Focus fly-to when selection changes
+  useEffect(() => {
+    if (!focusTarget) {
+      lastFocusKey.current = null
+      return
     }
-  }, [fitTrigger, camera])
+    const key = `${focusTarget.position.join(',')}|${focusTarget.distance ?? 12}|${viewMode}`
+    if (key === lastFocusKey.current) return
+    lastFocusKey.current = key
+    const pose = resolveFocusPose(focusTarget, viewMode)
+    beginTransition(pose.position, pose.target, pose.enableRotate, 0.85)
+  }, [focusTarget, viewMode, beginTransition])
+
+  // Cancel scripted animation as soon as the user grabs the view
+  useEffect(() => {
+    const el = gl.domElement
+    const onUserStart = () => stopAnimation()
+    const onContextMenu = (e: Event) => e.preventDefault()
+    el.addEventListener('pointerdown', onUserStart)
+    el.addEventListener('wheel', onUserStart, { passive: true })
+    el.addEventListener('contextmenu', onContextMenu)
+    return () => {
+      el.removeEventListener('pointerdown', onUserStart)
+      el.removeEventListener('wheel', onUserStart)
+      el.removeEventListener('contextmenu', onContextMenu)
+    }
+  }, [gl, stopAnimation])
+
+  useFrame((_, delta) => {
+    const controls = controlsRef.current
+    if (!controls || !animating.current) return
+
+    animElapsed.current += delta
+    const raw = Math.min(1, animElapsed.current / Math.max(animDuration.current, 0.05))
+    const t = easeInOutCubic(raw)
+
+    camera.position.lerpVectors(startPos.current, goalPos.current, t)
+    controls.target.lerpVectors(startTarget.current, goalTarget.current, t)
+    controls.update()
+
+    if (raw >= 1) {
+      camera.position.copy(goalPos.current)
+      controls.target.copy(goalTarget.current)
+      controls.update()
+      animating.current = false
+    }
+  })
+
+  const isTop = viewMode === 'TOP_VIEW'
 
   return (
     <OrbitControls
       ref={controlsRef}
       makeDefault
-      minDistance={8}
-      maxDistance={60}
-      maxPolarAngle={viewMode === 'TOP_VIEW' ? 0 : Math.PI / 2.1}
-      dampingFactor={0.07}
       enableDamping
+      dampingFactor={0.08}
+      rotateSpeed={0.72}
+      panSpeed={0.9}
+      zoomSpeed={1.05}
+      minDistance={5}
+      maxDistance={65}
+      minPolarAngle={isTop ? 0 : 0.25}
+      maxPolarAngle={isTop ? 0.02 : Math.PI / 2.08}
+      enableRotate={!isTop}
+      screenSpacePanning
+      // Left = orbit, right/middle = pan — standard 3D viewport feel
+      mouseButtons={ORBIT_MOUSE_BUTTONS}
+      touches={ORBIT_TOUCHES}
+      onStart={stopAnimation}
     />
   )
 }
 
-// ============================================================
-// ARCHITECTURAL CEILING TRUSSES, HVAC DUCTS & LED FIXTURES
-// ============================================================
-const SupermarketCeilingRig: React.FC = () => {
-  const lightStrips = [
-    { x: -14, z: -6, length: 16, rotate: false },
-    { x: -8,  z: -6, length: 16, rotate: false },
-    { x: -2,  z: -6, length: 16, rotate: false },
-    { x: 4,   z: -6, length: 16, rotate: false },
-    { x: 10,  z: -6, length: 16, rotate: false },
-    { x: 16,  z: -6, length: 16, rotate: false },
-    { x: 14,  z: 4.5, length: 12, rotate: false },
-    { x: 0,   z: -11, length: 42, rotate: true },
-    { x: 0,   z: 2.5, length: 42, rotate: true },
-    { x: 0,   z: 11.5, length: 42, rotate: true },
+/** Optional subtle white light strips — cutaway isometric (no dark industrial ceiling). */
+const SubtleOverheadStrips: React.FC = () => {
+  const strips = [
+    { x: -10, z: -4, length: 14 },
+    { x: 0, z: -4, length: 14 },
+    { x: 10, z: -4, length: 14 },
+    { x: -10, z: 6, length: 10 },
+    { x: 6, z: 6, length: 10 },
   ]
 
   return (
-    <group position={[0, 6.2, 0]}>
-      {/* 1. Industrial Dark Steel Ceiling Trusses */}
-      {[-12, -4, 4, 12].map((zPos, idx) => (
-        <group key={`truss-${idx}`} position={[0, 0.4, zPos]}>
-          {/* Main horizontal beam */}
-          <mesh>
-            <boxGeometry args={[44, 0.2, 0.2]} />
-            <meshStandardMaterial color="#1E293B" metalness={0.8} roughness={0.3} />
-          </mesh>
-          {/* Diagonal braces */}
-          {[-16, -8, 0, 8, 16].map((bx, bIdx) => (
-            <mesh key={bIdx} position={[bx, -0.2, 0]} rotation={[0, 0, Math.PI / 4]}>
-              <boxGeometry args={[0.08, 0.6, 0.08]} />
-              <meshStandardMaterial color="#1E293B" metalness={0.8} roughness={0.3} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-
-      {/* 2. HVAC Spiral Metal Air Ventilation Ducts */}
-      <group position={[0, 0.8, -3]}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.38, 0.38, 43, 20]} />
-          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+    <group position={[0, 5.8, 0]}>
+      {strips.map((s, i) => (
+        <mesh key={i} position={[s.x, 0, s.z]}>
+          <boxGeometry args={[0.12, 0.02, s.length]} />
+          <meshStandardMaterial
+            color="#FFFFFF"
+            emissive="#FFFFFF"
+            emissiveIntensity={0.15}
+            roughness={0.9}
+            metalness={0}
+          />
         </mesh>
-        {/* Duct hanging brackets */}
-        {[-15, -7.5, 0, 7.5, 15].map((hx, hIdx) => (
-          <mesh key={hIdx} position={[hx, 0.35, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.7, 8]} />
-            <meshStandardMaterial color="#64748B" metalness={0.9} />
-          </mesh>
-        ))}
-      </group>
-
-      {/* 3. Linear Suspended LED Luminaire Strips */}
-      {lightStrips.map((s, i) => (
-        <group
-          key={i}
-          position={[s.x, 0, s.z]}
-          rotation={s.rotate ? [0, Math.PI / 2, 0] : [0, 0, 0]}
-        >
-          {/* Dark aluminium fixture housing */}
-          <mesh>
-            <boxGeometry args={[0.26, 0.08, s.length]} />
-            <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.2} />
-          </mesh>
-          {/* Cool White Glowing LED Diffuser Bar */}
-          <mesh position={[0, -0.015, 0]}>
-            <boxGeometry args={[0.2, 0.025, s.length - 0.1]} />
-            <meshBasicMaterial color="#E0F2FE" />
-          </mesh>
-          {/* Suspension wire cords */}
-          <mesh position={[0, 0.25, -s.length * 0.4]}>
-            <cylinderGeometry args={[0.01, 0.01, 0.5, 6]} />
-            <meshBasicMaterial color="#64748B" />
-          </mesh>
-          <mesh position={[0, 0.25, s.length * 0.4]}>
-            <cylinderGeometry args={[0.01, 0.01, 0.5, 6]} />
-            <meshBasicMaterial color="#64748B" />
-          </mesh>
-        </group>
       ))}
     </group>
   )
 }
 
-interface DigitalTwinViewportProps {
+export interface DigitalTwinViewportProps {
   layers: TwinLayerState
   viewMode: TwinViewMode
   resetTrigger: number
   fitTrigger: number
   replaySpeed: number
+  focusTarget?: { position: [number, number, number]; distance?: number } | null
+  selectedEntityId?: string | null
   onSelectShelf: (shelf: Shelf3DData) => void
   onSelectCheckout: (checkout: Checkout3DData) => void
   onSelectZone: (zone: Zone3DData) => void
   onSelectCamera: (cam: Camera3DData) => void
   onSelectStaff?: (staff: Staff3DData) => void
   onSelectIncident?: (incident: any) => void
+  onSelectTask?: (task: any) => void
+  onSelectCustomerRequest?: (req: any) => void
+  onClearHover?: () => void
 }
 
 export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
@@ -187,168 +277,142 @@ export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
   resetTrigger,
   fitTrigger,
   replaySpeed,
+  focusTarget = null,
+  selectedEntityId = null,
   onSelectShelf,
   onSelectCheckout,
   onSelectZone,
   onSelectCamera,
   onSelectStaff,
   onSelectIncident,
+  onSelectTask,
+  onSelectCustomerRequest,
+  onClearHover,
 }) => {
   const [hoverData, setHoverData] = useState<TooltipData | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null)
+  const hoverRef = useRef<(data: TooltipData | null) => void>(() => {})
 
-  // Listen to window-level mousemove so R3F canvas event interception doesn't block cursor updates
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return
-      const rect = containerRef.current.getBoundingClientRect()
-      // If cursor is within viewport bounds
-      if (
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom
-      ) {
-        setCursorPos({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        })
-      }
-    }
+  void selectedEntityId
+  void replaySpeed
 
-    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
-    return () => window.removeEventListener('mousemove', handleGlobalMouseMove)
+  // Stable hover callback so child meshes don't see a new function every move
+  hoverRef.current = (data: TooltipData | null) => {
+    setHoverData(data)
+    if (!data) onClearHover?.()
+  }
+  const handleHover = useCallback((data: TooltipData | null) => {
+    hoverRef.current(data)
   }, [])
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[580px] bg-slate-950 rounded-xl border border-slate-200 shadow-2xs overflow-hidden"
+      className="relative w-full h-full min-h-[580px] bg-slate-100 rounded-xl border border-slate-200 shadow-2xs overflow-hidden cursor-grab active:cursor-grabbing touch-none"
     >
-      {/* Unified Hover Tooltip Overlay with Continuous Floating Tracking */}
-      <TwinTooltip
-        data={hoverData}
-        cursorPos={cursorPos}
-        containerRef={containerRef}
-      />
+      <TwinTooltip data={hoverData} containerRef={containerRef} />
 
       <Canvas
         shadows
+        dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         className="w-full h-full"
+        frameloop="always"
       >
-        {/* Deep sleek command center background */}
-        <color attach="background" args={['#070B14']} />
+        <color attach="background" args={BG_ARGS} />
 
-        <PerspectiveCamera makeDefault position={[-6, 22, 27]} fov={45} />
+        <PerspectiveCamera
+          makeDefault
+          position={ISOMETRIC_CAMERA.position}
+          fov={ISOMETRIC_CAMERA.fov}
+          near={0.5}
+          far={140}
+        />
         <CameraController
           viewMode={viewMode}
           resetTrigger={resetTrigger}
           fitTrigger={fitTrigger}
+          focusTarget={focusTarget}
         />
 
-        {/* ======================================================= */}
-        {/* CINEMATIC DIGITAL TWIN LIGHTING RIG                      */}
-        {/* ======================================================= */}
+        <hemisphereLight args={HEMI_ARGS} position={[0, 30, 0]} />
 
-        {/* 1. Hemisphere: Deep Cyan Sky + Dark Slate Floor Bounce */}
-        <hemisphereLight
-          args={['#38BDF8', '#0F172A', 1.05]}
-          position={[0, 30, 0]}
-        />
-
-        {/* 2. Main Key Directional Light (Casts crisp geometric shadows) */}
         <directionalLight
-          position={[12, 28, 16]}
-          intensity={2.1}
+          position={KEY_LIGHT_POS}
+          intensity={1.25}
           color="#FFFFFF"
           castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-bias={-0.0002}
-          shadow-camera-near={0.5}
-          shadow-camera-far={80}
-          shadow-camera-left={-30}
-          shadow-camera-right={30}
-          shadow-camera-top={24}
-          shadow-camera-bottom={-24}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-bias={-0.00015}
+          shadow-normalBias={0.035}
+          shadow-camera-near={1}
+          shadow-camera-far={70}
+          shadow-camera-left={-28}
+          shadow-camera-right={28}
+          shadow-camera-top={22}
+          shadow-camera-bottom={-22}
         />
 
-        {/* 3. Cool Cyan Fill Directional Light (Gives high-tech edge definition) */}
-        <directionalLight
-          position={[-18, 22, -14]}
-          intensity={1.2}
-          color="#0EA5E9"
-        />
+        <directionalLight position={FILL_LIGHT_POS} intensity={0.4} color="#FFF8F0" />
 
-        {/* 4. Warm Shelf/Counter Rim Highlight */}
-        <directionalLight
-          position={[0, 16, 28]}
-          intensity={0.9}
-          color="#F1F5F9"
-        />
+        <SubtleOverheadStrips />
 
-        {/* 5. Overhead Trusses & Linear LED Light Fixtures */}
-        <SupermarketCeilingRig />
-
-        {/* ======================================================= */}
-        {/* SCENE LAYERS                                             */}
-        {/* ======================================================= */}
-
-        {/* 1. Base Store Floor & Architectural Shell */}
         <StoreFloor />
 
-        {/* 2. Floor-Level Footfall Heatmap Plane */}
         <HeatmapFloor3D showHeatmap={layers.heatmap} />
 
-        {/* 3. Interactive 3D Product Shelves & Gondolas */}
         <StoreShelves3D
           showShelfHealth={layers.shelfHealth}
           onSelectShelf={onSelectShelf}
-          onHoverShelf={setHoverData}
+          onHoverShelf={handleHover}
         />
 
-        {/* 4. Interactive 3D Checkout Counters C1-C4 */}
         <CheckoutLanes3D
           showQueueStatus={layers.queueStatus}
           onSelectCheckout={onSelectCheckout}
-          onHoverCheckout={setHoverData}
+          onHoverCheckout={handleHover}
         />
 
-        {/* 5. Live Anonymous Shopper Human Avatars */}
         <Shoppers3D
           showPositions={layers.shopperPositions}
-          showTrails={layers.shopperTrails}
-          replaySpeedMultiplier={replaySpeed}
+          showTrails={false}
         />
 
-        {/* 6. 3D Staff Avatars with Uniform Vests */}
         <StaffMarkers3D
           showStaff={layers.staff}
           onSelectStaff={onSelectStaff}
-          onHoverStaff={setHoverData}
+          onHoverStaff={handleHover}
         />
 
-        {/* 7. 3D Camera Frustums & Coverage Cones */}
         <CameraCoverage3D
           showCoverage={layers.cameraCoverage}
           onSelectCamera={onSelectCamera}
-          onHoverCamera={setHoverData}
+          onHoverCamera={handleHover}
         />
 
-        {/* 8. Floor Incidents & Caution Cones */}
         <IncidentBeacons3D
           showIncidents={layers.incidents}
           onSelectIncident={onSelectIncident}
-          onHoverIncident={setHoverData}
+          onHoverIncident={handleHover}
         />
 
-        {/* 9. Suspended Departmental Signage Boards */}
         <ZoneLabels3D
           showZones={layers.productZones}
           onSelectZone={onSelectZone}
-          onHoverZone={setHoverData}
+          onHoverZone={handleHover}
+        />
+
+        <TaskMarkers3D
+          showTasks={layers.tasks}
+          onSelectTask={onSelectTask}
+          onHoverTask={handleHover}
+        />
+
+        <CustomerRequestMarkers3D
+          showRequests={layers.customerRequests}
+          onSelectRequest={onSelectCustomerRequest}
+          onHoverRequest={handleHover}
         />
       </Canvas>
     </div>

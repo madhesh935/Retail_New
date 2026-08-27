@@ -15,7 +15,7 @@ import { StaffTask } from '@/types'
 
 interface StaffTodayPageProps {
   onOpenTaskDetails: (task: StaffTask) => void
-  onNavigateTab: (tab: 'today' | 'assist' | 'work' | 'more') => void
+  onNavigateTab: (tab: 'today' | 'assist' | 'scan' | 'work' | 'more') => void
   onOpenHandover: () => void
 }
 

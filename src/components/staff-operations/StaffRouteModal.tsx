@@ -83,8 +83,8 @@ export const StaffRouteModal: React.FC<StaffRouteModalProps> = ({
         <div className="relative h-44 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden p-3 flex flex-col justify-between shadow-inner">
           <svg className="w-full h-full" viewBox="0 0 360 140">
             {/* Origin Node */}
-            <circle cx="50" cy="70" r="16" fill="#FFFFFF" stroke="#0284C7" strokeWidth="2" />
-            <text x="50" y="74" fill="#0284C7" fontSize="10" textAnchor="middle" fontWeight="bold" fontFamily="monospace">
+            <circle cx="50" cy="70" r="16" fill="#FFFFFF" stroke="#0F766E" strokeWidth="2" />
+            <text x="50" y="74" fill="#0F766E" fontSize="10" textAnchor="middle" fontWeight="bold" fontFamily="monospace">
               {staffId}
             </text>
             <text x="50" y="100" fill="#64748B" fontSize="9" textAnchor="middle" fontFamily="sans-serif">
@@ -104,14 +104,14 @@ export const StaffRouteModal: React.FC<StaffRouteModalProps> = ({
             <path
               d="M 68 70 Q 180 30 292 70"
               fill="none"
-              stroke="#0284C7"
+              stroke="#0F766E"
               strokeWidth="2.5"
               strokeDasharray="6 4"
             />
 
             {/* Distance Pill */}
             <rect x="150" y="38" width="60" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
-            <text x="180" y="50" fill="#0284C7" fontSize="8" textAnchor="middle" fontFamily="monospace" fontWeight="bold">
+            <text x="180" y="50" fill="#0F766E" fontSize="8" textAnchor="middle" fontFamily="monospace" fontWeight="bold">
               {distance}m Walk
             </text>
           </svg>

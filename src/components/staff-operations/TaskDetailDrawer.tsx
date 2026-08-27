@@ -174,7 +174,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               size="sm"
               onClick={() => {
                 onClose()
-                navigate('/digital-twin')
+                navigate(`/digital-twin?zone=${task.zoneId}`)
               }}
               className="w-full justify-between h-8 text-xs text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs font-sans"
             >

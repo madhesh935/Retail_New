@@ -227,9 +227,9 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
 
         <div className="flex items-center gap-2">
           {/* People Count Badge */}
-          <span className="px-2.5 py-1 rounded-md bg-sky-50 border border-sky-200 text-sky-700 font-bold text-xs font-mono flex items-center gap-1.5 shadow-2xs">
-            <Users className="h-3.5 w-3.5 text-sky-600" />
-            <span>{liveQueueCount} Shoppers ({liveWaitTime})</span>
+          <span className="px-2.5 py-1 rounded-md bg-sky-50 border border-sky-200 text-sky-700 font-bold text-xs font-mono inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0">
+            <Users className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+            <span className="whitespace-nowrap">{liveQueueCount} Shoppers ({liveWaitTime})</span>
           </span>
 
           {isEditingRoi ? (
@@ -278,7 +278,7 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
-            backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+            backgroundImage: `repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`,
           }}
         />
 

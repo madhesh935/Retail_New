@@ -24,7 +24,7 @@ export const CustomerFloatingCopilot: React.FC = () => {
 
         <CopilotRobotIcon
           className="w-7 h-7 text-cyan-600 group-hover:scale-105 transition-transform"
-          stroke="#0284C7"
+          stroke="#0F766E"
         />
       </button>
     </div>

@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react'
-import * as THREE from 'three'
+import { useAppStore } from '@/store/useAppStore'
 import { TooltipData } from '../controls/TwinTooltip'
+import { RetailPalette } from '../theme/retailPalette'
+import type { StockStatus } from '@/types/inventory.types'
 
 export interface Shelf3DData {
   id: string
@@ -20,6 +22,26 @@ export interface Shelf3DData {
   camera: string
 }
 
+const LIVE_STATUS_MAP: Record<StockStatus, Shelf3DData['status']> = {
+  OPTIMAL: 'HEALTHY',
+  LOW: 'LOW',
+  CRITICAL: 'CRITICAL',
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+  MISPLACED: 'LOW',
+}
+
+/** Muted retail package colors (no neon). */
+const PRODUCT_COLORS = {
+  produce: ['#C45C4A', '#D4894A', '#7A9B4A', '#D4A04A', '#8BAE5A'],
+  beverage: ['#C45C4A', '#5B8FA8', '#C4A04A', '#5A9B6A', '#8B6B5A'],
+  dairy: ['#E8E4DC', '#D4E0E8', '#F0EDE6', '#C8D4DC'],
+  frozen: ['#6B8FA8', '#B85C5C', '#7A9BB0', '#A86B6B'],
+  grocery: ['#B85C4A', '#5A8A7A', '#C4A04A', '#7A6B5A', '#8B7355'],
+  bakery: ['#C4A06A', '#8B6914', '#D4B896', '#A67C52'],
+  deli: ['#C4A04A', '#B85C4A', '#D4B896', '#A86B5A'],
+  endcap: ['#C4A04A', '#B85C4A'],
+} as const
+
 interface StoreShelves3DProps {
   showShelfHealth: boolean
   onSelectShelf: (shelf: Shelf3DData) => void
@@ -32,6 +54,7 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
   onHoverShelf,
 }) => {
   const [hoveredShelfId, setHoveredShelfId] = useState<string | null>(null)
+  const shelfItems = useAppStore((s) => s.shelfItems)
 
   const shelves: (Shelf3DData & {
     position: [number, number, number]
@@ -547,23 +570,46 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
     },
   ]
 
-  const handlePointerOver = (shelf: typeof shelves[0], e: any) => {
+  const liveShelves = useMemo(() => {
+    const liveById = new Map(shelfItems.map((item) => [item.shelfId, item]))
+    return shelves.map((shelf) => {
+      const live = liveById.get(shelf.id)
+      if (!live) return shelf
+      const availability =
+        live.capacityCount > 0
+          ? Math.round((live.currentCount / live.capacityCount) * 100)
+          : shelf.availability
+      return {
+        ...shelf,
+        status: LIVE_STATUS_MAP[live.status] ?? shelf.status,
+        availability,
+        visibleUnits: live.currentCount,
+        sku: live.productName || live.sku || shelf.sku,
+      }
+    })
+    // shelves is a static fixture layout; live metrics come from shelfItems
+  }, [shelfItems])
+
+  const handlePointerOver = (shelf: (typeof liveShelves)[0], e: any) => {
     e.stopPropagation()
     setHoveredShelfId(shelf.id)
     if (onHoverShelf) {
       onHoverShelf({
         type: 'shelf',
-        title: shelf.name,
-        subtitle: `${shelf.sku} • ${shelf.zone}`,
+        title: shelf.code,
+        subtitle: shelf.sku,
         status: shelf.status === 'OUT_OF_STOCK' ? 'OUT OF STOCK' : shelf.status,
-        statusColor: shelf.status === 'CRITICAL' || shelf.status === 'OUT_OF_STOCK' ? 'rose' : shelf.status === 'LOW' ? 'amber' : 'emerald',
+        statusColor:
+          shelf.status === 'CRITICAL' || shelf.status === 'OUT_OF_STOCK'
+            ? 'rose'
+            : shelf.status === 'LOW'
+              ? 'amber'
+              : 'emerald',
         metrics: [
           { label: 'Availability', value: `${shelf.availability}%`, highlight: shelf.availability < 30 },
-          { label: 'Visible Units', value: `${shelf.visibleUnits} units` },
-          { label: 'Backroom Stock', value: `${shelf.posInventory} units` },
-          { label: 'Stockout ETA', value: shelf.stockoutPrediction, highlight: shelf.availability < 30 },
+          { label: 'Visible', value: `${shelf.visibleUnits}` },
+          { label: 'Backroom', value: `${shelf.posInventory}` },
         ],
-        alert: shelf.availability < 20 ? `Predicted Stockout in ${shelf.stockoutPrediction}` : undefined,
         screenX: e.clientX,
         screenY: e.clientY,
       })
@@ -577,11 +623,16 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
 
   return (
     <group>
-      {shelves.map((shelf) => {
+      {liveShelves.map((shelf) => {
         const isHovered = hoveredShelfId === shelf.id
         const isCritical = shelf.status === 'CRITICAL' || shelf.status === 'OUT_OF_STOCK'
         const isLow = shelf.status === 'LOW'
-        const statusColor = isCritical ? '#EF4444' : isLow ? '#F59E0B' : '#10B981'
+        const statusColor = isCritical
+          ? RetailPalette.critical
+          : isLow
+            ? RetailPalette.low
+            : RetailPalette.healthy
+        const edgeEmissive = isCritical ? 0.35 : isLow ? 0.25 : 0.0
 
         return (
           <group
@@ -601,34 +652,30 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               const crateSlots = 5
               const filledCrates = Math.max(1, Math.round((shelf.visibleUnits / Math.max(shelf.capacity, 1)) * crateSlots))
               const crateXPositions = [-1.5, -0.75, 0, 0.75, 1.5]
-              const produceColors = ['#DC2626', '#EA580C', '#65A30D', '#F97316', '#84CC16']
               return (
                 <group>
-                  {/* Dark Walnut Display Base */}
                   <mesh castShadow receiveShadow>
                     <boxGeometry args={[shelf.dimensions[0], 0.6, shelf.dimensions[2]]} />
-                    <meshStandardMaterial color="#3E2723" roughness={0.75} />
+                    <meshStandardMaterial color={RetailPalette.woodDark} roughness={0.75} />
                   </mesh>
-                  {/* Sloped Top Display Platform */}
                   <mesh position={[0, 0.45, 0]} rotation={[0.08, 0, 0]} castShadow>
                     <boxGeometry args={[shelf.dimensions[0] * 0.96, 0.3, shelf.dimensions[2] * 0.94]} />
-                    <meshStandardMaterial color="#4E342E" roughness={0.65} />
+                    <meshStandardMaterial color={RetailPalette.woodProduce} roughness={0.65} />
                   </mesh>
-                  {/* Wooden Crates & Fruit */}
                   {crateXPositions.map((xOffset, idx) => {
                     const hasProduce = idx < filledCrates
                     return (
                       <group key={idx} position={[xOffset, 0.68, 0]}>
                         <mesh castShadow>
                           <boxGeometry args={[0.62, 0.18, 1.3]} />
-                          <meshStandardMaterial color="#5D4037" roughness={0.8} />
+                          <meshStandardMaterial color={RetailPalette.woodDark} roughness={0.8} />
                         </mesh>
                         {hasProduce && (
                           <mesh position={[0, 0.12, 0]}>
                             <boxGeometry args={[0.56, 0.14, 1.2]} />
                             <meshStandardMaterial
-                              color={produceColors[idx % produceColors.length]}
-                              roughness={0.45}
+                              color={PRODUCT_COLORS.produce[idx % PRODUCT_COLORS.produce.length]}
+                              roughness={0.55}
                             />
                           </mesh>
                         )}
@@ -652,43 +699,47 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               ]
               return (
                 <group>
-                  {/* Dark Metallic Cooler Cabinet */}
                   <mesh castShadow receiveShadow>
                     <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                    <meshStandardMaterial color="#1E293B" metalness={0.65} roughness={0.3} />
+                    <meshStandardMaterial color={RetailPalette.coolerBody} metalness={0.25} roughness={0.45} />
                   </mesh>
-                  {/* Glowing Illuminated Interior Backplate */}
                   <mesh position={[0, 0, 0.1]}>
                     <boxGeometry args={[shelf.dimensions[0] * 0.94, shelf.dimensions[1] * 0.88, shelf.dimensions[2] * 0.7]} />
-                    <meshStandardMaterial color="#0F172A" roughness={0.2} emissive="#0284C7" emissiveIntensity={0.18} />
+                    <meshStandardMaterial color={RetailPalette.coolerInterior} roughness={0.35} />
                   </mesh>
-                  {/* 3 Chrome Wire Shelf Grids */}
                   {[-0.45, 0, 0.45].map((yOff, ti) => (
                     <mesh key={ti} position={[0, yOff - 0.055, shelf.dimensions[2] * 0.2]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.9, 0.03, shelf.dimensions[2] * 0.55]} />
-                      <meshStandardMaterial color="#64748B" metalness={0.85} roughness={0.2} />
+                      <meshStandardMaterial color={RetailPalette.stainless} metalness={0.55} roughness={0.35} />
                     </mesh>
                   ))}
-                  {/* Product Cans based on occupancy */}
                   {canPositions.map(([cx, cy], slotIdx) => {
                     if (slotIdx >= filledSlots) return null
-                    const canColors = ['#EF4444', '#0EA5E9', '#F59E0B', '#10B981', '#8B5CF6']
                     return (
                       <mesh key={slotIdx} position={[cx, cy, shelf.dimensions[2] * 0.15]} castShadow>
                         <cylinderGeometry args={[0.08, 0.08, 0.26, 12]} />
-                        <meshStandardMaterial color={canColors[slotIdx % canColors.length]} metalness={0.8} roughness={0.2} />
+                        <meshStandardMaterial
+                          color={PRODUCT_COLORS.beverage[slotIdx % PRODUCT_COLORS.beverage.length]}
+                          metalness={0.45}
+                          roughness={0.35}
+                        />
                       </mesh>
                     )
                   })}
-                  {/* Branding Header Lightbox */}
+                  {/* Subtle white header strip */}
                   <mesh position={[0, shelf.dimensions[1] * 0.44, shelf.dimensions[2] * 0.48]}>
-                    <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.2, 0.07]} />
-                    <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.6} />
+                    <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.16, 0.06]} />
+                    <meshStandardMaterial color={RetailPalette.signFace} roughness={0.5} />
                   </mesh>
-                  {/* Glass Front Panel */}
                   <mesh position={[0, 0, shelf.dimensions[2] * 0.52]}>
                     <planeGeometry args={[shelf.dimensions[0] * 0.94, shelf.dimensions[1] * 0.85]} />
-                    <meshStandardMaterial color="#38BDF8" transparent opacity={0.2} roughness={0.05} metalness={0.9} />
+                    <meshStandardMaterial
+                      color={RetailPalette.coolerGlass}
+                      transparent
+                      opacity={0.18}
+                      roughness={0.08}
+                      metalness={0.35}
+                    />
                   </mesh>
                 </group>
               )
@@ -709,36 +760,33 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
                 <group>
                   <mesh castShadow receiveShadow>
                     <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                    <meshStandardMaterial color="#1E293B" metalness={0.5} roughness={0.4} />
+                    <meshStandardMaterial color={RetailPalette.coolerBody} metalness={0.2} roughness={0.5} />
                   </mesh>
-                  {/* Glowing Cool White Interior */}
                   <mesh position={[0, 0, 0.1]}>
                     <boxGeometry args={[shelf.dimensions[0] * 0.94, shelf.dimensions[1] * 0.88, shelf.dimensions[2] * 0.7]} />
-                    <meshStandardMaterial color="#0F172A" emissive="#38BDF8" emissiveIntensity={0.12} />
+                    <meshStandardMaterial color={RetailPalette.coolerInterior} roughness={0.4} />
                   </mesh>
                   {[-0.55, 0, 0.55].map((yOff, ti) => (
                     <mesh key={ti} position={[0, yOff - 0.045, shelf.dimensions[2] * 0.18]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.92, 0.03, shelf.dimensions[2] * 0.52]} />
-                      <meshStandardMaterial color="#64748B" metalness={0.8} />
+                      <meshStandardMaterial color={RetailPalette.stainless} metalness={0.5} roughness={0.4} />
                     </mesh>
                   ))}
-                  {/* Dairy Jugs / Yogurt cartons */}
                   {itemPositions.map(([ix, iy], slotIdx) => {
                     if (slotIdx >= filledSlots) return null
                     return (
                       <mesh key={slotIdx} position={[ix, iy, shelf.dimensions[2] * 0.12]} castShadow>
                         <boxGeometry args={[0.2, 0.26, 0.2]} />
                         <meshStandardMaterial
-                          color={slotIdx % 2 === 0 ? '#38BDF8' : '#F8FAFC'}
-                          roughness={0.4}
+                          color={PRODUCT_COLORS.dairy[slotIdx % PRODUCT_COLORS.dairy.length]}
+                          roughness={0.5}
                         />
                       </mesh>
                     )
                   })}
-                  {/* Header Lightbox */}
                   <mesh position={[0, shelf.dimensions[1] * 0.44, shelf.dimensions[2] * 0.48]}>
-                    <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.2, 0.07]} />
-                    <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.6} />
+                    <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.16, 0.06]} />
+                    <meshStandardMaterial color={RetailPalette.signFace} roughness={0.5} />
                   </mesh>
                 </group>
               )
@@ -751,37 +799,42 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               <group>
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#0F172A" metalness={0.7} roughness={0.3} />
+                  <meshStandardMaterial color={RetailPalette.coolerBody} metalness={0.3} roughness={0.4} />
                 </mesh>
-                {/* Ice-Blue Illuminated Freezer Cavity */}
                 <mesh position={[0, 0, 0.1]}>
                   <boxGeometry args={[shelf.dimensions[0] * 0.94, shelf.dimensions[1] * 0.88, shelf.dimensions[2] * 0.7]} />
-                  <meshStandardMaterial color="#082F49" emissive="#0284C7" emissiveIntensity={0.35} />
+                  <meshStandardMaterial color={RetailPalette.coolerInterior} roughness={0.35} />
                 </mesh>
-                {/* 3 Tier Shelves with Frozen Packages */}
                 {[-0.55, 0, 0.55].map((yOff, ti) => (
                   <group key={ti} position={[0, yOff, shelf.dimensions[2] * 0.18]}>
                     <mesh position={[0, -0.04, 0]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.92, 0.03, shelf.dimensions[2] * 0.52]} />
-                      <meshStandardMaterial color="#94A3B8" metalness={0.8} />
+                      <meshStandardMaterial color={RetailPalette.stainless} metalness={0.5} roughness={0.4} />
                     </mesh>
                     {[-1.1, -0.37, 0.37, 1.1].map((px, pi) => (
                       <mesh key={pi} position={[px, 0.12, 0]} castShadow>
                         <boxGeometry args={[0.26, 0.22, 0.22]} />
-                        <meshStandardMaterial color={pi % 2 === 0 ? '#0284C7' : '#DC2626'} roughness={0.4} />
+                        <meshStandardMaterial
+                          color={PRODUCT_COLORS.frozen[pi % PRODUCT_COLORS.frozen.length]}
+                          roughness={0.5}
+                        />
                       </mesh>
                     ))}
                   </group>
                 ))}
-                {/* Frosty Glass Doors with Handles */}
                 <mesh position={[0, 0, shelf.dimensions[2] * 0.52]}>
                   <planeGeometry args={[shelf.dimensions[0] * 0.94, shelf.dimensions[1] * 0.85]} />
-                  <meshStandardMaterial color="#BAE6FD" transparent opacity={0.28} roughness={0.15} metalness={0.9} />
+                  <meshStandardMaterial
+                    color={RetailPalette.coolerGlass}
+                    transparent
+                    opacity={0.22}
+                    roughness={0.12}
+                    metalness={0.35}
+                  />
                 </mesh>
-                {/* Freezer Header */}
                 <mesh position={[0, shelf.dimensions[1] * 0.44, shelf.dimensions[2] * 0.48]}>
-                  <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.2, 0.07]} />
-                  <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.6} />
+                  <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.16, 0.06]} />
+                  <meshStandardMaterial color={RetailPalette.signFace} roughness={0.5} />
                 </mesh>
               </group>
             )}
@@ -793,23 +846,25 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               <group>
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#451A03" roughness={0.8} />
+                  <meshStandardMaterial color={RetailPalette.woodDark} roughness={0.8} />
                 </mesh>
-                {/* Warm Golden Interior Backlight */}
                 <mesh position={[0, 0, 0.1]}>
                   <boxGeometry args={[shelf.dimensions[0] * 0.94, shelf.dimensions[1] * 0.88, shelf.dimensions[2] * 0.7]} />
-                  <meshStandardMaterial color="#78350F" emissive="#F59E0B" emissiveIntensity={0.2} />
+                  <meshStandardMaterial color={RetailPalette.woodProduce} roughness={0.7} />
                 </mesh>
                 {[-0.55, 0, 0.55].map((yOff, ti) => (
                   <group key={ti} position={[0, yOff, shelf.dimensions[2] * 0.18]}>
                     <mesh position={[0, -0.04, 0]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.92, 0.03, shelf.dimensions[2] * 0.52]} />
-                      <meshStandardMaterial color="#B45309" roughness={0.7} />
+                      <meshStandardMaterial color={RetailPalette.shelfBoard} roughness={0.65} />
                     </mesh>
                     {[-1.1, -0.37, 0.37, 1.1].map((bx, bi) => (
                       <mesh key={bi} position={[bx, 0.12, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
                         <cylinderGeometry args={[0.08, 0.08, 0.32, 8]} />
-                        <meshStandardMaterial color={bi % 2 === 0 ? '#D97706' : '#92400E'} roughness={0.8} />
+                        <meshStandardMaterial
+                          color={PRODUCT_COLORS.bakery[bi % PRODUCT_COLORS.bakery.length]}
+                          roughness={0.8}
+                        />
                       </mesh>
                     ))}
                   </group>
@@ -819,21 +874,26 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
 
             {shelf.category === 'deli' && (
               <group>
-                {/* Stainless & Glass Deli Counter */}
                 <mesh position={[0, -0.2, 0]} castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], 0.8, shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#1E293B" metalness={0.6} roughness={0.3} />
+                  <meshStandardMaterial color={RetailPalette.stainless} metalness={0.45} roughness={0.35} />
                 </mesh>
-                {/* Curved Glass Top Display Showcase */}
                 <mesh position={[0, 0.45, 0]} castShadow>
                   <boxGeometry args={[shelf.dimensions[0] * 0.96, 0.6, shelf.dimensions[2] * 0.92]} />
-                  <meshStandardMaterial color="#38BDF8" transparent opacity={0.3} roughness={0.1} />
+                  <meshStandardMaterial
+                    color={RetailPalette.coolerGlass}
+                    transparent
+                    opacity={0.22}
+                    roughness={0.12}
+                  />
                 </mesh>
-                {/* Illuminated Gourmet Pastries & Cheese Wheels */}
                 {[-1.1, -0.37, 0.37, 1.1].map((dx, di) => (
                   <mesh key={di} position={[dx, 0.35, 0]} castShadow>
                     <cylinderGeometry args={[0.16, 0.16, 0.15, 12]} />
-                    <meshStandardMaterial color={di % 2 === 0 ? '#F59E0B' : '#DC2626'} roughness={0.4} />
+                    <meshStandardMaterial
+                      color={PRODUCT_COLORS.deli[di % PRODUCT_COLORS.deli.length]}
+                      roughness={0.5}
+                    />
                   </mesh>
                 ))}
               </group>
@@ -844,46 +904,39 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
             {/* ======================================================= */}
             {shelf.category === 'grocery' && (
               <group>
-                {/* Central Charcoal Spine Structure */}
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], 0.18]} />
-                  <meshStandardMaterial color="#1E293B" metalness={0.7} roughness={0.3} />
+                  <meshStandardMaterial color={RetailPalette.shelfFrame} metalness={0.15} roughness={0.55} />
                 </mesh>
-                {/* Top Aisle Signage Header Track */}
                 <mesh position={[0, shelf.dimensions[1] * 0.48, 0]}>
-                  <boxGeometry args={[shelf.dimensions[0] * 1.02, 0.18, 0.25]} />
-                  <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.5} />
+                  <boxGeometry args={[shelf.dimensions[0] * 1.02, 0.14, 0.22]} />
+                  <meshStandardMaterial color={RetailPalette.signFace} roughness={0.5} />
                 </mesh>
-                {/* 4 Tiers of Shelves on BOTH Front and Back */}
                 {[-0.55, -0.18, 0.18, 0.55].map((yOff, ti) => (
                   <group key={ti} position={[0, yOff, 0]}>
-                    {/* Front Shelf Shelf-board */}
                     <mesh position={[0, -0.04, 0.32]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.96, 0.03, 0.55]} />
-                      <meshStandardMaterial color="#334155" metalness={0.6} />
+                      <meshStandardMaterial color={RetailPalette.shelfBoard} roughness={0.55} />
                     </mesh>
-                    {/* Back Shelf Shelf-board */}
                     <mesh position={[0, -0.04, -0.32]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.96, 0.03, 0.55]} />
-                      <meshStandardMaterial color="#334155" metalness={0.6} />
+                      <meshStandardMaterial color={RetailPalette.shelfBoard} roughness={0.55} />
                     </mesh>
-                    {/* Front Packaged Goods Rows */}
                     {[-1.3, -0.75, -0.2, 0.35, 0.9, 1.3].map((ix, ii) => (
                       <mesh key={`f-${ii}`} position={[ix, 0.12, 0.32]} castShadow>
                         <boxGeometry args={[0.22, 0.24, 0.18]} />
                         <meshStandardMaterial
-                          color={ii % 3 === 0 ? '#DC2626' : ii % 3 === 1 ? '#0284C7' : '#F59E0B'}
-                          roughness={0.4}
+                          color={PRODUCT_COLORS.grocery[ii % PRODUCT_COLORS.grocery.length]}
+                          roughness={0.5}
                         />
                       </mesh>
                     ))}
-                    {/* Back Packaged Goods Rows */}
                     {[-1.3, -0.75, -0.2, 0.35, 0.9, 1.3].map((ix, ii) => (
                       <mesh key={`b-${ii}`} position={[ix, 0.12, -0.32]} castShadow>
                         <boxGeometry args={[0.22, 0.24, 0.18]} />
                         <meshStandardMaterial
-                          color={ii % 3 === 0 ? '#10B981' : ii % 3 === 1 ? '#8B5CF6' : '#EA580C'}
-                          roughness={0.4}
+                          color={PRODUCT_COLORS.grocery[(ii + 2) % PRODUCT_COLORS.grocery.length]}
+                          roughness={0.5}
                         />
                       </mesh>
                     ))}
@@ -899,19 +952,18 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               <group>
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], 0.75, shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#0F172A" roughness={0.3} metalness={0.7} />
+                  <meshStandardMaterial color={RetailPalette.shelfFrame} roughness={0.45} metalness={0.2} />
                 </mesh>
-                {/* Luminous Tabletop Edge Glow */}
                 <mesh position={[0, 0.38, 0]}>
                   <boxGeometry args={[shelf.dimensions[0] * 0.98, 0.05, shelf.dimensions[2] * 0.98]} />
-                  <meshStandardMaterial color="#1E293B" roughness={0.2} metalness={0.5} />
+                  <meshStandardMaterial color={RetailPalette.shelfBoard} roughness={0.4} metalness={0.15} />
                 </mesh>
-                {/* Glowing Interactive Display Devices */}
+                {/* Muted device slabs — no glowing screens */}
                 {[-1.3, -0.45, 0.45, 1.3].map((xOffset, idx) => (
                   <group key={idx} position={[xOffset, 0.45, 0]}>
                     <mesh rotation={[-0.3, 0, 0]} castShadow>
                       <boxGeometry args={[0.42, 0.03, 0.32]} />
-                      <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.6} />
+                      <meshStandardMaterial color="#94A3B8" roughness={0.35} metalness={0.4} />
                     </mesh>
                   </group>
                 ))}
@@ -923,33 +975,29 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
             {/* ======================================================= */}
             {shelf.category === 'stockroom' && (
               <group>
-                {/* Safety Orange Steel Uprights */}
                 <mesh position={[-shelf.dimensions[0] * 0.48, 0, 0]}>
                   <boxGeometry args={[0.12, shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#EA580C" metalness={0.6} roughness={0.4} />
+                  <meshStandardMaterial color={RetailPalette.stockroomOrange} metalness={0.45} roughness={0.45} />
                 </mesh>
                 <mesh position={[shelf.dimensions[0] * 0.48, 0, 0]}>
                   <boxGeometry args={[0.12, shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#EA580C" metalness={0.6} roughness={0.4} />
+                  <meshStandardMaterial color={RetailPalette.stockroomOrange} metalness={0.45} roughness={0.45} />
                 </mesh>
-                {/* 3 Vertical Tiers of Pallet Storage */}
                 {[-0.8, 0, 0.8].map((yOffset, idx) => (
                   <group key={idx} position={[0, yOffset, 0]}>
-                    {/* Blue Heavy Steel Beam */}
                     <mesh>
                       <boxGeometry args={[shelf.dimensions[0] * 0.94, 0.09, shelf.dimensions[2]]} />
-                      <meshStandardMaterial color="#1D4ED8" metalness={0.7} roughness={0.4} />
+                      <meshStandardMaterial color={RetailPalette.stockroomSteel} metalness={0.55} roughness={0.4} />
                     </mesh>
-                    {/* Stacked Shipping Cartons with Labels */}
                     {[-1.6, -0.55, 0.55, 1.6].map((boxX, boxIdx) => (
                       <group key={boxIdx} position={[boxX, 0.38, 0]}>
                         <mesh castShadow>
                           <boxGeometry args={[0.9, 0.65, 0.95]} />
-                          <meshStandardMaterial color="#B45309" roughness={0.8} />
+                          <meshStandardMaterial color={RetailPalette.cardboard} roughness={0.85} />
                         </mesh>
                         <mesh position={[0, 0, 0.49]}>
                           <planeGeometry args={[0.32, 0.22]} />
-                          <meshBasicMaterial color="#FFFFFF" />
+                          <meshBasicMaterial color={RetailPalette.signFace} />
                         </mesh>
                       </group>
                     ))}
@@ -965,25 +1013,25 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               <group>
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#1E293B" roughness={0.5} metalness={0.5} />
+                  <meshStandardMaterial color={RetailPalette.shelfFrame} roughness={0.55} metalness={0.15} />
                 </mesh>
-                {/* Glowing Top Promo Header */}
+                {/* Muted red promo header — no strong emissive */}
                 <mesh position={[0, shelf.dimensions[1] * 0.48, 0]}>
-                  <boxGeometry args={[shelf.dimensions[0] * 1.05, 0.25, shelf.dimensions[2] * 0.95]} />
-                  <meshStandardMaterial color="#EF4444" emissive="#EF4444" emissiveIntensity={0.5} />
+                  <boxGeometry args={[shelf.dimensions[0] * 1.05, 0.2, shelf.dimensions[2] * 0.95]} />
+                  <meshStandardMaterial color="#B85C4A" roughness={0.55} emissive="#B85C4A" emissiveIntensity={0.08} />
                 </mesh>
                 {[-0.55, -0.2, 0.15, 0.5].map((yOffset, idx) => (
                   <group key={idx} position={[0, yOffset, 0]}>
                     <mesh position={[0, -0.04, 0]}>
                       <boxGeometry args={[shelf.dimensions[0] * 0.92, 0.04, shelf.dimensions[2] * 0.92]} />
-                      <meshStandardMaterial color="#475569" metalness={0.8} />
+                      <meshStandardMaterial color={RetailPalette.shelfBoard} roughness={0.5} />
                     </mesh>
                     {[-1.0, -0.35, 0.35, 1.0].map((itemZ, itemIdx) => (
                       <mesh key={itemIdx} position={[0, 0.14, itemZ]} castShadow>
                         <boxGeometry args={[0.65, 0.28, 0.32]} />
                         <meshStandardMaterial
-                          color={itemIdx % 2 === 0 ? '#F59E0B' : '#DC2626'}
-                          roughness={0.4}
+                          color={PRODUCT_COLORS.endcap[itemIdx % PRODUCT_COLORS.endcap.length]}
+                          roughness={0.5}
                         />
                       </mesh>
                     ))}
@@ -996,43 +1044,43 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
               <group>
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color="#92400E" roughness={0.7} />
+                  <meshStandardMaterial color={RetailPalette.woodDark} roughness={0.7} />
                 </mesh>
                 <mesh position={[0, 0, shelf.dimensions[2] * 0.51]}>
                   <planeGeometry args={[shelf.dimensions[0] * 0.8, shelf.dimensions[1] * 0.5]} />
-                  <meshBasicMaterial color="#DC2626" />
+                  <meshBasicMaterial color="#B85C4A" />
                 </mesh>
                 <mesh position={[0, shelf.dimensions[1] * 0.42, 0]} castShadow>
                   <sphereGeometry args={[shelf.dimensions[0] * 0.44, 12, 10]} />
                   <meshStandardMaterial
-                    color={shelf.id === 'shelf-db1' ? '#16A34A' : '#0284C7'}
-                    roughness={0.5}
+                    color={shelf.id === 'shelf-db1' ? '#6B9B5A' : '#5B8FA8'}
+                    roughness={0.55}
                   />
                 </mesh>
               </group>
             )}
 
             {/* ======================================================= */}
-            {/* REALISTIC SHELF-EDGE LED STATUS STRIP                   */}
+            {/* SHELF-EDGE STATUS STRIP ONLY (thin LED)                 */}
             {/* ======================================================= */}
             {showShelfHealth && (
               <group position={[0, -shelf.dimensions[1] * 0.38, shelf.dimensions[2] * 0.51]}>
                 <mesh>
-                  <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.06, 0.03]} />
+                  <boxGeometry args={[shelf.dimensions[0] * 0.95, 0.05, 0.025]} />
                   <meshStandardMaterial
                     color={statusColor}
                     emissive={statusColor}
-                    emissiveIntensity={isCritical ? 1.0 : 0.45}
+                    emissiveIntensity={edgeEmissive}
                   />
                 </mesh>
               </group>
             )}
 
-            {/* Hover Selection Wireframe */}
+            {/* Soft hover outline — no wireframe cage */}
             {isHovered && (
               <mesh position={[0, 0, 0]}>
-                <boxGeometry args={[shelf.dimensions[0] + 0.12, shelf.dimensions[1] + 0.12, shelf.dimensions[2] + 0.12]} />
-                <meshBasicMaterial color="#38BDF8" wireframe transparent opacity={0.5} />
+                <boxGeometry args={[shelf.dimensions[0] + 0.08, shelf.dimensions[1] + 0.08, shelf.dimensions[2] + 0.08]} />
+                <meshBasicMaterial color={RetailPalette.hover} transparent opacity={0.12} depthWrite={false} />
               </mesh>
             )}
           </group>

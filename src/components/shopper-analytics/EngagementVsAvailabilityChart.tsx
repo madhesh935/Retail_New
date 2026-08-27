@@ -12,7 +12,7 @@ export const EngagementVsAvailabilityChart: React.FC<EngagementVsAvailabilityCha
   const option = useMemo(() => {
     // Data format: [interestScore, shelfAvailability, zoneName, zoneObject, color]
     const scatterData = SHOPPING_ZONES.map((zone) => {
-      let color = '#38BDF8'
+      let color = '#2DD4BF'
       if (zone.opportunityRisk === 'HIGH') color = '#F43F5E'
       else if (zone.shelfAvailability >= 85) color = '#10B981'
       else if (zone.shelfAvailability < 80) color = '#F59E0B'

@@ -84,7 +84,7 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
-            backgroundImage: `repeating-linear-gradient(0deg, #38BDF8 0px, transparent 1px, transparent 4px)`,
+            backgroundImage: `repeating-linear-gradient(0deg, #2DD4BF 0px, transparent 1px, transparent 4px)`,
           }}
         />
 

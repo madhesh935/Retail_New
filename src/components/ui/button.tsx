@@ -4,30 +4,30 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer font-sans",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-xs font-semibold tracking-tight transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600/35 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer font-sans",
   {
     variants: {
       variant: {
         default:
-          "bg-sky-600 text-white shadow-2xs hover:bg-sky-700 active:bg-sky-800",
+          "bg-sky-600 text-white shadow-[0_1px_2px_rgb(15_118_110/0.2),0_6px_14px_-4px_rgb(15_118_110/0.4)] hover:bg-sky-800 hover:shadow-[0_2px_4px_rgb(15_118_110/0.25),0_10px_20px_-6px_rgb(15_118_110/0.45)] active:bg-sky-900 active:translate-y-px",
         primary:
-          "bg-blue-600 text-white shadow-2xs hover:bg-blue-700 active:bg-blue-800",
+          "bg-sky-600 text-white shadow-[0_1px_2px_rgb(15_118_110/0.2),0_6px_14px_-4px_rgb(15_118_110/0.4)] hover:bg-sky-800 hover:shadow-[0_2px_4px_rgb(15_118_110/0.25),0_10px_20px_-6px_rgb(15_118_110/0.45)] active:bg-sky-900 active:translate-y-px",
         destructive:
-          "bg-rose-600 text-white shadow-2xs hover:bg-rose-700 active:bg-rose-800",
+          "bg-rose-600 text-white shadow-[0_1px_2px_rgb(185_28_28/0.2),0_6px_14px_-4px_rgb(185_28_28/0.35)] hover:bg-rose-700 active:bg-rose-800",
         outline:
-          "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100 shadow-2xs",
+          "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:bg-slate-100 shadow-[0_1px_2px_rgb(15_23_42/0.04)]",
         secondary:
-          "bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 border border-slate-200",
+          "bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 border border-slate-200/80",
         ghost:
-          "text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200",
+          "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 active:bg-slate-200",
         link:
-          "text-sky-600 underline-offset-4 hover:underline p-0 h-auto",
+          "text-sky-700 underline-offset-4 hover:underline p-0 h-auto font-semibold",
         action:
-          "bg-sky-600 text-white shadow-2xs hover:bg-sky-700 active:bg-sky-800",
+          "bg-sky-600 text-white shadow-[0_1px_2px_rgb(15_118_110/0.2),0_6px_14px_-4px_rgb(15_118_110/0.4)] hover:bg-sky-800 active:bg-sky-900",
         amber:
-          "bg-amber-600 text-white shadow-2xs hover:bg-amber-700 active:bg-amber-800",
+          "bg-amber-600 text-white shadow-sm hover:bg-amber-700 active:bg-amber-800",
         emerald:
-          "bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 active:bg-emerald-800",
+          "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800",
       },
       size: {
         default: "h-8 px-3 py-1.5",

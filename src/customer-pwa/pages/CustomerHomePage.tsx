@@ -11,6 +11,7 @@ import { useCustomerShopping, STORE_CATALOG } from '../context/CustomerShoppingC
 import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerProductCard } from '../components/CustomerProductCard'
 import { AssistanceStatusCard } from '../components/assist/AssistanceStatusCard'
+import { CustomerSaveTodaySection } from '../components/CustomerSaveTodaySection'
 
 export const CustomerHomePage: React.FC = () => {
   const { shoppingList, setActiveTab, setIsNavigating } = useCustomerShopping()
@@ -38,8 +39,11 @@ export const CustomerHomePage: React.FC = () => {
         </p>
       </div>
 
-      {/* Active Help Request Status Banner (Replaces standard view when request is active) */}
+      {/* Active Help Request Status Banner */}
       <AssistanceStatusCard />
+
+      {/* Save Today — Approved Dynamic Markdowns */}
+      <CustomerSaveTodaySection />
 
       {/* 2. Primary Search Input & Shopping Copilot Shortcut */}
       <div className="space-y-2">

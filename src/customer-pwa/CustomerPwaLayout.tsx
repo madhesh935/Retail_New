@@ -36,14 +36,14 @@ const CustomerPwaContent: React.FC = () => {
     activeRequest && activeRequest.status !== 'COMPLETED' && activeRequest.status !== 'CANCELLED'
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 flex justify-center font-sans antialiased select-none">
+    <div className="min-h-screen bg-[#F4F6F8] text-slate-800 flex justify-center font-sans antialiased select-none">
       {/* Mobile Shell Container */}
       <div className="w-full max-w-md bg-white min-h-screen flex flex-col relative shadow-xl border-x border-slate-200">
         {/* Compact Mobile Header (~52px tall, No Manager Link) */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 h-13 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2.5">
             {/* RE Logo */}
-            <div className="h-7 w-7 min-w-7 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm font-mono">
+            <div className="h-7 w-7 min-w-7 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-sm font-mono">
               RE
             </div>
             <div className="flex flex-col justify-center">
@@ -73,7 +73,7 @@ const CustomerPwaContent: React.FC = () => {
         </header>
 
         {/* Dynamic Mobile Viewport Content */}
-        <main className="flex-1 p-4 overflow-y-auto bg-slate-50/50">
+        <main className="flex-1 p-4 overflow-y-auto bg-[#F4F6F8]/60">
           {activeTab === 'HOME' && <CustomerHomePage />}
           {activeTab === 'SEARCH' && <CustomerSearchPage />}
           {(activeTab === 'COPILOT' || activeTab === 'ASSISTANT') && <CustomerCopilotPage />}

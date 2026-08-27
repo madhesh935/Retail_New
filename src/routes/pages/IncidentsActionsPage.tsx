@@ -4,12 +4,12 @@ import {
   AlertTriangle,
   Clock,
   Sparkles,
+  Search,
+  ChevronDown,
+  RotateCcw,
 } from 'lucide-react'
 import { IncidentSummaryKpis } from '@/components/incidents-actions/IncidentSummaryKpis'
-import {
-  IncidentFiltersBar,
-  IncidentFilterState,
-} from '@/components/incidents-actions/IncidentFiltersBar'
+import { IncidentFilterState } from '@/components/incidents-actions/IncidentFiltersBar'
 import {
   IncidentListCard,
 } from '@/components/incidents-actions/IncidentListCard'
@@ -27,6 +27,7 @@ import {
   OperationalIncident,
 } from '@/components/incidents-actions/incidentData'
 import { useAppStore } from '@/store/useAppStore'
+import { cn } from '@/lib/utils'
 
 export const IncidentsActionsPage: React.FC = () => {
   const storeInfo = useAppStore((s) => s.storeInfo)
@@ -102,21 +103,18 @@ export const IncidentsActionsPage: React.FC = () => {
           return {
             ...item,
             status: 'ASSIGNED',
-            assignedStaffId: inc.suggestedStaffId || 'S02',
-            assignedStaffName: inc.suggestedStaffName || 'Marcus Vance',
+            assignedStaffName: inc.suggestedStaffName || 'Liam O\'Connor',
           }
         }
         return item
       })
     )
 
-    // Update selected incident if open
     if (selectedIncident && selectedIncident.id === inc.id) {
       setSelectedIncident({
         ...selectedIncident,
         status: 'ASSIGNED',
-        assignedStaffId: inc.suggestedStaffId || 'S02',
-        assignedStaffName: inc.suggestedStaffName || 'Marcus Vance',
+        assignedStaffName: inc.suggestedStaffName || 'Liam O\'Connor',
       })
     }
 
@@ -133,27 +131,124 @@ export const IncidentsActionsPage: React.FC = () => {
     })
   }
 
+  const isFiltered =
+    filters.severity !== 'ALL' ||
+    filters.category !== 'ALL' ||
+    filters.status !== 'ALL' ||
+    filters.timeRange !== 'LIVE' ||
+    filters.searchQuery.trim().length > 0
+
   return (
-    <div className="space-y-4 select-none pb-6">
+    <div className="space-y-4 select-none pb-6 font-sans">
       {/* ======================================================= */}
-      {/* 1. PAGE HEADER */}
+      {/* 1. ENHANCED PAGE HEADER WITH TOP FILTERS */}
       {/* ======================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        {/* Title */}
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
-              <ShieldAlert className="h-4 w-4 text-sky-600" />
-              <span>Incidents &amp; Actions</span>
-            </h1>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-mono">
-              Live Incident Feed
-            </span>
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+              <ShieldAlert className="h-4.5 w-4.5" />
+            </div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
+                Incidents &amp; Actions
+              </h1>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+                Live Incident Feed
+              </span>
+            </div>
           </div>
+          <p className="text-xs text-slate-500 font-medium mt-1">
+            Real-time computer vision anomaly detection, queue bottlenecks, spills, and staff dispatch
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Updated 2 sec ago</span>
+        {/* Enhanced Top Controls Bar (Search + Dropdowns + Time Filter + Reset) */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search incidents, staff, zones..."
+              value={filters.searchQuery}
+              onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+              className="w-44 sm:w-52 bg-white hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs transition-all font-sans"
+            />
+          </div>
+
+          {/* Severity Dropdown */}
+          <div className="relative">
+            <select
+              value={filters.severity}
+              onChange={(e) => setFilters({ ...filters, severity: e.target.value as any })}
+              className={cn(
+                'appearance-none pl-2.5 pr-7 py-1.5 rounded-xl text-xs font-semibold cursor-pointer border shadow-2xs transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20',
+                filters.severity !== 'ALL'
+                  ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              )}
+            >
+              <option value="ALL">All Severity</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Category Dropdown */}
+          <div className="relative">
+            <select
+              value={filters.category}
+              onChange={(e) => setFilters({ ...filters, category: e.target.value as any })}
+              className={cn(
+                'appearance-none pl-2.5 pr-7 py-1.5 rounded-xl text-xs font-semibold cursor-pointer border shadow-2xs transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20',
+                filters.category !== 'ALL'
+                  ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              )}
+            >
+              <option value="ALL">All Categories</option>
+              <option value="QUEUE">Queue</option>
+              <option value="INVENTORY">Inventory</option>
+              <option value="SAFETY">Safety</option>
+              <option value="CAMERA_SYSTEM">Camera / System</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Time Ranges Pill */}
+          <div className="flex items-center rounded-xl bg-white p-0.5 border border-slate-200 shadow-2xs">
+            {(['LIVE', 'LAST_HOUR', 'TODAY'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setFilters({ ...filters, timeRange: t })}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer',
+                  filters.timeRange === t
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                )}
+              >
+                {t === 'LIVE' ? 'Live' : t === 'LAST_HOUR' ? 'Last Hour' : 'Today'}
+              </button>
+            ))}
+          </div>
+
+          {/* Reset button */}
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -167,14 +262,7 @@ export const IncidentsActionsPage: React.FC = () => {
         latestHighMessage={latestHighMessage}
       />
 
-      {/* 3. Filter Toolbar */}
-      <IncidentFiltersBar
-        filters={filters}
-        onChange={(newFilters) => setFilters(newFilters)}
-        onReset={handleResetFilters}
-      />
-
-      {/* 5. All Incidents Table */}
+      {/* 3. All Incidents Table */}
       <IncidentListCard
         incidents={filteredIncidents}
         selectedIncidentId={selectedIncident?.id}
@@ -185,7 +273,7 @@ export const IncidentsActionsPage: React.FC = () => {
         }
       />
 
-      {/* 6. Recent Resolutions */}
+      {/* 4. Recent Resolutions Showcase */}
       <ResolvedIncidentShowcase />
 
       {/* ======================================================= */}
@@ -202,28 +290,29 @@ export const IncidentsActionsPage: React.FC = () => {
         }
       />
 
-      {/* Assignment Confirmation Modal */}
-      <IncidentAssignModal
-        incident={assignModalIncident}
-        onClose={() => setAssignModalIncident(null)}
-        onConfirm={handleConfirmAssignment}
+      {/* Camera Live Drawer */}
+      <ZoneCameraDrawer
+        isOpen={!!cameraDrawerInfo}
+        onClose={() => setCameraDrawerInfo(null)}
+        cameraCode={cameraDrawerInfo?.camCode}
+        zoneName={cameraDrawerInfo?.title}
       />
 
-      {/* Camera Live Stream Drawer */}
-      {cameraDrawerInfo && (
-        <ZoneCameraDrawer
-          cameraCode={cameraDrawerInfo.camCode}
-          zoneName={cameraDrawerInfo.title}
-          onClose={() => setCameraDrawerInfo(null)}
+      {/* Staff Assignment Modal */}
+      {assignModalIncident && (
+        <IncidentAssignModal
+          incident={assignModalIncident}
+          onClose={() => setAssignModalIncident(null)}
+          onConfirm={handleConfirmAssignment}
         />
       )}
 
-      {/* Why Recommendation Dialog */}
+      {/* Explainability "Why?" Dialog */}
       <WhyRecommendationDialog
         data={whyDialogData}
-        open={Boolean(whyDialogData)}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setWhyDialogData(null)
+        open={!!whyDialogData}
+        onOpenChange={(open) => {
+          if (!open) setWhyDialogData(null)
         }}
       />
     </div>
