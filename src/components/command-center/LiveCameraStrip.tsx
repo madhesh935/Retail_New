@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
 import { useAppStore } from '@/store/useAppStore'
-import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
 
 interface CameraFeed {
   id: string
@@ -32,14 +31,15 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
   const wsRef = React.useRef<WebSocket | null>(null)
   const currentOccupancy = useAppStore((s) => s.storeInfo?.currentOccupancy || 142)
 
+  const [totalEntered, setTotalEntered] = React.useState(0)
+  const [totalExited, setTotalExited] = React.useState(0)
+  const [inFrameCount, setInFrameCount] = React.useState(0)
+
   React.useEffect(() => {
     let intervalId: number
-    let mediaStream: MediaStream | null = null
-    const preferredLabel = useAppStore.getState().preferredCameraLabel
     const startCamera = async () => {
       try {
-        const { stream } = await openPreferredCameraStream({ preferredLabel })
-        mediaStream = stream
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
@@ -53,9 +53,14 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
 
         wsRef.current.onmessage = (event) => {
           const data = JSON.parse(event.data)
-          if (data.total_entered) {
-            const globalOccupancy = useAppStore.getState().storeInfo?.currentOccupancy || 142
-            useAppStore.getState().updateOccupancy(globalOccupancy + 1, 0)
+          if (data.total_entered !== undefined) {
+            setTotalEntered(data.total_entered)
+            setTotalExited(data.total_exited)
+            setInFrameCount(data.in_frame_count)
+            // Optional: update global store occupancy based on backend occupancy
+            if (data.current_occupancy !== undefined) {
+               useAppStore.getState().updateOccupancy(data.current_occupancy, 0, 0)
+            }
           }
         }
       } catch (err) {
@@ -68,8 +73,10 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
     return () => {
       if (intervalId) clearInterval(intervalId)
       if (wsRef.current) wsRef.current.close()
-      stopMediaStream(mediaStream)
-      if (videoRef.current) videoRef.current.srcObject = null
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+        tracks.forEach((t) => t.stop())
+      }
     }
   }, [])
 
@@ -115,15 +122,17 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
         </div>
 
         {/* Top HUD */}
-        <div className="flex items-center justify-between text-xs text-cyan-300 z-10">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-cyan-300 z-10">
           <span className="flex items-center gap-2 font-bold">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>RTSP STREAM • CAM-01 (Main Entrance)</span>
           </span>
-          <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded-md border border-cyan-500/40 text-cyan-300 font-bold flex items-center gap-1.5 shadow-sm">
-            <span>Occupancy:</span>
-            <span className="text-white">{currentOccupancy} Shoppers</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded-md border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1.5 shadow-sm">
+              <span>Visited Count:</span>
+              <span className="text-white">{totalEntered}</span>
+            </span>
+          </div>
         </div>
 
         {/* Bottom HUD */}
@@ -158,12 +167,9 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
 
   React.useEffect(() => {
     let intervalId: number
-    let mediaStream: MediaStream | null = null
-    const preferredLabel = useAppStore.getState().preferredCameraLabel
     const startCamera = async () => {
       try {
-        const { stream } = await openPreferredCameraStream({ preferredLabel })
-        mediaStream = stream
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
@@ -192,8 +198,10 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
     return () => {
       if (intervalId) clearInterval(intervalId)
       if (wsRef.current) wsRef.current.close()
-      stopMediaStream(mediaStream)
-      if (videoRef.current) videoRef.current.srcObject = null
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
+        tracks.forEach((t) => t.stop())
+      }
     }
   }, [])
 
@@ -286,19 +294,15 @@ const LiveEntranceMiniStream: React.FC = () => {
 
   React.useEffect(() => {
     let stream: MediaStream | null = null
-    const preferredLabel = useAppStore.getState().preferredCameraLabel
-    openPreferredCameraStream({ preferredLabel })
-      .then(({ stream: s }) => {
-        stream = s
-        if (videoRef.current) {
-          videoRef.current.srcObject = s
-        }
-      })
-      .catch(console.warn)
+    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
+      stream = s
+      if (videoRef.current) {
+        videoRef.current.srcObject = s
+      }
+    }).catch(console.warn)
 
     return () => {
-      stopMediaStream(stream)
-      if (videoRef.current) videoRef.current.srcObject = null
+      if (stream) stream.getTracks().forEach((t) => t.stop())
     }
   }, [])
 
@@ -328,19 +332,15 @@ const LiveCheckoutMiniStream: React.FC = () => {
 
   React.useEffect(() => {
     let stream: MediaStream | null = null
-    const preferredLabel = useAppStore.getState().preferredCameraLabel
-    openPreferredCameraStream({ preferredLabel })
-      .then(({ stream: s }) => {
-        stream = s
-        if (videoRef.current) {
-          videoRef.current.srcObject = s
-        }
-      })
-      .catch(console.warn)
+    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
+      stream = s
+      if (videoRef.current) {
+        videoRef.current.srcObject = s
+      }
+    }).catch(console.warn)
 
     return () => {
-      stopMediaStream(stream)
-      if (videoRef.current) videoRef.current.srcObject = null
+      if (stream) stream.getTracks().forEach((t) => t.stop())
     }
   }, [])
 
