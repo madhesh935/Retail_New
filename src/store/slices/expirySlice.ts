@@ -10,8 +10,6 @@ import {
 import { StaffTask } from '@/types/staff.types'
 import {
   DEFAULT_MARKDOWN_RULES,
-  INITIAL_INVENTORY_BATCHES,
-  INITIAL_WASTE_RECORDS,
   assessBatchRisk,
   generateMarkdownCandidates,
   calculateExpiryAnalyticsSummary,
@@ -39,6 +37,11 @@ export interface ExpirySlice {
   setExpiryTimelineFilter: (filter: string | null) => void
   setExpiryQuickFilter: (filter: 'ALL' | '<24H' | '1-3DAYS' | 'HIGH_RISK' | 'MARKDOWN' | 'EXPIRED') => void
   setExpiryCategoryFilter: (category: string) => void
+  hydrateExpiryFromApi: (
+    batches: InventoryBatch[],
+    markdownCandidates?: MarkdownCandidate[],
+    wasteRecords?: WasteRecord[]
+  ) => void
 
   // Operational Actions
   createRotationTask: (batchId: string, instructions?: string) => void
@@ -51,17 +54,17 @@ export interface ExpirySlice {
   removeExpiredBatch: (batchId: string) => void
 }
 
-// Initial calculation of risks and candidates
-const initialAssessments = INITIAL_INVENTORY_BATCHES.map((b) =>
-  assessBatchRisk(b, INITIAL_INVENTORY_BATCHES, b.category === 'Dairy' ? 0.45 : 0.3)
-)
-const initialCandidates = generateMarkdownCandidates(initialAssessments, DEFAULT_MARKDOWN_RULES)
-const initialSummary = calculateExpiryAnalyticsSummary(
-  INITIAL_INVENTORY_BATCHES,
-  initialAssessments,
-  initialCandidates,
-  INITIAL_WASTE_RECORDS
-)
+const emptyExpirySummary: ExpiryAnalyticsSummary = {
+  expiringSoonSkusCount: 0,
+  atRiskUnitsTotal: 0,
+  markdownCandidatesCount: 0,
+  wasteTodayUnits: 0,
+  wasteAvoidedUnits: 0,
+  timeline: [],
+  categoryRisk: [],
+  wasteByCategory: [],
+  topWasteProducts: [],
+}
 
 export const createExpirySlice: StateCreator<
   ExpirySlice & { pendingTasks?: StaffTask[]; addStaffTask?: (t: StaffTask) => void; updateShelfItemCount?: (id: string, count: number) => void; shelfItems?: any[] },
@@ -69,18 +72,35 @@ export const createExpirySlice: StateCreator<
   [],
   ExpirySlice
 > = (set, get) => ({
-  inventoryBatches: INITIAL_INVENTORY_BATCHES,
-  expiryRiskAssessments: initialAssessments,
-  markdownCandidates: initialCandidates,
+  inventoryBatches: [],
+  expiryRiskAssessments: [],
+  markdownCandidates: [],
   markdownRules: DEFAULT_MARKDOWN_RULES,
-  wasteRecords: INITIAL_WASTE_RECORDS,
-  expiryAnalyticsSummary: initialSummary,
+  wasteRecords: [],
+  expiryAnalyticsSummary: emptyExpirySummary,
 
   selectedExpiryBatch: null,
   isExpiryDetailOpen: false,
   expiryTimelineFilter: null,
   expiryQuickFilter: 'ALL',
   expiryCategoryFilter: 'ALL',
+
+  hydrateExpiryFromApi: (batches, markdownFromApi, wasteFromApi) => {
+    const waste = wasteFromApi ?? get().wasteRecords
+    const assessments = batches.map((b) =>
+      assessBatchRisk(b, batches, b.category === 'Dairy' ? 0.45 : 0.3)
+    )
+    const generated = generateMarkdownCandidates(assessments, get().markdownRules, markdownFromApi || [])
+    const candidates = markdownFromApi && markdownFromApi.length > 0 ? markdownFromApi : generated
+    const summary = calculateExpiryAnalyticsSummary(batches, assessments, candidates, waste)
+    set({
+      inventoryBatches: batches,
+      expiryRiskAssessments: assessments,
+      markdownCandidates: candidates,
+      wasteRecords: waste,
+      expiryAnalyticsSummary: summary,
+    })
+  },
 
   recalculateExpiryRisks: () => {
     const batches = get().inventoryBatches

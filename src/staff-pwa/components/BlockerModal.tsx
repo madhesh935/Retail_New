@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
-import { X, AlertTriangle, Camera, Check, ShieldAlert } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { X, Check, ShieldAlert } from 'lucide-react'
+import { PhotoEvidenceField } from './PhotoEvidenceField'
 import { BlockerReason } from '@/types'
 
 interface BlockerModalProps {
@@ -31,22 +32,23 @@ export const BlockerModal: React.FC<BlockerModalProps> = ({
 }) => {
   const [selectedReason, setSelectedReason] = useState<BlockerReason>('BACKROOM_STOCK_UNAVAILABLE')
   const [note, setNote] = useState('')
-  const [hasPhoto, setHasPhoto] = useState(false)
+  const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) return
+    setSelectedReason('BACKROOM_STOCK_UNAVAILABLE')
+    setNote('')
+    setEvidencePhoto(null)
+  }, [isOpen, taskId])
 
   if (!isOpen) return null
 
   const handleSubmit = () => {
     setIsSubmitting(true)
-    setTimeout(() => {
-      onSubmitBlocker(
-        selectedReason,
-        note,
-        hasPhoto ? 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=300' : undefined
-      )
-      setIsSubmitting(false)
-      onClose()
-    }, 400)
+    onSubmitBlocker(selectedReason, note, evidencePhoto || undefined)
+    setIsSubmitting(false)
+    onClose()
   }
 
   return (
@@ -135,18 +137,11 @@ export const BlockerModal: React.FC<BlockerModalProps> = ({
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
               Evidence Photo (Optional)
             </label>
-            <button
-              type="button"
-              onClick={() => setHasPhoto(!hasPhoto)}
-              className={`w-full py-2.5 px-3 rounded-xl border border-dashed flex items-center justify-center gap-2 text-xs font-semibold transition-all ${
-                hasPhoto
-                  ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
-                  : 'border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <Camera className="w-4 h-4" />
-              <span>{hasPhoto ? '✓ Shelf / Backroom Photo Attached' : 'Attach Photo Evidence'}</span>
-            </button>
+            <PhotoEvidenceField
+              value={evidencePhoto}
+              onChange={setEvidencePhoto}
+              attachedLabel="Shelf / backroom photo attached"
+            />
           </div>
         </div>
 

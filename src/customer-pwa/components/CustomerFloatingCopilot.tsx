@@ -11,7 +11,7 @@ export const CustomerFloatingCopilot: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 select-none">
+    <div className="absolute bottom-20 right-3 z-40 select-none">
       {/* Floating Copilot Robot Logo Trigger (Light Clean Theme) */}
       <button
         onClick={() => setIsCopilotDrawerOpen(true)}

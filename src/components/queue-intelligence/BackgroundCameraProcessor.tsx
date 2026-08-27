@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
+import { markYoloActive } from '@/lib/yoloLaneRegistry'
 
 interface BackgroundCameraProcessorProps {
   laneCode: string
@@ -47,6 +48,8 @@ export const BackgroundCameraProcessor: React.FC<BackgroundCameraProcessorProps>
 
         wsRef.current.onmessage = (event) => {
           const data = JSON.parse(event.data)
+          // Mark this lane as YOLO-active so the polling loop won't overwrite the count
+          markYoloActive(laneId)
           useAppStore.getState().updateLaneQueue(laneId, data.people_count, data.average_wait_time_seconds)
         }
       } catch (err) {

@@ -2,7 +2,12 @@ import React, { createContext, useContext, useState, useMemo, useRef } from 'rea
 import { realStoreApi } from '@/services/api/realStoreApi'
 import type { NavigationPlan } from '../types/navigation'
 import { sendCopilotChat } from '@/services/api/chat.service'
-import { buildCustomerCopilotEnrichment } from '@/customer-pwa/lib/customerCopilotEnrichment'
+import { mapCustomerProduct } from '@/services/api/mappers'
+import {
+  buildCopilotReplyText,
+  buildCustomerCopilotEnrichment,
+  buildProductRoutePreview,
+} from '@/customer-pwa/lib/customerCopilotEnrichment'
 
 export interface CustomerProduct {
   id: string
@@ -35,6 +40,21 @@ export interface WaypointRouteStep {
   isCompleted: boolean
   isSkipped?: boolean
   mapCoord: { x: number; y: number }
+}
+
+/** Bare shelf codes for the navigation API (e.g. "Shelf B2" → "B2"). */
+function bareShelfCode(shelf: string | undefined): string | undefined {
+  if (!shelf) return undefined
+  const cleaned = shelf.replace(/^shelf\s+/i, '').trim().toUpperCase()
+  return cleaned || undefined
+}
+
+const CHECKOUT_MAP_COORDS: Record<string, { x: number; y: number }> = {
+  C1: { x: 505, y: 110 },
+  C2: { x: 505, y: 165 },
+  C3: { x: 505, y: 220 },
+  C4: { x: 505, y: 250 },
+  C5: { x: 545, y: 265 },
 }
 
 export interface CopilotShoppingPlanItem {
@@ -74,278 +94,17 @@ export interface CopilotMessage {
     aisle: string
     shelf: string
   }
+  /** Product-specific walking route (Entrance → this shelf → Checkout) */
+  productRoute?: import('../lib/customerCopilotEnrichment').CopilotProductRoutePreview
 }
 
-export const STORE_CATALOG: CustomerProduct[] = [
-  {
-    id: 'prod-milk',
-    name: 'Heritage Fresh Whole Milk (1L)',
-    brand: 'Heritage',
-    category: 'Dairy & Chilled',
-    price: '₹68',
-    priceNum: 68,
-    aisle: 'Aisle 2',
-    shelf: 'Shelf C2',
-    stockCount: 18,
-    isAvailable: true,
-    backroomStock: 24,
-    mapCoord: { x: 165, y: 235 },
-    alternatives: [
-      { id: 'prod-aavin-milk', name: 'Aavin Full Cream Milk (500ml)', shelf: 'Shelf C3', price: '₹34', isAvailable: true },
-      { id: 'prod-amul-taaza', name: 'Amul Taaza Homogenised Toned Milk (1L)', shelf: 'Shelf C4', price: '₹72', isAvailable: true },
-    ],
-  },
-  {
-    id: 'prod-aavin-milk',
-    name: 'Aavin Full Cream Milk (500ml)',
-    brand: 'Aavin',
-    category: 'Dairy & Chilled',
-    price: '₹34',
-    priceNum: 34,
-    aisle: 'Aisle 2',
-    shelf: 'Shelf C3',
-    stockCount: 14,
-    isAvailable: true,
-    mapCoord: { x: 142, y: 220 },
-  },
-  {
-    id: 'prod-amul-taaza',
-    name: 'Amul Taaza Toned Milk (1L)',
-    brand: 'Amul',
-    category: 'Dairy & Chilled',
-    price: '₹72',
-    priceNum: 72,
-    aisle: 'Aisle 2',
-    shelf: 'Shelf C4',
-    stockCount: 3,
-    isAvailable: true,
-    isLowStock: true,
-    mapCoord: { x: 142, y: 220 },
-  },
-  {
-    id: 'prod-bread',
-    name: 'Modern 100% Whole Wheat Brown Bread (400g)',
-    brand: 'Modern',
-    category: 'Bakery & Breakfast',
-    price: '₹45',
-    priceNum: 45,
-    aisle: 'Aisle 3',
-    shelf: 'Shelf D1',
-    stockCount: 12,
-    isAvailable: true,
-    mapCoord: { x: 250, y: 105 },
-    alternatives: [
-      { id: 'prod-britannia-bread', name: 'Britannia 100% Whole Wheat Bread (400g)', shelf: 'Shelf A3', price: '₹48', isAvailable: true },
-    ],
-  },
-  {
-    id: 'prod-amul-butter',
-    name: 'Amul Pasteurised Salted Butter (500g)',
-    brand: 'Amul',
-    category: 'Dairy & Chilled',
-    price: '₹275',
-    priceNum: 275,
-    aisle: 'Aisle 2',
-    shelf: 'Shelf C1',
-    stockCount: 18,
-    isAvailable: true,
-    mapCoord: { x: 142, y: 200 },
-    alternatives: [
-      { id: 'prod-amul-100', name: 'Amul Butter 100g Pack', shelf: 'Shelf C1', price: '₹58', isAvailable: true },
-    ],
-  },
-  {
-    id: 'prod-amul-100',
-    name: 'Amul Butter 100g Mini Pack',
-    brand: 'Amul',
-    category: 'Dairy & Chilled',
-    price: '₹58',
-    priceNum: 58,
-    aisle: 'Aisle 2',
-    shelf: 'Shelf C1',
-    stockCount: 22,
-    isAvailable: true,
-    mapCoord: { x: 142, y: 200 },
-  },
-  {
-    id: 'prod-tea',
-    name: 'Tata Tea Gold Premium Black Tea (500g)',
-    brand: 'Tata Tea',
-    category: 'Beverages',
-    price: '₹310',
-    priceNum: 310,
-    aisle: 'Aisle 5',
-    shelf: 'Shelf A2',
-    stockCount: 16,
-    isAvailable: true,
-    mapCoord: { x: 362, y: 90 },
-  },
-  {
-    id: 'prod-biscuits',
-    name: 'Britannia NutriChoice Digestive Biscuits (250g)',
-    brand: 'Britannia',
-    category: 'Snacks & Pantry',
-    price: '₹65',
-    priceNum: 65,
-    aisle: 'Aisle 4',
-    shelf: 'Shelf B2',
-    stockCount: 2,
-    isAvailable: true,
-    isLowStock: true,
-    mapCoord: { x: 250, y: 235 },
-    alternatives: [
-      { id: 'prod-marie-gold', name: 'Britannia Marie Gold Biscuits (300g)', shelf: 'Shelf C3', price: '₹55', isAvailable: true },
-      { id: 'prod-parle-g', name: 'Parle-G Glucose Biscuits (250g)', shelf: 'Shelf C4', price: '₹40', isAvailable: true },
-    ],
-  },
-  {
-    id: 'prod-marie-gold',
-    name: 'Britannia Marie Gold Biscuits (300g)',
-    brand: 'Britannia',
-    category: 'Snacks & Pantry',
-    price: '₹55',
-    priceNum: 55,
-    aisle: 'Aisle 4',
-    shelf: 'Shelf C3',
-    stockCount: 25,
-    isAvailable: true,
-    mapCoord: { x: 252, y: 220 },
-  },
-  {
-    id: 'prod-parle-g',
-    name: 'Parle-G Glucose Biscuits (250g)',
-    brand: 'Parle',
-    category: 'Snacks & Pantry',
-    price: '₹40',
-    priceNum: 40,
-    aisle: 'Aisle 4',
-    shelf: 'Shelf C4',
-    stockCount: 30,
-    isAvailable: true,
-    mapCoord: { x: 252, y: 220 },
-  },
-  {
-    id: 'prod-lays',
-    name: "Lay's Classic Salted Potato Chips (50g)",
-    brand: "Lay's",
-    category: 'Snacks & Pantry',
-    price: '₹20',
-    priceNum: 20,
-    aisle: 'Aisle 4',
-    shelf: 'Shelf A1',
-    stockCount: 40,
-    isAvailable: true,
-    mapCoord: { x: 252, y: 190 },
-  },
-  {
-    id: 'prod-haldirams',
-    name: "Haldiram's Nagpur Aloo Bhujia (200g)",
-    brand: "Haldiram's",
-    category: 'Snacks & Pantry',
-    price: '₹95',
-    priceNum: 95,
-    aisle: 'Aisle 4',
-    shelf: 'Shelf A3',
-    stockCount: 15,
-    isAvailable: true,
-    mapCoord: { x: 252, y: 200 },
-  },
-  {
-    id: 'prod-juice',
-    name: 'Real Fruit Power Mixed Fruit Juice (1L)',
-    brand: 'Real',
-    category: 'Beverages',
-    price: '₹110',
-    priceNum: 110,
-    aisle: 'Aisle 5',
-    shelf: 'Shelf B1',
-    stockCount: 18,
-    isAvailable: true,
-    mapCoord: { x: 362, y: 80 },
-  },
-  {
-    id: 'prod-dove',
-    name: 'Dove Daily Moisture Shampoo (340ml)',
-    brand: 'Dove',
-    category: 'Personal Care & Hair',
-    price: '₹245',
-    priceNum: 245,
-    aisle: 'Aisle 6',
-    shelf: 'Shelf F2',
-    stockCount: 7,
-    isAvailable: true,
-    mapCoord: { x: 385, y: 235 },
-    alternatives: [
-      { id: 'prod-sunsilk', name: 'Sunsilk Soft & Smooth Shampoo (350ml)', shelf: 'Shelf D5', price: '₹215', isAvailable: true },
-      { id: 'prod-pantene', name: 'Pantene Silky Smooth Shampoo (340ml)', shelf: 'Shelf D6', price: '₹260', isAvailable: true },
-    ],
-  },
-  {
-    id: 'prod-sunsilk',
-    name: 'Sunsilk Soft & Smooth Shampoo (350ml)',
-    brand: 'Sunsilk',
-    category: 'Personal Care & Hair',
-    price: '₹215',
-    priceNum: 215,
-    aisle: 'Aisle 6',
-    shelf: 'Shelf D5',
-    stockCount: 12,
-    isAvailable: true,
-    mapCoord: { x: 362, y: 220 },
-  },
-  {
-    id: 'prod-pantene',
-    name: 'Pantene Silky Smooth Care (340ml)',
-    brand: 'Pantene',
-    category: 'Personal Care & Hair',
-    price: '₹260',
-    priceNum: 260,
-    aisle: 'Aisle 6',
-    shelf: 'Shelf D6',
-    stockCount: 9,
-    isAvailable: true,
-    mapCoord: { x: 362, y: 220 },
-  },
-  {
-    id: 'prod-pasta',
-    name: 'Barilla Penne Rigate Durum Wheat Pasta (500g)',
-    brand: 'Barilla',
-    category: 'Grains & Staples',
-    price: '₹195',
-    priceNum: 195,
-    aisle: 'Aisle 1',
-    shelf: 'Shelf B2',
-    stockCount: 14,
-    isAvailable: true,
-    mapCoord: { x: 105, y: 80 },
-  },
-  {
-    id: 'prod-pasta-sauce',
-    name: 'Del Monte Traditional Pasta Sauce (500g)',
-    brand: 'Del Monte',
-    category: 'Grains & Staples',
-    price: '₹145',
-    priceNum: 145,
-    aisle: 'Aisle 1',
-    shelf: 'Shelf B3',
-    stockCount: 11,
-    isAvailable: true,
-    mapCoord: { x: 105, y: 80 },
-  },
-  {
-    id: 'prod-cheese',
-    name: 'Amul Processed Cheese Slices (200g)',
-    brand: 'Amul',
-    category: 'Dairy & Chilled',
-    price: '₹140',
-    priceNum: 140,
-    aisle: 'Aisle 2',
-    shelf: 'Shelf C5',
-    stockCount: 16,
-    isAvailable: true,
-    mapCoord: { x: 142, y: 210 },
-  },
-]
+export interface CheckoutLaneLive {
+  code: string
+  name: string
+  status: string
+  queueLength: number
+  waitSeconds: number
+}
 
 export type CustomerPwaTab = 'HOME' | 'SEARCH' | 'COPILOT' | 'ROUTE' | 'MAP' | 'LIST' | 'ASSISTANT' | 'HELP'
 
@@ -377,13 +136,21 @@ interface CustomerShoppingContextType {
   setActiveStepIndex: (idx: number) => void
   isNavigating: boolean
   setIsNavigating: (val: boolean) => void
-  targetCheckoutCounter: 'C1' | 'C2' | 'C3'
-  setTargetCheckoutCounter: (counter: 'C1' | 'C2' | 'C3') => void
+  targetCheckoutCounter: 'C1' | 'C2' | 'C3' | 'C4' | 'C5'
+  setTargetCheckoutCounter: (counter: 'C1' | 'C2' | 'C3' | 'C4' | 'C5') => void
   isNavigatingToCheckout: boolean
   setIsNavigatingToCheckout: (val: boolean) => void
+  checkoutLanes: CheckoutLaneLive[]
+  recommendedCheckout: CheckoutLaneLive | null
   toastMessage: string | null
   showToast: (msg: string) => void
+  catalog: CustomerProduct[]
+  catalogLoading: boolean
   searchCatalog: (query: string) => CustomerProduct[]
+  /** When set, Smart Map routes only these products (copilot product navigate). */
+  routeFocusProductIds: string[] | null
+  setRouteFocusProductIds: (ids: string[] | null) => void
+  navigateToProduct: (product: CustomerProduct) => void
   // Copilot Chat State
   isCopilotDrawerOpen: boolean
   setIsCopilotDrawerOpen: (val: boolean) => void
@@ -400,52 +167,144 @@ export const CustomerShoppingProvider: React.FC<{
   storeId?: string
   defaultTab?: CustomerPwaTab
 }> = ({ children, storeId, defaultTab }) => {
-  const storeName = storeId === 'store-002' ? 'Velachery Mall' : 'Chennai Central'
+  const storeName = storeId === 'store-02' || storeId === 'store-002' ? 'Velachery Mall' : 'Chennai Central'
+  // Indoor graph is seeded for store-01; other demo store URLs share that layout.
+  const navigationStoreId = 'store-01'
+  const shoppingListStorageKey = `retail-edge-shopping-list-${storeId || 'store-01'}`
   const [activeTab, setActiveTab] = useState<CustomerPwaTab>(defaultTab || 'HOME')
   const [isNavigating, setIsNavigating] = useState(false)
-  const [targetCheckoutCounter, setTargetCheckoutCounter] = useState<'C1' | 'C2' | 'C3'>('C2')
+  const [targetCheckoutCounter, setTargetCheckoutCounter] = useState<'C1' | 'C2' | 'C3' | 'C4' | 'C5'>('C4')
   const [isNavigatingToCheckout, setIsNavigatingToCheckout] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [isCopilotDrawerOpen, setIsCopilotDrawerOpen] = useState(false)
 
-  // Initial shopping list
-  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([
-    { ...STORE_CATALOG[0], quantity: 1, isCollected: false, isSkipped: false }, // Milk
-    { ...STORE_CATALOG[3], quantity: 1, isCollected: false, isSkipped: false }, // Bread
-    { ...STORE_CATALOG[7], quantity: 1, isCollected: false, isSkipped: false }, // Biscuits
-    { ...STORE_CATALOG[13], quantity: 1, isCollected: false, isSkipped: false }, // Shampoo
-  ])
+  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>(() => {
+    try {
+      const saved = window.localStorage.getItem(shoppingListStorageKey)
+      const parsed = saved ? JSON.parse(saved) : []
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
 
-  const [isAisle4Congested, setIsAisle4Congested] = useState(true)
+  React.useEffect(() => {
+    window.localStorage.setItem(shoppingListStorageKey, JSON.stringify(shoppingList))
+  }, [shoppingList, shoppingListStorageKey])
+
+  const [isAisle4Congested, setIsAisle4Congested] = useState(false)
   const [useCrowdAlternativeRoute, setUseCrowdAlternativeRoute] = useState(false)
   const [outOfStockProduct, setOutOfStockProduct] = useState<CustomerProduct | null>(null)
   const [activeStepIndex, setActiveStepIndex] = useState(1)
 
-  const [catalog, setCatalog] = useState<CustomerProduct[]>(STORE_CATALOG)
+  const [catalog, setCatalog] = useState<CustomerProduct[]>([])
+  const [catalogLoading, setCatalogLoading] = useState(true)
   const [navigationPlan, setNavigationPlan] = useState<NavigationPlan | null>(null)
   const [isNavigationPlanLoading, setIsNavigationPlanLoading] = useState(false)
+  const [checkoutLanes, setCheckoutLanes] = useState<CheckoutLaneLive[]>([])
+  const [routeFocusProductIds, setRouteFocusProductIds] = useState<string[] | null>(null)
 
   React.useEffect(() => {
-    realStoreApi.getCustomerCatalog().then((prods) => {
-      if (prods && prods.length > 0) {
-        setCatalog(prods)
-      }
-    }).catch(console.warn)
+    let cancelled = false
+    setCatalogLoading(true)
+    realStoreApi
+      .getCustomerCatalog()
+      .then((prods) => {
+        if (cancelled || !prods) return
+        const mapped = prods.map(mapCustomerProduct)
+        setCatalog(mapped)
+        // Congestion from live shelf / stock pressure in aisle 4 category snacks
+        const snacksLow = mapped.some(
+          (p) => p.aisle.toLowerCase().includes('aisle 4') && (p.isLowStock || !p.isAvailable)
+        )
+        setIsAisle4Congested(snacksLow)
+      })
+      .catch(console.warn)
+      .finally(() => {
+        if (!cancelled) setCatalogLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   React.useEffect(() => {
     let cancelled = false
+    const loadQueues = () => {
+      realStoreApi
+        .getQueueLanes()
+        .then((lanes) => {
+          if (cancelled || !Array.isArray(lanes)) return
+          const mapped: CheckoutLaneLive[] = lanes.map((lane: any) => {
+            const code = String(
+              lane.laneCode || lane.lane_code || lane.id || lane.code || ''
+            ).toUpperCase()
+            return {
+              code: code || `C${lane.laneNumber || lane.lane_number || '?'}`,
+              name: String(lane.name || `Checkout ${code}`),
+              status: String(lane.status || 'ACTIVE').toUpperCase(),
+              queueLength: Number(lane.queueLength ?? lane.queue_length ?? lane.currentQueueLength ?? 0),
+              waitSeconds: Number(lane.waitTimeSeconds ?? lane.wait_time_seconds ?? lane.currentWaitTimeSeconds ?? 0),
+            }
+          })
+          setCheckoutLanes(mapped)
+          const open = mapped
+            .filter((lane) => lane.status !== 'CLOSED' && lane.status !== 'STANDBY')
+            .sort((a, b) => a.waitSeconds - b.waitSeconds)
+          const best =
+            open.find((lane) => ['C1', 'C2', 'C3', 'C4', 'C5'].includes(lane.code)) || open[0]
+          if (best && ['C1', 'C2', 'C3', 'C4', 'C5'].includes(best.code)) {
+            const code = best.code as 'C1' | 'C2' | 'C3' | 'C4' | 'C5'
+            setTargetCheckoutCounter((prev) => (prev === code ? prev : code))
+          }
+        })
+        .catch(console.warn)
+    }
+    loadQueues()
+    const timer = window.setInterval(loadQueues, 12000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  const recommendedCheckout = useMemo(() => {
+    const open = checkoutLanes
+      .filter((lane) => lane.status !== 'CLOSED')
+      .sort((a, b) => {
+        // Prefer active/self-checkout over standby empty lanes for shopper UX
+        const rank = (s: string) => (s === 'STANDBY' ? 1 : s === 'CONGESTED' ? 2 : 0)
+        const d = rank(a.status) - rank(b.status)
+        return d !== 0 ? d : a.waitSeconds - b.waitSeconds
+      })
+    return open[0] || null
+  }, [checkoutLanes])
+
+  React.useEffect(() => {
+    let cancelled = false
+    const focusProducts =
+      routeFocusProductIds && routeFocusProductIds.length > 0
+        ? routeFocusProductIds
+            .map((id) => catalog.find((p) => p.id === id) || shoppingList.find((p) => p.id === id))
+            .filter(Boolean)
+        : null
+
+    const activeItems =
+      focusProducts && focusProducts.length > 0
+        ? (focusProducts as CustomerProduct[])
+        : shoppingList.filter((item) => !item.isSkipped)
+
     setIsNavigationPlanLoading(true)
     realStoreApi.optimizeNavigationRoute({
-      store_id: storeId || 'store-01',
-      destinations: shoppingList.map((item) => ({
+      store_id: navigationStoreId,
+      destinations: activeItems.map((item) => ({
         product_id: item.id,
-        shelf_code: item.shelf,
+        shelf_code: bareShelfCode(item.shelf),
         label: item.name,
       })),
       include_checkout: true,
       checkout_lane_code: targetCheckoutCounter,
-      avoid_congestion: useCrowdAlternativeRoute,
+      avoid_congestion: useCrowdAlternativeRoute || isAisle4Congested,
       accessible_only: false,
     }).then((plan) => {
       if (!cancelled) setNavigationPlan(plan)
@@ -459,7 +318,35 @@ export const CustomerShoppingProvider: React.FC<{
     return () => {
       cancelled = true
     }
-  }, [shoppingList, storeId, targetCheckoutCounter, useCrowdAlternativeRoute])
+  }, [
+    shoppingList,
+    catalog,
+    routeFocusProductIds,
+    navigationStoreId,
+    targetCheckoutCounter,
+    useCrowdAlternativeRoute,
+    isAisle4Congested,
+  ])
+
+  const routeSignature = useMemo(
+    () =>
+      [
+        targetCheckoutCounter,
+        useCrowdAlternativeRoute || isAisle4Congested ? 'avoid' : 'direct',
+        routeFocusProductIds?.join(',') || '',
+        shoppingList
+          .filter((item) => !item.isSkipped)
+          .map((item) => item.id)
+          .sort()
+          .join(','),
+      ].join('|'),
+    [shoppingList, targetCheckoutCounter, useCrowdAlternativeRoute, isAisle4Congested, routeFocusProductIds]
+  )
+
+  React.useEffect(() => {
+    // Start at the first product stop (index 1); entrance is 0.
+    setActiveStepIndex(1)
+  }, [routeSignature])
 
   // Copilot Conversation Messages
   const initialCopilotMessages: CopilotMessage[] = [
@@ -483,6 +370,7 @@ export const CustomerShoppingProvider: React.FC<{
   }
 
   const addToShoppingList = (product: CustomerProduct, qty = 1) => {
+    setRouteFocusProductIds(null)
     setShoppingList((prev) => {
       const exists = prev.find((item) => item.id === product.id)
       if (exists) {
@@ -493,6 +381,19 @@ export const CustomerShoppingProvider: React.FC<{
       return [...prev, { ...product, quantity: qty, isCollected: false, isSkipped: false }]
     })
     showToast(`Added ${qty > 1 ? `${qty}× ` : ''}${product.name.split(' (')[0]} to list`)
+  }
+
+  const navigateToProduct = (product: CustomerProduct) => {
+    setShoppingList((prev) => {
+      if (prev.some((item) => item.id === product.id)) return prev
+      return [...prev, { ...product, quantity: 1, isCollected: false, isSkipped: false }]
+    })
+    setRouteFocusProductIds([product.id])
+    setActiveStepIndex(1)
+    setIsNavigating(true)
+    setIsNavigatingToCheckout(false)
+    setActiveTab('ROUTE')
+    showToast(`Routing to ${product.name.split(' (')[0]} • ${product.aisle}`)
   }
 
   const addMultipleToShoppingList = (items: { product: CustomerProduct; qty: number }[]) => {
@@ -547,6 +448,7 @@ export const CustomerShoppingProvider: React.FC<{
   }
 
   const clearShoppingList = () => {
+    setRouteFocusProductIds(null)
     setShoppingList([])
     showToast('Shopping list cleared')
   }
@@ -567,7 +469,7 @@ export const CustomerShoppingProvider: React.FC<{
     setCopilotMessages(initialCopilotMessages)
   }
 
-  // Live Shopping Copilot — one request at a time (never fire async inside setState)
+  // Live Shopping Copilot — availability + product-specific route from catalog/nav API
   const sendCopilotMessage = (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || copilotBusyRef.current) return
@@ -585,10 +487,7 @@ export const CustomerShoppingProvider: React.FC<{
     setCopilotMessages((prev) => [...prev, userMsg])
     setCopilotIsTyping(true)
 
-    const enrichment = buildCustomerCopilotEnrichment(
-      trimmed,
-      catalog.length ? catalog : STORE_CATALOG
-    )
+    let enrichment = buildCustomerCopilotEnrichment(trimmed, catalog)
 
     const history = [...copilotMessages, userMsg]
       .filter((m) => m.id !== 'c-welcome')
@@ -600,32 +499,91 @@ export const CustomerShoppingProvider: React.FC<{
 
     void (async () => {
       try {
-        const { reply } = await sendCopilotChat({
-          persona: 'customer',
-          messages: history,
-          context: {
-            surface: 'customer_pwa',
-            storeName,
-            listItemCount: shoppingList.length,
-            listPreview: shoppingList.slice(0, 8).map((i) => `${i.name} x${i.quantity}`),
-            sampleCatalog: (catalog.length ? catalog : STORE_CATALOG).slice(0, 20).map((p) => ({
-              name: p.name,
-              aisle: p.aisle,
-              shelf: p.shelf,
-              price: p.price,
-              available: p.isAvailable,
-            })),
-          },
-        })
+        // Attach live navigation plan for the primary matched product (unique per product location)
+        const focusProduct =
+          enrichment.productRoute?.product ||
+          enrichment.singleProductLocation?.product ||
+          enrichment.matchedProducts?.[0]
+
+        if (focusProduct) {
+          try {
+            const plan = await realStoreApi.optimizeNavigationRoute({
+              store_id: navigationStoreId,
+              destinations: [
+                {
+                  product_id: focusProduct.id,
+                  shelf_code: bareShelfCode(focusProduct.shelf),
+                  label: focusProduct.name,
+                },
+              ],
+              include_checkout: true,
+              checkout_lane_code: targetCheckoutCounter,
+              avoid_congestion: useCrowdAlternativeRoute || isAisle4Congested,
+              accessible_only: false,
+            })
+            enrichment = {
+              ...enrichment,
+              productRoute: buildProductRoutePreview(focusProduct, plan),
+              matchedProducts: enrichment.matchedProducts || [focusProduct],
+              singleProductLocation: {
+                product: focusProduct,
+                aisle: focusProduct.aisle,
+                shelf: bareShelfCode(focusProduct.shelf)
+                  ? `Shelf ${bareShelfCode(focusProduct.shelf)}`
+                  : focusProduct.shelf,
+              },
+            }
+          } catch (routeErr) {
+            console.warn('Product route optimize failed; using shelf coordinates.', routeErr)
+            enrichment = {
+              ...enrichment,
+              productRoute: buildProductRoutePreview(focusProduct, null),
+            }
+          }
+        }
+
+        let reply = ''
+        try {
+          const chat = await sendCopilotChat({
+            persona: 'customer',
+            messages: history,
+            context: {
+              surface: 'customer_pwa',
+              storeName,
+              listItemCount: shoppingList.length,
+              listPreview: shoppingList.slice(0, 8).map((i) => `${i.name} x${i.quantity}`),
+              matchedProducts: (enrichment.matchedProducts || []).slice(0, 5).map((p) => ({
+                name: p.name,
+                aisle: p.aisle,
+                shelf: p.shelf,
+                price: p.price,
+                available: p.isAvailable,
+                stockCount: p.stockCount,
+              })),
+              sampleCatalog: catalog.slice(0, 24).map((p) => ({
+                name: p.name,
+                aisle: p.aisle,
+                shelf: p.shelf,
+                price: p.price,
+                available: p.isAvailable,
+              })),
+            },
+          })
+          reply = chat.reply
+        } catch (chatErr) {
+          console.warn('Copilot chat unavailable; using availability reply.', chatErr)
+        }
 
         if (requestId !== copilotRequestIdRef.current) return
+
+        const finalText = buildCopilotReplyText(enrichment, reply)
 
         setCopilotMessages((cur) => [
           ...cur,
           {
             id: `copilot-${Date.now()}`,
             sender: 'COPILOT',
-            text: reply,
+            text: finalText,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             ...enrichment,
           },
@@ -638,7 +596,7 @@ export const CustomerShoppingProvider: React.FC<{
           {
             id: `copilot-${Date.now()}`,
             sender: 'COPILOT',
-            text: `Sorry — ${detail}. Please try again in a moment.`,
+            text: buildCopilotReplyText(enrichment) || `Sorry — ${detail}. Please try again in a moment.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             ...enrichment,
           },
@@ -653,7 +611,7 @@ export const CustomerShoppingProvider: React.FC<{
   }
 
   const searchCatalog = (query: string): CustomerProduct[] => {
-    const source = catalog.length ? catalog : STORE_CATALOG
+    const source = catalog
     if (!query.trim()) return source
     const q = query.toLowerCase()
     return source.filter(
@@ -666,13 +624,21 @@ export const CustomerShoppingProvider: React.FC<{
   }
 
   const optimizedRoute = useMemo<WaypointRouteStep[]>(() => {
+    const checkoutCoord =
+      CHECKOUT_MAP_COORDS[targetCheckoutCounter] || CHECKOUT_MAP_COORDS.C2
+
+    const formatShelfLabel = (shelfCode?: string | null, fallback?: string) => {
+      const code = bareShelfCode(shelfCode || undefined) || bareShelfCode(fallback)
+      return code ? `Shelf ${code}` : fallback || 'Shelf'
+    }
+
     if (navigationPlan?.stops.length) {
-      return navigationPlan.stops.map((stop, index) => {
+      const mapped = navigationPlan.stops.map((stop, index) => {
         const item = stop.kind === 'PRODUCT'
           ? shoppingList.find((candidate) => candidate.id === stop.productId)
           : undefined
         const location = item
-          ? `${item.aisle} • ${stop.shelfCode ? `Shelf ${stop.shelfCode}` : item.shelf}`
+          ? `${item.aisle} • ${formatShelfLabel(stop.shelfCode, item.shelf)}`
           : stop.kind === 'ENTRANCE'
             ? 'Starting Point'
             : `Checkout Lane • ${stop.laneCode || targetCheckoutCounter}`
@@ -684,8 +650,41 @@ export const CustomerShoppingProvider: React.FC<{
           isCompleted: stop.kind === 'ENTRANCE' || Boolean(item?.isCollected),
           isSkipped: item?.isSkipped,
           mapCoord: { x: stop.node.x, y: stop.node.y },
-        }
+        } satisfies WaypointRouteStep
       })
+
+      const resolvedIds = new Set(
+        navigationPlan.stops
+          .filter((stop) => stop.kind === 'PRODUCT' && stop.productId)
+          .map((stop) => stop.productId as string)
+      )
+      const unresolvedItems = shoppingList.filter(
+        (item) =>
+          !item.isSkipped &&
+          !resolvedIds.has(item.id) &&
+          Number.isFinite(item.mapCoord?.x) &&
+          Number.isFinite(item.mapCoord?.y)
+      )
+
+      if (unresolvedItems.length === 0) return mapped
+
+      const checkoutIndex = navigationPlan.stops.findIndex((stop) => stop.kind === 'CHECKOUT')
+      const beforeCheckout = checkoutIndex >= 0 ? mapped.slice(0, checkoutIndex) : mapped
+      const checkoutSteps = checkoutIndex >= 0 ? mapped.slice(checkoutIndex) : []
+      const extraStops = unresolvedItems.map((item) => ({
+        stepIndex: 0,
+        title: item.name,
+        location: `${item.aisle} • ${formatShelfLabel(item.shelf)}`,
+        item,
+        isCompleted: item.isCollected,
+        isSkipped: item.isSkipped,
+        mapCoord: item.mapCoord,
+      }))
+
+      return [...beforeCheckout, ...extraStops, ...checkoutSteps].map((step, index) => ({
+        ...step,
+        stepIndex: index + 1,
+      }))
     }
 
     const steps: WaypointRouteStep[] = [
@@ -698,14 +697,18 @@ export const CustomerShoppingProvider: React.FC<{
       },
     ]
 
-    // Sort items by aisle sequence
-    const sorted = [...shoppingList].sort((a, b) => a.aisle.localeCompare(b.aisle))
+    // Sort items by aisle sequence (or focus product only)
+    const sorted = (
+      routeFocusProductIds?.length
+        ? shoppingList.filter((item) => routeFocusProductIds.includes(item.id) && !item.isSkipped)
+        : shoppingList.filter((item) => !item.isSkipped)
+    ).sort((a, b) => a.aisle.localeCompare(b.aisle))
 
     sorted.forEach((item, idx) => {
       steps.push({
         stepIndex: idx + 2,
         title: item.name,
-        location: `${item.aisle} • ${item.shelf}`,
+        location: `${item.aisle} • ${formatShelfLabel(item.shelf)}`,
         item,
         isCompleted: item.isCollected,
         isSkipped: item.isSkipped,
@@ -713,18 +716,22 @@ export const CustomerShoppingProvider: React.FC<{
       })
     })
 
-    // Final checkout counter
-    const checkoutWait = targetCheckoutCounter === 'C1' ? '5.4 min' : targetCheckoutCounter === 'C3' ? '3.1 min' : '1.8 min'
+    // Final checkout counter — coords must match seed nav-checkout-* nodes
+    const waitSeconds =
+      checkoutLanes.find((lane) => lane.code === targetCheckoutCounter)?.waitSeconds ??
+      (targetCheckoutCounter === 'C1' ? 324 : targetCheckoutCounter === 'C3' ? 0 : 70)
+    const checkoutWait =
+      waitSeconds <= 0 ? 'Now' : `${(waitSeconds / 60).toFixed(1)} min`
     steps.push({
       stepIndex: steps.length + 1,
       title: `Checkout ${targetCheckoutCounter}`,
       location: `Checkout Lane • ~${checkoutWait} wait`,
       isCompleted: false,
-      mapCoord: { x: 465, y: 295 },
+      mapCoord: checkoutCoord,
     })
 
     return steps
-  }, [navigationPlan, shoppingList, targetCheckoutCounter])
+  }, [navigationPlan, shoppingList, targetCheckoutCounter, checkoutLanes, routeFocusProductIds])
 
   return (
     <CustomerShoppingContext.Provider
@@ -758,9 +765,16 @@ export const CustomerShoppingProvider: React.FC<{
         setTargetCheckoutCounter,
         isNavigatingToCheckout,
         setIsNavigatingToCheckout,
+        checkoutLanes,
+        recommendedCheckout,
         toastMessage,
         showToast,
+        catalog,
+        catalogLoading,
         searchCatalog,
+        routeFocusProductIds,
+        setRouteFocusProductIds,
+        navigateToProduct,
         isCopilotDrawerOpen,
         setIsCopilotDrawerOpen,
         copilotMessages,
@@ -772,7 +786,7 @@ export const CustomerShoppingProvider: React.FC<{
       {children}
       {/* Global Customer Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-xl border border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-xl border border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-[90%]">
           {toastMessage}
         </div>
       )}

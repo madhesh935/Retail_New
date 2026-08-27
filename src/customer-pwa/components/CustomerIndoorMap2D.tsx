@@ -72,6 +72,15 @@ export const CustomerIndoorMap2D: React.FC = () => {
   const currentWaypointIndex = Math.min(WAYPOINTS.length - 1, Math.max(0, activeStepIndex))
   const currentTarget = WAYPOINTS[currentWaypointIndex] || WAYPOINTS[1]
   const finalWaypointIndex = Math.max(0, WAYPOINTS.length - 1)
+  // Destinations after entrance (products + checkout)
+  const destinationCount = Math.max(1, finalWaypointIndex)
+  const stopDisplayNumber = Math.min(destinationCount, Math.max(1, currentWaypointIndex))
+  const stopHeaderLabel =
+    currentWaypointIndex >= finalWaypointIndex
+      ? 'ARRIVED AT BILLING'
+      : currentWaypointIndex === 0
+        ? `HEADING TO STOP 1 OF ${destinationCount}`
+        : `NAVIGATING TO STOP ${stopDisplayNumber} OF ${destinationCount}`
   const activeAisle = currentTarget?.aisle
 
   // Customer marker position follows active step coordinates
@@ -155,8 +164,13 @@ export const CustomerIndoorMap2D: React.FC = () => {
   }
 
   const routeLegs = useMemo(() => {
-    if (navigationPlan?.legs.length) {
-      return navigationPlan.legs.map((leg) => ({
+    const expectedLegs = Math.max(0, WAYPOINTS.length - 1)
+    const planLegsMatch =
+      Boolean(navigationPlan?.legs?.length) &&
+      navigationPlan!.legs.length === expectedLegs
+
+    if (planLegsMatch) {
+      return navigationPlan!.legs.map((leg) => ({
         id: leg.id,
         legIndex: leg.legIndex,
         d: leg.svgPath,
@@ -185,13 +199,13 @@ export const CustomerIndoorMap2D: React.FC = () => {
             <div className="relative flex items-center justify-center">
               <span className="absolute -inset-1 rounded-xl bg-cyan-400 opacity-40 animate-ping" />
               <div className="relative h-8 w-8 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                {currentWaypointIndex >= finalWaypointIndex ? '✓' : currentWaypointIndex}
+                {currentWaypointIndex >= finalWaypointIndex ? '✓' : stopDisplayNumber}
               </div>
             </div>
 
             <div className="min-w-0">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-700 flex items-center gap-1.5 leading-none">
-                <span>{currentWaypointIndex >= finalWaypointIndex ? 'ARRIVED AT BILLING' : `NAVIGATING TO STOP ${currentWaypointIndex} OF ${Math.max(0, finalWaypointIndex - 1)}`}</span>
+                <span>{stopHeaderLabel}</span>
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-600" />

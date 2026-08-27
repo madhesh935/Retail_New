@@ -56,6 +56,7 @@ export interface CustomerRequestSlice {
   customerRequests: CustomerHelpRequest[]
 
   // Actions
+  setCustomerRequests: (reqs: CustomerHelpRequest[]) => void
   receiveCustomerRequest: (req: CustomerHelpRequest) => void
   acceptCustomerRequest: (id: string, staffId: string, staffName: string) => void
   startAssistingCustomer: (id: string) => void
@@ -64,74 +65,10 @@ export interface CustomerRequestSlice {
   completeCustomerRequest: (id: string, note?: string) => void
 }
 
-const INITIAL_REQUESTS: CustomerHelpRequest[] = [
-  {
-    id: 'CR-104',
-    requestType: 'PRODUCT_ASSISTANCE',
-    typeLabel: 'Find a Product',
-    productName: 'Lactose-Free Organic Milk 1L',
-    productSku: 'SKU-MLK-9902',
-    shelfCode: 'C2',
-    zoneId: 'zone-dairy',
-    zoneName: 'Dairy & Chilled',
-    message: 'Looking for lactose-free milk, cannot find it in cooler',
-    receivedAt: '1 min ago',
-    status: 'REQUESTED',
-    messages: [
-      { id: 'm1', sender: 'CUSTOMER', text: 'Hi! Is there any lactose-free milk left in the cooler?', timestamp: '14:08' },
-    ],
-    timeline: [
-      { status: 'REQUESTED', title: 'Customer requested assistance in Dairy', timestamp: '14:08' },
-    ],
-  },
-  {
-    id: 'CR-105',
-    requestType: 'BACKROOM_REQUEST',
-    typeLabel: 'Bring From Backroom',
-    productName: 'Horizon Organic Whole Milk 1 Gal',
-    productSku: 'SKU-MLK-8812',
-    shelfCode: 'C2',
-    zoneId: 'zone-dairy',
-    zoneName: 'Dairy & Chilled',
-    message: 'Shelf is empty. App shows stock available in backroom storage.',
-    receivedAt: '3 mins ago',
-    status: 'ACCEPTED',
-    assignedStaffId: 'STAFF-03',
-    assignedStaffName: 'Liam',
-    isBackroomFlow: true,
-    backroomBay: 'Bay D2 (Cold Room Rack 2)',
-    messages: [
-      { id: 'm2', sender: 'CUSTOMER', text: 'Could someone check the backroom for Horizon Whole Milk?', timestamp: '14:06' },
-      { id: 'm3', sender: 'ASSOCIATE', text: 'Checking Backroom Bay D2 right now! Give me 2 minutes.', timestamp: '14:07' },
-    ],
-    timeline: [
-      { status: 'REQUESTED', title: 'Backroom fetch requested', timestamp: '14:06' },
-      { status: 'ACCEPTED', title: 'Liam accepted request & heading to Bay D2', timestamp: '14:07' },
-    ],
-  },
-  {
-    id: 'CR-102',
-    requestType: 'PRICE_ASSISTANCE',
-    typeLabel: 'Price Question',
-    productName: 'Dove Daily Moisture 340ml',
-    shelfCode: 'E3',
-    zoneId: 'zone-care',
-    zoneName: 'Personal Care',
-    message: 'Shelf tag says ₹189 but barcode scan shows ₹210',
-    receivedAt: '18 mins ago',
-    status: 'COMPLETED',
-    assignedStaffId: 'STAFF-03',
-    assignedStaffName: 'Liam',
-    messages: [],
-    timeline: [
-      { status: 'REQUESTED', title: 'Price check requested', timestamp: '13:50' },
-      { status: 'COMPLETED', title: 'Price confirmed & updated shelf label', timestamp: '13:54' },
-    ],
-  },
-]
-
 export const createCustomerRequestSlice: StateCreator<CustomerRequestSlice, [], [], CustomerRequestSlice> = (set) => ({
-  customerRequests: INITIAL_REQUESTS,
+  customerRequests: [],
+
+  setCustomerRequests: (customerRequests) => set({ customerRequests }),
 
   receiveCustomerRequest: (req) =>
     set((state) => ({

@@ -7,20 +7,23 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  SHOPPING_ZONES,
-  CHECKOUT_ZONE,
   CanonicalZoneAnalytics,
 } from './shopperData'
 
 interface ZonePerformanceTableProps {
+  zones: CanonicalZoneAnalytics[]
+  checkoutZone?: CanonicalZoneAnalytics | null
   selectedZoneId?: string | null
   onSelectZone: (zone: CanonicalZoneAnalytics) => void
 }
 
 export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
+  zones,
+  checkoutZone,
   selectedZoneId,
   onSelectZone,
 }) => {
+  const rows = checkoutZone ? [...zones, checkoutZone] : zones
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
       {/* Header */}
@@ -37,7 +40,7 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
         </div>
 
         <span className="text-[11px] text-slate-500">
-          5 Main Shopping Zones
+          {rows.length} live zones
         </span>
       </div>
 
@@ -56,7 +59,7 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
-            {SHOPPING_ZONES.map((zone) => {
+            {zones.map((zone) => {
               const isSelected = selectedZoneId === zone.id
               const isHighRisk = zone.opportunityRisk === 'HIGH'
               const isMedRisk = zone.opportunityRisk === 'MEDIUM'
@@ -163,20 +166,22 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
       </div>
 
       {/* Checkout Separate Section */}
-      <div className="mt-2 pt-3 border-t border-slate-100 bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-2xs font-sans">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-900">Checkout Plaza (Registers C1–C4):</span>
-          <span className="text-slate-600">
-            {CHECKOUT_ZONE.visitors} customer transitions · {CHECKOUT_ZONE.avgDwellLabel} average queue wait
-          </span>
+      {checkoutZone && (
+        <div className="mt-2 pt-3 border-t border-slate-100 bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-2xs font-sans">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-900">{checkoutZone.name}:</span>
+            <span className="text-slate-600">
+              {checkoutZone.visitors} customer transitions · {checkoutZone.avgDwellLabel} average queue wait
+            </span>
+          </div>
+          <button
+            onClick={() => onSelectZone(checkoutZone)}
+            className="text-sky-700 hover:text-sky-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+          >
+            <span>View Checkout Cameras →</span>
+          </button>
         </div>
-        <button
-          onClick={() => onSelectZone(CHECKOUT_ZONE)}
-          className="text-sky-700 hover:text-sky-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-        >
-          <span>View Checkout Cameras →</span>
-        </button>
-      </div>
+      )}
     </div>
   )
 }

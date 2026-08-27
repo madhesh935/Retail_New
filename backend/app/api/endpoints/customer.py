@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.db.models import ProductModel, StaffTaskModel, StaffModel
+from app.db.models import ProductModel, StaffTaskModel
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
+from datetime import datetime, timezone
 import uuid
 
 router = APIRouter()
+
 
 class CustomerAssistRequest(BaseModel):
     request_type: str
@@ -17,6 +19,16 @@ class CustomerAssistRequest(BaseModel):
     product_id: Optional[str] = None
     product_name: Optional[str] = None
     customer_notes: Optional[str] = None
+
+
+class CustomerAssistMessagePayload(BaseModel):
+    sender: str
+    text: str
+
+
+class CustomerAssistDetailsPayload(BaseModel):
+    backroom_item_found: Optional[bool] = None
+
 
 @router.get("/catalog")
 def get_customer_catalog(db: Session = Depends(get_db)):
@@ -36,40 +48,33 @@ def get_customer_catalog(db: Session = Depends(get_db)):
             "isLowStock": p.is_low_stock,
             "backroomStock": p.backroom_stock,
             "mapCoord": {"x": p.map_x, "y": p.map_y},
-            "alternatives": p.alternatives or []
+            "alternatives": p.alternatives or [],
         }
         for p in products
     ]
 
+
 @router.post("/assist")
 def submit_customer_assist(payload: CustomerAssistRequest, db: Session = Depends(get_db)):
     task_id = f"assist-{uuid.uuid4().hex[:6]}"
-    
-    # Select available staff in area if possible
-    available_staff = db.query(StaffModel).filter(StaffModel.status == "AVAILABLE").first()
-    assigned_id = available_staff.id if available_staff else None
-    assigned_name = available_staff.name if available_staff else None
-    
-    if available_staff:
-        available_staff.status = "BUSY"
-        available_staff.active_task_id = task_id
-
     priority = "HIGH" if payload.urgency == "URGENT" else "MEDIUM"
     title = f"Customer Assist: {payload.request_type.replace('_', ' ').title()}"
     if payload.product_name:
         title += f" ({payload.product_name})"
 
+    request_data = payload.model_dump()
+    request_data["messages"] = []
     task = StaffTaskModel(
         id=task_id,
         title=title,
         type="CUSTOMER_ASSIST",
         priority=priority,
-        status="IN_PROGRESS" if assigned_id else "PENDING",
-        assigned_staff_id=assigned_id,
-        assigned_staff_name=assigned_name,
+        status="PENDING",
+        assigned_staff_id=None,
+        assigned_staff_name=None,
         target_location=f"{payload.location_zone} · {payload.shelf_code or 'General'}",
         description=payload.customer_notes or f"Customer requested help with {payload.request_type}",
-        customer_request_data=payload.dict()
+        customer_request_data=request_data,
     )
     db.add(task)
     db.commit()
@@ -78,6 +83,74 @@ def submit_customer_assist(payload: CustomerAssistRequest, db: Session = Depends
     return {
         "status": "success",
         "request_id": task.id,
-        "assigned_staff_name": assigned_name or "Store Floor Associate",
-        "estimated_arrival_minutes": 2 if assigned_id else 4
+        "assigned_staff_name": None,
+        "estimated_arrival_minutes": 3,
     }
+
+
+@router.get("/assist/{request_id}")
+def get_customer_assist_status(request_id: str, db: Session = Depends(get_db)):
+    task = db.query(StaffTaskModel).filter(StaffTaskModel.id == request_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Assist request not found")
+    return {
+        "request_id": task.id,
+        "status": task.status,
+        "assigned_staff_id": task.assigned_staff_id,
+        "assigned_staff_name": task.assigned_staff_name,
+        "target_location": task.target_location,
+        "title": task.title,
+        "customer_request_data": task.customer_request_data or {},
+        "created_at": task.created_at.isoformat() if task.created_at else None,
+        "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+    }
+
+
+@router.post("/assist/{request_id}/messages")
+def add_customer_assist_message(
+    request_id: str,
+    payload: CustomerAssistMessagePayload,
+    db: Session = Depends(get_db),
+):
+    task = db.query(StaffTaskModel).filter(StaffTaskModel.id == request_id).first()
+    if not task or task.type not in ("CUSTOMER_ASSIST", "CUSTOMER_ASSISTANCE"):
+        raise HTTPException(status_code=404, detail="Assist request not found")
+
+    sender = payload.sender.strip().upper()
+    if sender not in ("CUSTOMER", "ASSOCIATE"):
+        raise HTTPException(status_code=422, detail="sender must be CUSTOMER or ASSOCIATE")
+    text = payload.text.strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="Message cannot be empty")
+
+    data = dict(task.customer_request_data or {})
+    messages = list(data.get("messages") or [])
+    message = {
+        "id": f"msg-{uuid.uuid4().hex[:10]}",
+        "sender": sender,
+        "text": text,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    messages.append(message)
+    data["messages"] = messages[-100:]
+    task.customer_request_data = data
+    db.commit()
+    return message
+
+
+@router.patch("/assist/{request_id}/details")
+def update_customer_assist_details(
+    request_id: str,
+    payload: CustomerAssistDetailsPayload,
+    db: Session = Depends(get_db),
+):
+    task = db.query(StaffTaskModel).filter(StaffTaskModel.id == request_id).first()
+    if not task or task.type not in ("CUSTOMER_ASSIST", "CUSTOMER_ASSISTANCE"):
+        raise HTTPException(status_code=404, detail="Assist request not found")
+
+    data = dict(task.customer_request_data or {})
+    updates = payload.model_dump(exclude_none=True)
+    data.update(updates)
+    task.customer_request_data = data
+    db.commit()
+    return {"status": "success", "request_id": request_id, "details": updates}

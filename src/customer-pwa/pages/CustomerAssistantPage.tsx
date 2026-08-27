@@ -10,7 +10,7 @@ import {
   RotateCcw,
   Navigation,
 } from 'lucide-react'
-import { useCustomerShopping, STORE_CATALOG, CustomerProduct } from '../context/CustomerShoppingContext'
+import { useCustomerShopping, CustomerProduct } from '../context/CustomerShoppingContext'
 import { CustomerProductCard } from '../components/CustomerProductCard'
 import { CheckoutRecommendationCard } from '../components/CheckoutRecommendationCard'
 
@@ -24,7 +24,7 @@ interface AssistantChatMessage {
 }
 
 export const CustomerAssistantPage: React.FC = () => {
-  const { addToShoppingList, setActiveTab } = useCustomerShopping()
+  const { addToShoppingList, setActiveTab, catalog, searchCatalog } = useCustomerShopping()
 
   const initialAssistantMessages: AssistantChatMessage[] = [
     {
@@ -63,53 +63,59 @@ export const CustomerAssistantPage: React.FC = () => {
     setInputValue('')
     setIsTyping(true)
 
-    // Grounded customer query evaluator
+    // Grounded against live DB catalog
     setTimeout(() => {
       const q = text.toLowerCase()
       let replyText = ''
       let matched: CustomerProduct[] = []
       let isCheckout = false
+      const find = (id: string) => catalog.find((p) => p.id === id)
 
       if (q.includes('dove') || q.includes('shampoo')) {
-        const prod = STORE_CATALOG.find((p) => p.id === 'prod-dove')!
-        matched = [prod]
-        replyText = `Dove Daily Moisture Shampoo is in stock on Shelf D4 in Aisle 6 with 7 units on shelf.`
+        const prod = find('prod-dove') || searchCatalog('shampoo')[0]
+        if (prod) {
+          matched = [prod]
+          replyText = `${prod.name} is ${prod.isAvailable ? 'in stock' : 'currently unavailable'} on ${prod.shelf} in ${prod.aisle} (${prod.stockCount} units).`
+        }
       } else if (q.includes('milk') && !q.includes('bread') && !q.includes('shampoo')) {
-        const prod = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
-        matched = [prod]
-        replyText = `Heritage Fresh Whole Milk (1L) is available in Dairy & Chilled (Aisle 2, Shelf C2).`
+        const prod = find('prod-milk') || searchCatalog('milk')[0]
+        if (prod) {
+          matched = [prod]
+          replyText = `${prod.name} is available in ${prod.category} (${prod.aisle}, ${prod.shelf}).`
+        }
       } else if (q.includes('bread') || q.includes('brown bread')) {
-        const prod = STORE_CATALOG.find((p) => p.id === 'prod-bread')!
-        matched = [prod]
-        replyText = `Modern 100% Whole Wheat Brown Bread is available in Bakery (Aisle 3, Shelf A2).`
+        const prod = find('prod-bread') || searchCatalog('bread')[0]
+        if (prod) {
+          matched = [prod]
+          replyText = `${prod.name} is available in ${prod.category} (${prod.aisle}, ${prod.shelf}).`
+        }
       } else if (q.includes('amul') || q.includes('butter')) {
-        const prod = STORE_CATALOG.find((p) => p.id === 'prod-amul-butter')!
-        matched = [prod]
-        replyText = `Yes, Amul Salted Butter is in stock in the Dairy section (Aisle 2, Shelf C1).`
+        const prod = find('prod-amul-butter') || searchCatalog('butter')[0]
+        if (prod) {
+          matched = [prod]
+          replyText = `Yes, ${prod.name} is in stock in ${prod.aisle}, ${prod.shelf}.`
+        }
       } else if (q.includes('milk, bread') || (q.includes('milk') && q.includes('bread') && q.includes('shampoo'))) {
-        const milk = STORE_CATALOG.find((p) => p.id === 'prod-milk')!
-        const bread = STORE_CATALOG.find((p) => p.id === 'prod-bread')!
-        const shampoo = STORE_CATALOG.find((p) => p.id === 'prod-dove')!
-        matched = [milk, bread, shampoo]
-        // Auto add to shopping list
-        addToShoppingList(milk, 1)
-        addToShoppingList(bread, 1)
-        addToShoppingList(shampoo, 1)
-        replyText = `I found all 3 items in stock and added them to your Shopping List! Milk is in Aisle 2, Bread in Aisle 3, and Shampoo in Aisle 6.`
+        const milk = find('prod-milk')
+        const bread = find('prod-bread')
+        const shampoo = find('prod-dove')
+        matched = [milk, bread, shampoo].filter(Boolean) as CustomerProduct[]
+        matched.forEach((p) => addToShoppingList(p, 1))
+        replyText =
+          matched.length > 0
+            ? `I found ${matched.length} items in stock and added them to your Shopping List.`
+            : `I couldn't resolve those items from the live catalog yet.`
       } else if (q.includes('checkout') || q.includes('fastest') || q.includes('queue') || q.includes('pay')) {
         isCheckout = true
-        replyText = `Counter C2 is currently the fastest checkout lane with approximately 1.8 min wait time.`
+        replyText = `I'll recommend the fastest open checkout based on live queue intelligence.`
       } else if (q.includes('alternative')) {
-        const biscuit = STORE_CATALOG.find((p) => p.id === 'prod-biscuits')!
-        matched = [biscuit]
-        replyText = `Britannia NutriChoice Biscuits has alternatives available on Shelf C3 (Britannia Marie Gold).`
+        const biscuit = find('prod-biscuits') || searchCatalog('biscuit')[0]
+        if (biscuit) {
+          matched = [biscuit]
+          replyText = `${biscuit.name} has alternatives available nearby on the sales floor.`
+        }
       } else {
-        matched = STORE_CATALOG.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q) ||
-            p.brand.toLowerCase().includes(q)
-        )
+        matched = searchCatalog(text)
         if (matched.length > 0) {
           replyText = `Here are the matching products in the store:`
         } else {
@@ -120,7 +126,7 @@ export const CustomerAssistantPage: React.FC = () => {
       const botMsg: AssistantChatMessage = {
         id: `bot-${Date.now()}`,
         sender: 'ASSISTANT',
-        text: replyText,
+        text: replyText || `I couldn't find a match in the live catalog for "${text}".`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         matchedProducts: matched.length > 0 ? matched : undefined,
         isCheckoutRecommendation: isCheckout,

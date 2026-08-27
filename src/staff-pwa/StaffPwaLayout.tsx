@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom'
-import { Bot } from 'lucide-react'
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { CopilotRobotIcon } from './components/CopilotRobotIcon'
 import { useAppStore } from '@/store/useAppStore'
+import { useStoreData } from '@/hooks/useStoreData'
 import { StaffTopBar } from './components/StaffTopBar'
 import { StaffBottomNav, StaffNavTab } from './components/StaffBottomNav'
 import { StaffTodayPage } from './pages/StaffTodayPage'
@@ -15,20 +15,20 @@ import { StaffMorePage } from './pages/StaffMorePage'
 import { TaskDetailSheet } from './components/TaskDetailSheet'
 import { BlockerModal } from './components/BlockerModal'
 import { AssistDetailSheet } from './components/AssistDetailSheet'
-import { StoreMap2DModal } from './components/StoreMap2DModal'
+import { StoreMap2DModal, type StaffMapTarget } from './components/StoreMap2DModal'
 import { ShiftHandoverModal } from './components/ShiftHandoverModal'
 import { ReportIssueModal } from './components/ReportIssueModal'
 import { NotificationsSheet } from './components/NotificationsSheet'
 import { StaffCopilotModal } from './components/StaffCopilotModal'
-import { StaffTask } from '@/types'
+import { BlockerReason, StaffTask } from '@/types'
 import { CustomerHelpRequest } from '@/store/slices/customerRequestSlice'
 
 export const StaffPwaLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const params = useParams()
+  useStoreData({ pollMs: 8000 })
 
-  const { authenticatedStaff, attendanceState, blockStaffTask } = useAppStore()
+  const { authenticatedStaff, attendanceState, syncTaskStatus } = useAppStore()
 
   // Active Tab state
   const [activeTab, setActiveTab] = useState<StaffNavTab>('today')
@@ -43,7 +43,7 @@ export const StaffPwaLayout: React.FC = () => {
   const [isAssistDetailOpen, setIsAssistDetailOpen] = useState(false)
 
   const [isMapOpen, setIsMapOpen] = useState(false)
-  const [mapTarget, setMapTarget] = useState<{ destination: string; zone?: string; shelf?: string }>({
+  const [mapTarget, setMapTarget] = useState<StaffMapTarget>({
     destination: 'Shelf B4 — Cold Beverages',
     zone: 'Beverages & Snacks',
     shelf: 'B4',
@@ -93,8 +93,10 @@ export const StaffPwaLayout: React.FC = () => {
     )
   }
 
-  // If waiting for auth redirect, show blank
-  if (!authenticatedStaff) return null
+  // If waiting for auth redirect, send to login instead of blank screen
+  if (!authenticatedStaff) {
+    return <Navigate to="/staff/login" replace />
+  }
 
   // Handlers
   const handleOpenTaskDetails = (task: StaffTask) => {
@@ -113,19 +115,27 @@ export const StaffPwaLayout: React.FC = () => {
     setIsAssistDetailOpen(true)
   }
 
-  const handleOpenMap = (destination: string, zone?: string, shelf?: string) => {
-    setMapTarget({ destination, zone, shelf })
+  const handleOpenMap = (
+    targetOrDestination: StaffMapTarget | string,
+    zone?: string,
+    shelf?: string
+  ) => {
+    const target: StaffMapTarget =
+      typeof targetOrDestination === 'string'
+        ? { destination: targetOrDestination, zone, shelf }
+        : targetOrDestination
+    setMapTarget(target)
     setIsMapOpen(true)
   }
 
-  const handleBlockerSubmit = (reason: any, note?: string, photo?: string) => {
+  const handleBlockerSubmit = (reason: BlockerReason, note?: string, photo?: string) => {
     if (blockerTask) {
-      blockStaffTask(blockerTask.id, reason, note, photo)
+      void syncTaskStatus(blockerTask.id, 'BLOCKED', undefined, { reason, note, photo })
     }
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#F4F6F8] text-slate-900 font-sans overflow-hidden w-full max-w-md mx-auto relative shadow-2xl border-x border-slate-200 select-none">
+    <div className="flex flex-col h-dvh max-h-dvh bg-[#F4F6F8] text-slate-900 font-sans overflow-hidden w-full max-w-md mx-auto relative shadow-2xl border-x border-slate-200 select-none">
       {/* 1. Top Mobile Bar */}
       <StaffTopBar
         onOpenNotifications={() => setIsNotificationsOpen(true)}
@@ -144,7 +154,6 @@ export const StaffPwaLayout: React.FC = () => {
         {activeTab === 'assist' && (
           <StaffAssistPage
             onOpenAssistDetails={handleOpenAssistDetails}
-            onOpenMap={(zone, shelf) => handleOpenMap(`Customer in ${zone}`, zone, shelf)}
           />
         )}
         {activeTab === 'scan' && (
@@ -168,8 +177,8 @@ export const StaffPwaLayout: React.FC = () => {
         )}
       </main>
 
-      {/* 3. Floating Copilot Robot Logo Trigger (Light Clean Theme) */}
-      <div className="fixed bottom-18 right-4 max-w-md mx-auto z-30 pointer-events-auto select-none">
+      {/* 3. Floating Copilot — anchored inside phone shell */}
+      <div className="absolute bottom-20 right-3 z-30 pointer-events-auto select-none">
         <button
           type="button"
           onClick={() => setIsCopilotOpen(true)}
@@ -189,7 +198,13 @@ export const StaffPwaLayout: React.FC = () => {
         task={selectedTask}
         isOpen={isTaskDetailOpen}
         onClose={() => setIsTaskDetailOpen(false)}
-        onOpenMap={(task) => handleOpenMap(task.title, task.zoneName, task.shelfCode)}
+        onOpenMap={(task) =>
+          handleOpenMap({
+            destination: task.title,
+            zone: task.zoneName,
+            shelf: task.shelfCode,
+          })
+        }
         onOpenBlocker={handleOpenBlocker}
       />
 
@@ -205,16 +220,20 @@ export const StaffPwaLayout: React.FC = () => {
         request={selectedAssist}
         isOpen={isAssistDetailOpen}
         onClose={() => setIsAssistDetailOpen(false)}
-        onOpenMap={(zone, shelf) => handleOpenMap(`Customer in ${zone}`, zone, shelf)}
+        onOpenMap={(request) =>
+          handleOpenMap({
+            destination: request.productName
+              ? `Assist: ${request.productName}`
+              : `Customer in ${request.zoneName}`,
+            zone: request.zoneName,
+            shelf: request.shelfCode,
+            productName: request.productName,
+            customerMessage: request.message,
+          })
+        }
       />
 
-      <StoreMap2DModal
-        isOpen={isMapOpen}
-        onClose={() => setIsMapOpen(false)}
-        destinationName={mapTarget.destination}
-        destinationZone={mapTarget.zone}
-        shelfCode={mapTarget.shelf}
-      />
+      <StoreMap2DModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} target={mapTarget} />
 
       <ShiftHandoverModal
         isOpen={isHandoverOpen}

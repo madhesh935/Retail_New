@@ -15,6 +15,18 @@ import { CustomerRequestSlice, createCustomerRequestSlice } from './slices/custo
 import { ExpirySlice, createExpirySlice } from './slices/expirySlice'
 import { WebSocketMessage } from '@/types'
 import { realStoreApi } from '@/services/api/realStoreApi'
+import {
+  buildInventoryAnalytics,
+  mapCamera,
+  mapCustomerAssistTask,
+  mapInventoryBatch,
+  mapMarkdownCandidate,
+  mapQueueLane,
+  mapShelfToItem,
+  mapStaffMember,
+  mapStaffTask,
+  mapWasteRecord,
+} from '@/services/api/mappers'
 
 export type AppState = StoreSlice &
   CameraSlice &
@@ -33,6 +45,12 @@ export type AppState = StoreSlice &
     handleWebSocketMessage: (msg: WebSocketMessage) => void
     fetchStoreData: (storeId?: string) => Promise<void>
     dispatchRealTask: (task: any) => Promise<void>
+    syncTaskStatus: (
+      taskId: string,
+      status: string,
+      assignedStaffId?: string,
+      blocker?: { reason?: string; note?: string; photo?: string }
+    ) => Promise<void>
     resolveRealIncident: (id: string) => Promise<void>
     executeRealAction: (id: string) => Promise<void>
   }
@@ -111,21 +129,62 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
   dispatchRealTask: async (task: any) => {
     try {
       await realStoreApi.createStaffTask(task)
-      const tasks = await realStoreApi.getStaffTasks()
-      const members = await realStoreApi.getStaffMembers()
+      const tasks = (await realStoreApi.getStaffTasks()).map(mapStaffTask)
+      const members = (await realStoreApi.getStaffMembers()).map(mapStaffMember)
       get().setStaffPayload({
-        totalStaffOnShift: members.length,
-        availableStaffCount: members.filter((m: any) => m.status === 'AVAILABLE').length,
-        busyStaffCount: members.filter((m: any) => m.status === 'BUSY').length,
-        breakStaffCount: members.filter((m: any) => m.status === 'ON_BREAK').length,
-        activeTasksCount: tasks.filter((t: any) => t.status === 'IN_PROGRESS').length,
+        totalStaffOnShift: members.filter((m) => m.status !== 'OFF_DUTY').length,
+        availableStaffCount: members.filter((m) => m.status === 'ON_DUTY_AVAILABLE').length,
+        busyStaffCount: members.filter((m) => m.status === 'ON_DUTY_BUSY').length,
+        breakStaffCount: members.filter((m) => m.status === 'ON_BREAK').length,
+        activeTasksCount: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
         staffMembers: members,
-        pendingTasks: tasks,
+        pendingTasks: tasks.filter((t) => t.status !== 'CANCELLED'),
         recommendedReallocations: [],
       })
     } catch (err) {
       console.warn('Could not persist task to backend:', err)
       get().addStaffTask(task)
+    }
+  },
+
+  syncTaskStatus: async (
+    taskId: string,
+    status: string,
+    assignedStaffId?: string,
+    blocker?: { reason?: string; note?: string; photo?: string }
+  ) => {
+    try {
+      await realStoreApi.updateTaskStatus(taskId, status, assignedStaffId, blocker)
+    } catch (err) {
+      console.warn('Could not sync task status to backend:', err)
+    }
+
+    if (status === 'IN_PROGRESS') {
+      if (assignedStaffId) {
+        const staff = get().staffMembers.find((m) => m.id === assignedStaffId)
+        const staffName = staff?.name || get().authenticatedStaff?.name || 'Staff'
+        get().acceptStaffTask(taskId, assignedStaffId, staffName)
+        get().acceptCustomerRequest(taskId, assignedStaffId, staffName)
+      }
+      get().startStaffTask(taskId)
+    } else if (status === 'ASSISTING') {
+      get().startStaffTask(taskId)
+      get().startAssistingCustomer(taskId)
+    } else if (status === 'COMPLETED') {
+      get().completeStaffTask(taskId)
+      get().completeCustomerRequest(taskId)
+    } else if (status === 'BLOCKED') {
+      get().blockStaffTask(taskId, (blocker?.reason as any) || 'OTHER', blocker?.note, blocker?.photo)
+    } else if (status === 'CANCELLED') {
+      get().completeCustomerRequest(taskId, 'Cancelled')
+      set((state) => ({
+        pendingTasks: state.pendingTasks.map((t) =>
+          t.id === taskId ? { ...t, status: 'CANCELLED' as const } : t
+        ),
+        customerRequests: state.customerRequests.map((r) =>
+          r.id === taskId ? { ...r, status: 'CANCELLED' as const } : r
+        ),
+      }))
     }
   },
 
@@ -151,32 +210,47 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
     get().setLoadingStore(true)
 
     try {
-      const [statusData, shelvesData, staffMembers, staffTasks, incidentsData, systemData, camerasData] =
-        await Promise.allSettled([
-          realStoreApi.getStoreStatus(),
-          realStoreApi.getShelves(),
-          realStoreApi.getStaffMembers(),
-          realStoreApi.getStaffTasks(),
-          realStoreApi.getIncidents(),
-          realStoreApi.getSystemHealth(),
-          realStoreApi.getCameras(),
-        ])
+      const [
+        statusData,
+        shelvesData,
+        staffMembers,
+        staffTasks,
+        incidentsData,
+        systemData,
+        camerasData,
+        queueLanesData,
+        batchesData,
+        markdownData,
+        wasteData,
+      ] = await Promise.allSettled([
+        realStoreApi.getStoreStatus(),
+        realStoreApi.getShelves(),
+        realStoreApi.getStaffMembers(),
+        realStoreApi.getStaffTasks(),
+        realStoreApi.getIncidents(),
+        realStoreApi.getSystemHealth(),
+        realStoreApi.getCameras(),
+        realStoreApi.getQueueLanes(),
+        realStoreApi.getInventoryBatches(),
+        realStoreApi.getMarkdownCandidates(),
+        realStoreApi.getWasteRecords(),
+      ])
 
       // 1. Store Status & Occupancy
       if (statusData.status === 'fulfilled' && statusData.value) {
         const s = statusData.value
         get().setStoreInfo({
           storeId: s.store_id || 'store-01',
-          name: s.name || 'FreshMart Flagship — Koramangala, BLR',
-          code: s.code || 'STORE-01-CHN',
+          name: s.name || 'FreshMart',
+          code: s.code || 'STORE-01',
           isOpen: s.is_open ?? true,
-          currentOccupancy: s.current_occupancy || 142,
-          currentActiveShoppers: s.current_occupancy || 142,
-          maxCapacity: s.max_capacity || 350,
-          todaysTotalFootfall: s.todays_total_footfall || 1840,
-          peakOccupancyToday: s.peak_occupancy_today || 288,
-          occupancyRate: s.occupancy_rate || 40.6,
-          averageDwellTimeMinutes: s.average_dwell_time_minutes || 24,
+          currentOccupancy: s.current_occupancy ?? 0,
+          currentActiveShoppers: s.current_occupancy ?? 0,
+          maxCapacity: s.max_capacity ?? 0,
+          todaysTotalFootfall: s.todays_total_footfall ?? 0,
+          peakOccupancyToday: s.peak_occupancy_today ?? 0,
+          occupancyRate: s.occupancy_rate ?? 0,
+          averageDwellTimeMinutes: s.average_dwell_time_minutes ?? 0,
           edgeAiStatus: s.edge_ai_status || 'ACTIVE',
           activeIncidentsCount: s.active_incidents_count ?? 0,
           onlineCamerasCount: s.online_cameras_count ?? 0,
@@ -186,7 +260,12 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
           avgCheckoutWaitTimeSeconds: s.avg_checkout_wait_time_seconds ?? 0,
           lastUpdated: new Date().toISOString(),
         })
-        get().updateOccupancy(s.current_occupancy || 142, s.occupancy_rate || 40.6)
+        get().updateOccupancy(s.current_occupancy ?? 0, s.occupancy_rate ?? 0)
+        set({
+          todaysTotalFootfall: s.todays_total_footfall ?? 0,
+          peakOccupancyToday: s.peak_occupancy_today ?? 0,
+          averageDwellTimeMinutes: s.average_dwell_time_minutes ?? 0,
+        })
         if (Array.isArray(s.zones)) {
           get().setZones(
             s.zones.map((zone: any) => ({
@@ -205,34 +284,44 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
       }
 
       // 2. Shelves & Inventory
-      if (shelvesData.status === 'fulfilled' && shelvesData.value) {
-        const items = shelvesData.value
+      if (shelvesData.status === 'fulfilled' && Array.isArray(shelvesData.value)) {
+        const items = shelvesData.value.map(mapShelfToItem)
         get().setShelfItems(items)
+        get().setInventoryAnalytics(buildInventoryAnalytics(items))
       }
 
       // 3. Staff Members & Tasks
-      if (staffMembers.status === 'fulfilled' && staffMembers.value) {
-        const members = staffMembers.value
-        const tasks = staffTasks.status === 'fulfilled' ? staffTasks.value : []
+      if (staffMembers.status === 'fulfilled' && Array.isArray(staffMembers.value)) {
+        const members = staffMembers.value.map(mapStaffMember)
+        const rawTasks = staffTasks.status === 'fulfilled' && Array.isArray(staffTasks.value) ? staffTasks.value : []
+        const tasks = rawTasks.map(mapStaffTask)
+        const assists = rawTasks.map(mapCustomerAssistTask).filter(Boolean) as any[]
         get().setStaffPayload({
-          totalStaffOnShift: members.length,
-          availableStaffCount: members.filter((m: any) => m.status === 'AVAILABLE').length,
-          busyStaffCount: members.filter((m: any) => m.status === 'BUSY').length,
-          breakStaffCount: members.filter((m: any) => m.status === 'ON_BREAK').length,
-          activeTasksCount: tasks.filter((t: any) => t.status === 'IN_PROGRESS').length,
+          totalStaffOnShift: members.filter((m) => m.status !== 'OFF_DUTY').length,
+          availableStaffCount: members.filter((m) => m.status === 'ON_DUTY_AVAILABLE').length,
+          busyStaffCount: members.filter((m) => m.status === 'ON_DUTY_BUSY').length,
+          breakStaffCount: members.filter((m) => m.status === 'ON_BREAK').length,
+          activeTasksCount: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
           staffMembers: members,
-          pendingTasks: tasks,
+          pendingTasks: tasks.filter((t) => t.status !== 'CANCELLED'),
           recommendedReallocations: [],
         })
+        if (typeof (get() as any).setCustomerRequests === 'function') {
+          ;(get() as any).setCustomerRequests(assists)
+        }
       }
 
       // 4. Incidents
-      if (incidentsData.status === 'fulfilled' && incidentsData.value) {
+      if (incidentsData.status === 'fulfilled' && Array.isArray(incidentsData.value) && incidentsData.value.length > 0) {
         const incs = incidentsData.value
         get().setIncidentsPayload({
           activeCount: incs.filter((i: any) => i.status === 'ACTIVE').length,
-          criticalCount: incs.filter((i: any) => i.status === 'ACTIVE' && (i.severity === 'CRITICAL' || i.severity === 'critical')).length,
-          highCount: incs.filter((i: any) => i.status === 'ACTIVE' && (i.severity === 'HIGH' || i.severity === 'high')).length,
+          criticalCount: incs.filter(
+            (i: any) => i.status === 'ACTIVE' && String(i.severity).toUpperCase() === 'CRITICAL'
+          ).length,
+          highCount: incs.filter(
+            (i: any) => i.status === 'ACTIVE' && String(i.severity).toUpperCase() === 'HIGH'
+          ).length,
           avgResolutionMinutes: 4.2,
           incidentsTodayTotal: incs.length,
           incidents: incs,
@@ -248,49 +337,120 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
         get().setSystemHealth({
           edgeDevice: {
             deviceId: 'edge-01',
-            deviceName: ed.device_name || ed.deviceName || 'NVIDIA Jetson AGX Orin — Edge-01',
-            model: 'Jetson AGX Orin 64GB',
-            ipAddress: '192.168.1.100',
-            firmwareVersion: 'v5.1.2',
-            jetpackVersion: 'JetPack 6.0',
-            deepstreamVersion: 'DeepStream 7.0',
-            tensorRtVersion: 'TensorRT 8.6.2',
-            cpuUsagePercent: ed.cpu_usage_percent || ed.cpuUsagePercent || 28.4,
-            gpuUsagePercent: ed.gpu_usage_percent || ed.gpuUsagePercent || 68.4,
-            npuDlaUsagePercent: 45.0,
-            ramUsageGb: 8.4,
-            ramTotalGb: 64.0,
-            temperatureCelsius: ed.temperature_celsius || ed.temperatureCelsius || 48.5,
-            powerDrawWatts: 38.5,
-            fanSpeedPercent: 62.0,
-            nvmeStorageUsedGb: 112.0,
-            nvmeStorageTotalGb: 1024.0,
-            fpsTotalInference: ed.inference_fps || ed.fpsTotalInference || 178.6,
-            activeCameraStreamsCount: 4,
-            droppedFramesCount: 0,
-            uptimeSeconds: (ed.uptime_hours || 142.8) * 3600,
+            deviceName: ed.device_name || ed.deviceName || 'Edge Node',
+            model: ed.model || 'Retail Edge Runtime',
+            ipAddress: ed.ip_address || ed.ipAddress || '127.0.0.1',
+            firmwareVersion: ed.firmware_version || 'live',
+            jetpackVersion: ed.jetpack_version || '',
+            deepstreamVersion: ed.deepstream_version || '',
+            tensorRtVersion: ed.tensor_rt_version || '',
+            cpuUsagePercent: ed.cpu_usage_percent ?? ed.cpuUsagePercent ?? 0,
+            gpuUsagePercent: ed.gpu_usage_percent ?? ed.gpuUsagePercent ?? 0,
+            npuDlaUsagePercent: ed.npu_dla_usage_percent ?? 0,
+            ramUsageGb: ed.ram_usage_gb ?? ((ed.memory_usage_percent || 0) / 100) * 16,
+            ramTotalGb: ed.ram_total_gb ?? 16,
+            temperatureCelsius: ed.temperature_celsius ?? ed.temperatureCelsius ?? 0,
+            powerDrawWatts: ed.power_draw_watts ?? 0,
+            fanSpeedPercent: ed.fan_speed_percent ?? 0,
+            nvmeStorageUsedGb: ed.nvme_storage_used_gb ?? 0,
+            nvmeStorageTotalGb: ed.nvme_storage_total_gb ?? 0,
+            fpsTotalInference: ed.inference_fps ?? ed.fpsTotalInference ?? 0,
+            activeCameraStreamsCount: ed.active_camera_streams_count ?? get().cameras.length,
+            droppedFramesCount: ed.dropped_frames_count ?? 0,
+            uptimeSeconds: (ed.uptime_hours ?? 0) * 3600,
             lastPingTimestamp: new Date().toISOString(),
           },
           cloudSync: {
-            status: cs.status === 'CONNECTED' ? 'SYNCED' : (cs.status || 'SYNCED'),
-            cloudRegion: 'ap-south-1 (Mumbai)',
-            latencyMs: cs.sync_latency_ms || cs.latencyMs || 14.2,
+            status: cs.status === 'CONNECTED' || cs.status === 'SYNCED' ? 'SYNCED' : (cs.status || 'SYNCED'),
+            cloudRegion: cs.cloud_region || cs.cloudRegion || 'local',
+            latencyMs: cs.sync_latency_ms ?? cs.latencyMs ?? 0,
             lastSyncTimestamp: cs.last_synced_at || cs.lastSyncTimestamp || new Date().toISOString(),
-            pendingTelemetryPackets: 0,
-            bandwidthUsageKbps: 128.5,
-            edgeToCloudSyncErrorCount: 0,
+            pendingTelemetryPackets: cs.pending_telemetry_packets ?? 0,
+            bandwidthUsageKbps: cs.bandwidth_usage_kbps ?? 0,
+            edgeToCloudSyncErrorCount: cs.edge_to_cloud_sync_error_count ?? 0,
           },
-          overallHealth: sys.overall_health === 'OPTIMAL' ? 'HEALTHY' : (sys.overall_health || 'HEALTHY'),
+          overallHealth: sys.overall_health === 'OPTIMAL' || sys.overall_health === 'HEALTHY' ? 'HEALTHY' : (sys.overall_health || 'HEALTHY'),
           activeAnomalies: sys.active_anomalies || sys.activeAnomalies || [],
         })
       }
 
-      // 6. Camera inventory and edge stream health
-      if (camerasData.status === 'fulfilled' && camerasData.value) {
-        get().setCameras(camerasData.value)
+      // 6. Cameras
+      if (camerasData.status === 'fulfilled' && Array.isArray(camerasData.value)) {
+        get().setCameras(camerasData.value.map(mapCamera))
+      }
+
+      // 7. Checkout queues (DB-seeded lanes)
+      if (queueLanesData.status === 'fulfilled' && Array.isArray(queueLanesData.value)) {
+        const lanes = queueLanesData.value.map(mapQueueLane)
+        const active = lanes.filter((l) => l.status !== 'CLOSED' && l.status !== 'STANDBY')
+        const avgWait =
+          active.length > 0
+            ? Math.round(active.reduce((acc, l) => acc + l.currentWaitTimeSeconds, 0) / active.length)
+            : 0
+        get().setQueuesPayload({
+          storeId: get().activeStoreId || 'store-01',
+          totalLanes: lanes.length,
+          activeLanesCount: active.length,
+          congestedLanesCount: lanes.filter((l) => l.status === 'CONGESTED').length,
+          closedLanesCount: lanes.filter((l) => l.status === 'CLOSED').length,
+          systemAverageWaitTimeSeconds: avgWait,
+          systemTargetWaitTimeSeconds: 120,
+          estimatedShopperAbandonmentRisk:
+            avgWait > 240 ? 'CRITICAL' : avgWait > 180 ? 'HIGH' : avgWait > 120 ? 'MEDIUM' : 'LOW',
+          lanes,
+          predictedWaitTimeCurve: lanes.map((l) => ({
+            time: `Lane ${l.laneNumber}`,
+            regularAvgSec: l.currentWaitTimeSeconds,
+            expressAvgSec: Math.round(l.currentWaitTimeSeconds * 0.7),
+          })),
+        })
+
+        get().setPredictions({
+          storeId: get().activeStoreId || 'store-01',
+          generatedAt: new Date().toISOString(),
+          modelName: 'queue-lanes-derived',
+          footfallForecast: [],
+          queueCongestionForecast: lanes.map((l) => ({
+            targetTime: `+10m lane ${l.laneNumber}`,
+            predictedQueueCount: l.predictedQueueIn10Min,
+            predictedWaitTimeSeconds: l.predictedWaitTimeIn10MinSeconds,
+            recommendedOpenLanes: Math.max(1, Math.ceil(l.predictedQueueIn10Min / 4)),
+            confidence: 0.8,
+          })),
+          stockoutForecast: get()
+            .inventoryAnalytics.topVulnerableSkus.slice(0, 5)
+            .map((sku) => ({
+              sku: sku.sku,
+              productName: sku.productName,
+              zoneName: '',
+              predictedDepletionTime: new Date(Date.now() + sku.minutesUntilStockout * 60000).toISOString(),
+              timeRemainingMinutes: sku.minutesUntilStockout,
+              recommendedRestockUnits: Math.max(4, sku.currentStock === 0 ? 12 : 8),
+              urgency: (sku.minutesUntilStockout < 30 ? 'HIGH' : sku.minutesUntilStockout < 90 ? 'MEDIUM' : 'LOW') as
+                | 'HIGH'
+                | 'MEDIUM'
+                | 'LOW',
+            })),
+          staffingDemandForecast: [],
+        })
+      }
+
+      // 8. Expiry / waste batches from DB
+      if (batchesData.status === 'fulfilled' && Array.isArray(batchesData.value)) {
+        const batches = batchesData.value.map(mapInventoryBatch)
+        const markdown =
+          markdownData.status === 'fulfilled' && Array.isArray(markdownData.value)
+            ? markdownData.value.map(mapMarkdownCandidate)
+            : undefined
+        const waste =
+          wasteData.status === 'fulfilled' && Array.isArray(wasteData.value)
+            ? wasteData.value.map(mapWasteRecord)
+            : undefined
+        get().hydrateExpiryFromApi(batches, markdown, waste)
       }
     } catch (err) {
       console.warn('Backend data sync notice:', err)
+      get().setStoreError(err instanceof Error ? err.message : 'Failed to sync store data')
     } finally {
       get().setLoadingStore(false)
     }

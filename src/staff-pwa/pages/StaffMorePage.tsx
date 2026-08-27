@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { useNavigate } from 'react-router-dom'
+import { ShiftCheckoutConfirmSheet } from '../components/ShiftCheckoutConfirmSheet'
 
 interface StaffMorePageProps {
   onOpenHandover: () => void
@@ -36,25 +37,33 @@ export const StaffMorePage: React.FC<StaffMorePageProps> = ({
     setOperationalStatus,
     storeAnnouncements,
     acknowledgeAnnouncement,
-    logoutStaff,
     checkOutShift,
+    pendingTasks,
   } = useAppStore()
 
   const [activeSopModal, setActiveSopModal] = useState<string | null>(null)
   const [offlineMode, setOfflineMode] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false)
 
-  const staffName = authenticatedStaff?.name || "Liam O'Connor"
+  const staffName = authenticatedStaff?.name || 'Madhesh'
   const employeeId = authenticatedStaff?.employeeId || 'EMP-404'
   const role = authenticatedStaff?.role || 'Inventory Restocker'
   const shift = authenticatedStaff?.shift || 'Shift B'
   const storeName = authenticatedStaff?.storeName || 'Chennai Central'
 
+  const unfinishedTaskCount = (pendingTasks || []).filter(
+    (t) => t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && t.status !== 'VERIFIED'
+  ).length
+
   const handleCheckout = () => {
-    if (window.confirm('Check out of current shift? Unfinished tasks will be staged for Shift Handover.')) {
-      checkOutShift(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
-      navigate('/staff/login')
-    }
+    setShowCheckoutConfirm(true)
+  }
+
+  const confirmCheckout = () => {
+    setShowCheckoutConfirm(false)
+    checkOutShift(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+    navigate('/staff/login', { replace: true })
   }
 
   const SOPS = [
@@ -275,6 +284,14 @@ export const StaffMorePage: React.FC<StaffMorePageProps> = ({
           <span>Check Out of Shift & Logout</span>
         </button>
       </div>
+
+      <ShiftCheckoutConfirmSheet
+        isOpen={showCheckoutConfirm}
+        staffName={staffName}
+        unfinishedTaskCount={unfinishedTaskCount}
+        onClose={() => setShowCheckoutConfirm(false)}
+        onConfirm={confirmCheckout}
+      />
     </div>
   )
 }

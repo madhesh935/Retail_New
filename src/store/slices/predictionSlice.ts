@@ -1,6 +1,15 @@
 import { StateCreator } from 'zustand'
 import { PredictionsPayload } from '@/types'
-import { MOCK_PREDICTIONS } from '@/services/mock/mockData'
+
+const EMPTY_PREDICTIONS: PredictionsPayload = {
+  storeId: 'store-01',
+  generatedAt: '',
+  modelName: 'live-store-derived',
+  footfallForecast: [],
+  queueCongestionForecast: [],
+  stockoutForecast: [],
+  staffingDemandForecast: [],
+}
 
 export interface PredictionSlice {
   predictions: PredictionsPayload
@@ -11,7 +20,7 @@ export interface PredictionSlice {
 }
 
 export const createPredictionSlice: StateCreator<PredictionSlice, [], [], PredictionSlice> = (set) => ({
-  predictions: MOCK_PREDICTIONS,
+  predictions: EMPTY_PREDICTIONS,
   isLoadingPredictions: false,
 
   setPredictions: (predictions) => set({ predictions }),

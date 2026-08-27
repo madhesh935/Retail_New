@@ -21,11 +21,11 @@ export interface IncidentSlice {
 }
 
 export const createIncidentSlice: StateCreator<IncidentSlice, [], [], IncidentSlice> = (set) => ({
-  incidents: MOCK_INCIDENTS.incidents,
-  recentAiRecommendations: MOCK_INCIDENTS.recentAiRecommendations,
-  activeIncidentsCount: MOCK_INCIDENTS.activeCount,
-  criticalIncidentsCount: MOCK_INCIDENTS.criticalCount,
-  highIncidentsCount: MOCK_INCIDENTS.highCount,
+  incidents: MOCK_INCIDENTS.incidents || [],
+  recentAiRecommendations: MOCK_INCIDENTS.recentAiRecommendations || [],
+  activeIncidentsCount: MOCK_INCIDENTS.activeCount || 0,
+  criticalIncidentsCount: MOCK_INCIDENTS.criticalCount || 0,
+  highIncidentsCount: MOCK_INCIDENTS.highCount || 0,
   selectedIncidentId: null,
   isLoadingIncidents: false,
 

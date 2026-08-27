@@ -3,15 +3,23 @@ import {
   Clock,
   Info,
 } from 'lucide-react'
-import { SHOPPING_ZONES, CHECKOUT_ZONE } from './shopperData'
+import { CanonicalZoneAnalytics } from './shopperData'
 
-export const DwellAnalyticsCard: React.FC = () => {
+interface DwellAnalyticsCardProps {
+  shoppingZones?: CanonicalZoneAnalytics[]
+  checkoutZone?: CanonicalZoneAnalytics | null
+}
+
+export const DwellAnalyticsCard: React.FC<DwellAnalyticsCardProps> = ({
+  shoppingZones = [],
+  checkoutZone = null,
+}) => {
   // Sort shopping zones by dwell descending
-  const sortedShoppingZones = [...SHOPPING_ZONES].sort(
+  const sortedShoppingZones = [...shoppingZones].sort(
     (a, b) => b.avgDwellMinutes - a.avgDwellMinutes
   )
 
-  const maxDwell = 5.0 // scale baseline
+  const maxDwell = Math.max(5, ...sortedShoppingZones.map((z) => z.avgDwellMinutes), checkoutZone?.avgDwellMinutes || 0)
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[380px] font-sans">
@@ -78,7 +86,7 @@ export const DwellAnalyticsCard: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="font-bold text-amber-800">Checkout Queue Wait:</span>
           <span className="text-slate-600">
-            {CHECKOUT_ZONE.avgDwellLabel} average service wait (Queue friction, not product browsing)
+            {checkoutZone?.avgDwellLabel || '—'} average service wait (Queue friction, not product browsing)
           </span>
         </div>
       </div>

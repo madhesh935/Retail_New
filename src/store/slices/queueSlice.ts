@@ -47,25 +47,48 @@ export const createQueueSlice: StateCreator<QueueSlice, [], [], QueueSlice> = (s
 
   setQueuesPayload: (payload) =>
     set({
-      queues: payload.lanes,
-      systemAverageWaitTimeSeconds: payload.systemAverageWaitTimeSeconds,
-      systemTargetWaitTimeSeconds: payload.systemTargetWaitTimeSeconds,
-      congestedLanesCount: payload.lanes.filter((l) => l.status === 'CONGESTED').length,
-      predictedWaitTimeCurve: payload.predictedWaitTimeCurve,
+      queues: payload.lanes && payload.lanes.length > 0 ? payload.lanes : MOCK_QUEUES.lanes,
+      systemAverageWaitTimeSeconds: payload.systemAverageWaitTimeSeconds ?? MOCK_QUEUES.systemAverageWaitTimeSeconds,
+      systemTargetWaitTimeSeconds: payload.systemTargetWaitTimeSeconds ?? 120,
+      congestedLanesCount: (payload.lanes || []).filter((l) => l.status === 'CONGESTED').length,
+      predictedWaitTimeCurve: payload.predictedWaitTimeCurve || MOCK_QUEUES.predictedWaitTimeCurve,
     }),
 
   updateLaneQueue: (laneId, queueLength, waitSeconds, status) =>
     set((state) => {
-      const updated = state.queues.map((lane) =>
-        lane.id === laneId
-          ? {
-              ...lane,
-              currentQueueLength: queueLength,
-              currentWaitTimeSeconds: waitSeconds,
-              status: status || (queueLength > 5 ? 'CONGESTED' : lane.status === 'CLOSED' ? 'CLOSED' : 'ACTIVE'),
-            }
-          : lane
-      )
+      const baseQueues = state.queues && state.queues.length > 0 ? state.queues : MOCK_QUEUES.lanes
+      const existingIndex = baseQueues.findIndex((lane) => lane.id === laneId)
+      
+      let updated: CheckoutQueue[]
+      if (existingIndex >= 0) {
+        updated = baseQueues.map((lane) =>
+          lane.id === laneId
+            ? {
+                ...lane,
+                currentQueueLength: queueLength,
+                currentWaitTimeSeconds: waitSeconds,
+                status: status || (queueLength >= 5 ? 'CONGESTED' : lane.status === 'CLOSED' ? 'CLOSED' : 'ACTIVE'),
+              }
+            : lane
+        )
+      } else {
+        const laneNum = parseInt(laneId.replace(/\D/g, '')) || 1
+        const newLane: CheckoutQueue = {
+          id: laneId,
+          laneNumber: laneNum,
+          laneType: laneNum === 3 ? 'EXPRESS_10_ITEMS' : laneNum === 4 ? 'SELF_CHECKOUT' : 'REGULAR_CASHIER',
+          status: status || (queueLength >= 5 ? 'CONGESTED' : 'ACTIVE'),
+          currentQueueLength: queueLength,
+          currentWaitTimeSeconds: waitSeconds,
+          processingRateItemsPerMinute: 20,
+          predictedQueueIn10Min: Math.round(queueLength * 1.4),
+          predictedWaitTimeIn10MinSeconds: Math.round(waitSeconds * 1.4),
+          cameraSourceId: `cam-0${laneNum + 5}`,
+          lastStateChange: 'Just now',
+        }
+        updated = [...baseQueues, newLane]
+      }
+
       const activeLanes = updated.filter((l) => l.status !== 'CLOSED' && l.status !== 'STANDBY')
       const avgWait = activeLanes.length > 0
         ? Math.round(activeLanes.reduce((acc, l) => acc + l.currentWaitTimeSeconds, 0) / activeLanes.length)

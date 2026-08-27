@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Users,
   Sparkles,
@@ -12,12 +12,32 @@ import { DwellAnalyticsCard } from '@/components/shopper-analytics/DwellAnalytic
 import { PeakForecastCard } from '@/components/shopper-analytics/PeakForecastCard'
 import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import {
-  CANONICAL_ZONE_ANALYTICS,
   CanonicalZoneAnalytics,
 } from '@/components/shopper-analytics/shopperData'
+import { useAppStore } from '@/store/useAppStore'
+import { zonesToAnalytics } from '@/services/api/livePageAdapters'
 
 export const ShopperAnalyticsPage: React.FC = () => {
-  // Selected zone for synchronized highlight and detail drawer
+  const storeZones = useAppStore((s) => s.zones)
+  const shelfItems = useAppStore((s) => s.shelfItems)
+  const cameras = useAppStore((s) => s.cameras)
+
+  const zoneAnalytics = useMemo(
+    () =>
+      zonesToAnalytics(
+        storeZones,
+        shelfItems,
+        cameras.map((c) => ({ code: c.code, zoneId: c.zoneId }))
+      ),
+    [storeZones, shelfItems, cameras]
+  )
+
+  const shoppingZones = useMemo(() => zoneAnalytics.filter((z) => !z.isCheckout), [zoneAnalytics])
+  const checkoutZone = useMemo(
+    () => zoneAnalytics.find((z) => z.isCheckout) || null,
+    [zoneAnalytics]
+  )
+
   const [selectedZone, setSelectedZone] = useState<CanonicalZoneAnalytics | null>(null)
 
   const handleSelectZone = (zone: CanonicalZoneAnalytics) => {
@@ -30,9 +50,6 @@ export const ShopperAnalyticsPage: React.FC = () => {
 
   return (
     <div className="space-y-4 select-none pb-6">
-      {/* ======================================================= */}
-      {/* 1. PAGE HEADER */}
-      {/* ======================================================= */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
@@ -40,24 +57,26 @@ export const ShopperAnalyticsPage: React.FC = () => {
             <span>Shopper Analytics</span>
           </h1>
         </div>
+        <div className="text-[11px] text-slate-500 font-medium">
+          {zoneAnalytics.length} live zones from store DB
+        </div>
       </div>
 
-      {/* 2. Top 6 Shopper Analytics KPI Cards */}
-      <ShopperKpiRow />
+      <ShopperKpiRow shoppingZones={shoppingZones} />
 
-      {/* 4. Live Store Traffic Map */}
       <StoreHeatmapCard
+        zones={zoneAnalytics}
         selectedZoneId={selectedZone?.id}
         onSelectZone={handleSelectZone}
       />
 
-      {/* 5. Zone Performance Summary Table */}
       <ZonePerformanceTable
+        zones={shoppingZones}
+        checkoutZone={checkoutZone}
         selectedZoneId={selectedZone?.id}
         onSelectZone={handleSelectZone}
       />
 
-      {/* 6. Shopper Flow Patterns (Left) & Interest vs Availability (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col">
           <CustomerFlowMap />
@@ -65,7 +84,6 @@ export const ShopperAnalyticsPage: React.FC = () => {
 
         <div className="lg:col-span-6 xl:col-span-5 flex flex-col">
           <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[420px]">
-            {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
               <div className="flex items-center gap-2">
                 <div className="p-1 rounded-md bg-purple-50 text-purple-600 border border-purple-200">
@@ -81,37 +99,19 @@ export const ShopperAnalyticsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Scatter Chart */}
-            <div className="my-1 flex-1 flex items-center justify-center">
-              <EngagementVsAvailabilityChart onSelectZone={handleSelectZone} />
-            </div>
-
-            {/* Footer Alert */}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-sans">
-              <span className="text-rose-700 font-medium">
-                Cold Beverages: 82% Interest / 61% Shelf Availability
-              </span>
-              <span className="text-amber-700 font-semibold">Needs Attention</span>
-            </div>
+            <EngagementVsAvailabilityChart zones={shoppingZones} />
           </div>
         </div>
       </div>
 
-      {/* 7. Dwell Time by Zone (Left) & Traffic Forecast (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-        <div className="lg:col-span-6 flex flex-col">
-          <DwellAnalyticsCard />
-        </div>
-
-        <div className="lg:col-span-6 flex flex-col">
-          <PeakForecastCard />
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <DwellAnalyticsCard shoppingZones={shoppingZones} checkoutZone={checkoutZone} />
+        <PeakForecastCard />
       </div>
 
-      {/* Slide-over Zone Detail Drawer */}
       <ZoneCameraDrawer
         zone={selectedZone}
+        isOpen={!!selectedZone}
         onClose={handleCloseDrawer}
       />
     </div>

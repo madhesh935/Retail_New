@@ -7,34 +7,35 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  CANONICAL_STAFF,
   StaffMember,
 } from './staffData'
 
 interface StaffStatusTableProps {
+  staff: StaffMember[]
   onSelectStaff?: (staff: StaffMember) => void
   selectedStaffId?: string | null
 }
 
 export const StaffStatusTable: React.FC<StaffStatusTableProps> = ({
+  staff,
   onSelectStaff,
   selectedStaffId,
 }) => {
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'AVAILABLE' | 'BUSY' | 'ON_BREAK'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const availableCount = CANONICAL_STAFF.filter((s) => s.status === 'AVAILABLE').length
-  const busyCount = CANONICAL_STAFF.filter((s) => s.status === 'BUSY').length
-  const breakCount = CANONICAL_STAFF.filter((s) => s.status === 'ON_BREAK').length
+  const availableCount = staff.filter((s) => s.status === 'AVAILABLE').length
+  const busyCount = staff.filter((s) => s.status === 'BUSY').length
+  const breakCount = staff.filter((s) => s.status === 'ON_BREAK').length
 
-  const filteredStaff = CANONICAL_STAFF.filter((staff) => {
+  const filteredStaff = staff.filter((member) => {
     const matchesStatus =
-      filterStatus === 'ALL' || staff.status === filterStatus
+      filterStatus === 'ALL' || member.status === filterStatus
     const matchesSearch =
-      staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      staff.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      staff.currentZone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      staff.code.toLowerCase().includes(searchQuery.toLowerCase())
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.currentZone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.code.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -58,7 +59,7 @@ export const StaffStatusTable: React.FC<StaffStatusTableProps> = ({
           {/* Status Tabs */}
           <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200">
             {[
-              { key: 'ALL', label: `All (${CANONICAL_STAFF.length})` },
+              { key: 'ALL', label: `All (${staff.length})` },
               { key: 'AVAILABLE', label: `Available (${availableCount})` },
               { key: 'BUSY', label: `Busy (${busyCount})` },
               { key: 'ON_BREAK', label: `Break (${breakCount})` },

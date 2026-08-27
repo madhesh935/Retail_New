@@ -33,6 +33,21 @@ interface CustomerAssistContextType {
 
 const CustomerAssistContext = createContext<CustomerAssistContextType | undefined>(undefined)
 
+function mapBackendStatusToUi(
+  status: string,
+  assignedName: string | null | undefined
+): CustomerAssistStatus {
+  const raw = String(status || '').toUpperCase()
+  if (raw === 'COMPLETED') return 'COMPLETED'
+  if (raw === 'CANCELLED') return 'CANCELLED'
+  if (raw === 'BLOCKED') return 'UNAVAILABLE'
+  if (raw === 'ASSISTING') return 'ARRIVED'
+  if (raw === 'IN_PROGRESS' || raw === 'ASSIGNED') {
+    return assignedName ? 'ON_THE_WAY' : 'ASSIGNED'
+  }
+  return 'REQUESTED'
+}
+
 export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; storeId?: string }> = ({
   children,
   storeId = 'store-01',
@@ -42,22 +57,29 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
   const [isHelpSheetOpen, setIsHelpSheetOpen] = useState(false)
   const [activePrefill, setActivePrefill] = useState<CustomerAssistPrefill | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const pollTimerRef = useRef<number | null>(null)
 
-  // Simulation timers refs to clear on unmount or cancel
-  const simulationTimers = useRef<number[]>([])
-
-  const clearTimers = () => {
-    simulationTimers.current.forEach((id) => clearTimeout(id))
-    simulationTimers.current = []
+  const clearPoll = () => {
+    if (pollTimerRef.current) {
+      window.clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
   }
 
-  // Hydrate active request from localStorage on initial mount
+  const saveRequestState = useCallback((req: CustomerAssistRequest | null) => {
+    setActiveRequest(req)
+    if (req) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(req))
+    } else {
+      localStorage.removeItem(LOCAL_STORAGE_KEY)
+    }
+  }, [])
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved) as CustomerAssistRequest
-        // If request is older than 4 hours, ignore it
         const ageHours = (Date.now() - new Date(parsed.createdAt).getTime()) / (1000 * 60 * 60)
         if (ageHours < 4) {
           setActiveRequest(parsed)
@@ -70,15 +92,103 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
     }
   }, [])
 
-  // Sync active request changes to localStorage
-  const saveRequestState = useCallback((req: CustomerAssistRequest | null) => {
-    setActiveRequest(req)
-    if (req) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(req))
-    } else {
-      localStorage.removeItem(LOCAL_STORAGE_KEY)
+  // Poll live assist task status from DB while request is open
+  useEffect(() => {
+    clearPoll()
+    const requestId = activeRequest?.id
+    if (
+      !requestId ||
+      !requestId.startsWith('assist-') ||
+      activeRequest?.status === 'COMPLETED' ||
+      activeRequest?.status === 'CANCELLED'
+    ) {
+      return
     }
-  }, [])
+
+    const poll = async () => {
+      try {
+        const live = await realStoreApi.getCustomerAssistStatus(requestId)
+        setActiveRequest((prev) => {
+          if (!prev || prev.id !== requestId) return prev
+          const nextStatus = mapBackendStatusToUi(live.status, live.assigned_staff_name)
+          const liveMessages = (Array.isArray(live.customer_request_data?.messages)
+            ? live.customer_request_data.messages
+            : []
+          ).map((message: any, index: number) => ({
+            id: String(message.id || `message-${requestId}-${index}`),
+            sender:
+              String(message.sender || '').toUpperCase() === 'ASSOCIATE'
+                ? ('ASSOCIATE' as const)
+                : ('CUSTOMER' as const),
+            text: String(message.text || ''),
+            timestamp: message.timestamp
+              ? new Date(message.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Just now',
+          }))
+          const messagesChanged =
+            liveMessages.length !== prev.messages.length ||
+            liveMessages.some((message, index) => message.id !== prev.messages[index]?.id)
+          if (
+            nextStatus === prev.status &&
+            (live.assigned_staff_name || null) === (prev.assignedAssociate?.name || null) &&
+            !messagesChanged
+          ) {
+            return prev
+          }
+
+          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          const timeline = [...prev.timeline]
+          if (nextStatus !== prev.status) {
+            timeline.push({
+              status: nextStatus,
+              title:
+                nextStatus === 'ON_THE_WAY'
+                  ? 'Associate On The Way'
+                  : nextStatus === 'COMPLETED'
+                    ? 'Assistance Completed'
+                    : nextStatus === 'ASSIGNED'
+                      ? 'Associate Assigned'
+                      : `Status: ${nextStatus}`,
+              timestamp: now,
+              note: live.assigned_staff_name || undefined,
+            })
+          }
+
+          const updated: CustomerAssistRequest = {
+            ...prev,
+            status: nextStatus,
+            assignedAssociate: live.assigned_staff_name
+              ? {
+                  name: live.assigned_staff_name,
+                  role: 'Floor Assistance',
+                  estimatedArrival: '~2 min',
+                  avatarColor: '#06B6D4',
+                }
+              : prev.assignedAssociate,
+            messages: liveMessages,
+            timeline,
+          }
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
+          if (nextStatus === 'ON_THE_WAY' && prev.status !== 'ON_THE_WAY') {
+            showToast(`${live.assigned_staff_name || 'Associate'} is on the way`)
+          }
+          if (nextStatus === 'COMPLETED' && prev.status !== 'COMPLETED') {
+            showToast('✓ Assistance completed')
+          }
+          return updated
+        })
+      } catch (err) {
+        console.warn('Assist status poll failed', err)
+      }
+    }
+
+    void poll()
+    pollTimerRef.current = window.setInterval(poll, 4000)
+    return clearPoll
+  }, [activeRequest?.id, activeRequest?.status, showToast])
 
   const getAnonymousSessionId = (): string => {
     let id = localStorage.getItem(ANONYMOUS_SESSION_KEY)
@@ -103,18 +213,37 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
     setActiveTab('HELP')
   }, [setActiveTab])
 
-  // Create a new assistance request with realistic lifecycle orchestration
   const createRequest = async (input: CreateAssistRequestInput): Promise<CustomerAssistRequest> => {
     setIsCreating(true)
-    clearTimers()
 
     const now = new Date()
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     const typeCfg = ASSIST_TYPE_CONFIGS[input.requestType]
-    const isBackroom = input.requestType === 'BACKROOM_REQUEST'
+
+    let requestId = `ast-local-${Date.now()}`
+    let assignedName: string | null = null
+
+    try {
+      const created = await realStoreApi.submitCustomerAssist({
+        request_type: input.requestType,
+        urgency: input.accessibilityNeed ? 'URGENT' : 'NORMAL',
+        customer_name: 'Customer',
+        location_zone: input.zoneName,
+        shelf_code: input.shelfCode,
+        product_id: input.product?.id,
+        product_name: input.product?.name,
+        customer_notes: input.message,
+      })
+      requestId = created.request_id
+      assignedName = created.assigned_staff_name
+    } catch (e) {
+      setIsCreating(false)
+      showToast('Could not reach store staff system. Try again.')
+      throw e
+    }
 
     const newRequest: CustomerAssistRequest = {
-      id: `ast-${Date.now()}`,
+      id: requestId,
       storeId,
       requestType: input.requestType,
       typeLabel: typeCfg.label,
@@ -125,9 +254,17 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
       message: input.message,
       accessibilityNeed: input.accessibilityNeed,
       anonymousSessionId: getAnonymousSessionId(),
-      status: 'REQUESTED',
+      status: assignedName ? 'ASSIGNED' : 'REQUESTED',
       createdAt: now.toISOString(),
-      isBackroomFlow: isBackroom,
+      isBackroomFlow: input.requestType === 'BACKROOM_REQUEST',
+      assignedAssociate: assignedName
+        ? {
+            name: assignedName,
+            role: 'Floor Assistance',
+            estimatedArrival: '~3 min',
+            avatarColor: '#06B6D4',
+          }
+        : undefined,
       timeline: [
         {
           status: 'REQUESTED',
@@ -139,138 +276,23 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
       messages: [],
     }
 
-    // Submit real task to backend database
-    try {
-      await realStoreApi.submitCustomerAssist({
-        request_type: input.requestType,
-        urgency: input.accessibilityNeed ? 'URGENT' : 'NORMAL',
-        customer_name: 'Customer',
-        location_zone: input.zoneName,
-        shelf_code: input.shelfCode,
-        product_id: input.product?.id,
-        product_name: input.product?.name,
-        customer_notes: input.message,
-      })
-    } catch (e) {
-      console.warn('Backend assist submission notice:', e)
-    }
-
     saveRequestState(newRequest)
     setIsCreating(false)
     closeHelpSheet()
     setActiveTab('HELP')
-    showToast('✓ Staff help requested. Finding an available associate...')
-
-    // Step 2: Associate Assigned (after 2.5s)
-    const timer1 = window.setTimeout(() => {
-      setActiveRequest((prev) => {
-        if (!prev || prev.status === 'CANCELLED' || prev.status === 'COMPLETED') return prev
-        const assignTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        const isStaffPriya = input.zoneName.includes('Dairy') || input.zoneName.includes('Produce')
-        const associateName = isStaffPriya ? 'Priya' : 'Marcus'
-
-        const updated: CustomerAssistRequest = {
-          ...prev,
-          status: 'ASSIGNED',
-          assignedAssociate: {
-            name: `${associateName} (Store Associate)`,
-            role: input.requestType === 'BACKROOM_REQUEST' ? 'Inventory & Restock' : 'Floor Assistance',
-            estimatedArrival: '~2 min',
-            avatarColor: isStaffPriya ? '#06B6D4' : '#3B82F6',
-          },
-          timeline: [
-            ...prev.timeline,
-            {
-              status: 'ASSIGNED',
-              title: 'Associate Assigned',
-              timestamp: assignTime,
-              note: `${associateName} assigned to your request`,
-            },
-          ],
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
-        return updated
-      })
-    }, 2500)
-
-    // Step 3: Associate Accepted & On The Way (after 5.5s)
-    const timer2 = window.setTimeout(() => {
-      setActiveRequest((prev) => {
-        if (!prev || prev.status === 'CANCELLED' || prev.status === 'COMPLETED') return prev
-        const enRouteTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        const associateFirstName = prev.assignedAssociate?.name.split(' ')[0] || 'Associate'
-
-        const initialStaffMsg: CustomerAssistMessage = {
-          id: `msg-${Date.now()}`,
-          sender: 'ASSOCIATE',
-          text: isBackroom
-            ? `Hello! I've located the item in our stockroom and I'm bringing it out now.`
-            : `Hello! I'm on my way to the ${prev.zoneName} ${prev.shelfCode ? `near Shelf ${prev.shelfCode}` : ''}.`,
-          timestamp: enRouteTime,
-        }
-
-        const updated: CustomerAssistRequest = {
-          ...prev,
-          status: 'ON_THE_WAY',
-          timeline: [
-            ...prev.timeline,
-            {
-              status: 'ON_THE_WAY',
-              title: isBackroom ? 'Retrieving Product & On The Way' : 'Store Associate On The Way',
-              timestamp: enRouteTime,
-              note: 'Estimated arrival ~1-2 min',
-            },
-          ],
-          messages: [...prev.messages, initialStaffMsg],
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
-        showToast(`${associateFirstName} is on the way to help you`)
-        return updated
-      })
-    }, 5500)
-
-    // Step 4: Associate Arrived (after 16s)
-    const timer3 = window.setTimeout(() => {
-      setActiveRequest((prev) => {
-        if (!prev || prev.status !== 'ON_THE_WAY') return prev
-        const arriveTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        const associateFirstName = prev.assignedAssociate?.name.split(' ')[0] || 'Associate'
-
-        const arriveMsg: CustomerAssistMessage = {
-          id: `msg-${Date.now()}`,
-          sender: 'ASSOCIATE',
-          text: `I've arrived in the ${prev.zoneName}. Look out for my name tag!`,
-          timestamp: arriveTime,
-        }
-
-        const updated: CustomerAssistRequest = {
-          ...prev,
-          status: 'ARRIVED',
-          timeline: [
-            ...prev.timeline,
-            {
-              status: 'ARRIVED',
-              title: 'Store Associate Arrived',
-              timestamp: arriveTime,
-              note: `${associateFirstName} is at ${prev.zoneName}`,
-            },
-          ],
-          messages: [...prev.messages, arriveMsg],
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
-        showToast(`🔔 ${associateFirstName} has arrived at ${prev.zoneName}`)
-        return updated
-      })
-    }, 16000)
-
-    simulationTimers.current = [timer1, timer2, timer3]
+    showToast('✓ Staff help requested. Waiting for an associate...')
     return newRequest
   }
 
-  // Cancel assistance request
   const cancelRequest = async () => {
-    clearTimers()
     if (!activeRequest) return
+    if (activeRequest.id.startsWith('assist-')) {
+      try {
+        await realStoreApi.updateTaskStatus(activeRequest.id, 'CANCELLED')
+      } catch (e) {
+        console.warn('Cancel assist sync failed', e)
+      }
+    }
 
     const cancelTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     const updated: CustomerAssistRequest = {
@@ -290,10 +312,8 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
     showToast('Staff assistance request cancelled')
   }
 
-  // Send messaging text or quick reply to associate
   const sendAssistMessage = (text: string) => {
     if (!activeRequest || !text.trim()) return
-
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     const userMsg: CustomerAssistMessage = {
       id: `msg-${Date.now()}`,
@@ -301,50 +321,24 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
       text: text.trim(),
       timestamp: now,
     }
-
-    const updatedMessages = [...activeRequest.messages, userMsg]
-    const updated: CustomerAssistRequest = {
+    saveRequestState({
       ...activeRequest,
-      messages: updatedMessages,
+      messages: [...activeRequest.messages, userMsg],
+    })
+    if (activeRequest.id.startsWith('assist-')) {
+      void realStoreApi
+        .sendCustomerAssistMessage(activeRequest.id, 'CUSTOMER', userMsg.text)
+        .catch((error) => console.warn('Could not sync shopper message', error))
     }
-    saveRequestState(updated)
-
-    // Optional quick reply response from associate after 2.5s
-    const timer = window.setTimeout(() => {
-      setActiveRequest((cur) => {
-        if (!cur || cur.status === 'COMPLETED' || cur.status === 'CANCELLED') return cur
-        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        let replyText = "Got it, thanks for letting me know! I'm right here."
-
-        const q = text.toLowerCase()
-        if (q.includes('shelf')) {
-          replyText = "Understood! I'll come straight to the shelf facing."
-        } else if (q.includes('checkout')) {
-          replyText = "Heading over to the checkout area now."
-        } else if (q.includes('backroom')) {
-          replyText = "Checking the stock cart right now, bringing one unit out."
-        }
-
-        const replyMsg: CustomerAssistMessage = {
-          id: `msg-${Date.now()}`,
-          sender: 'ASSOCIATE',
-          text: replyText,
-          timestamp: replyTime,
-        }
-
-        const next = { ...cur, messages: [...cur.messages, replyMsg] }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(next))
-        return next
-      })
-    }, 2500)
-
-    simulationTimers.current.push(timer)
   }
 
   const confirmMetStaff = () => {
     if (!activeRequest) return
+    if (activeRequest.id.startsWith('assist-')) {
+      void realStoreApi.updateTaskStatus(activeRequest.id, 'COMPLETED')
+    }
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    const updated: CustomerAssistRequest = {
+    saveRequestState({
       ...activeRequest,
       status: 'COMPLETED',
       resolvedInMinutes: 3,
@@ -357,30 +351,25 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
           note: 'Customer confirmed meeting associate',
         },
       ],
-    }
-    saveRequestState(updated)
+    })
     showToast('✓ Great! Glad we could help you.')
   }
 
   const reportStaffNotFound = () => {
-    if (!activeRequest) return
     sendAssistMessage("I'm looking for the associate but can't spot you yet. I'm waiting here.")
     showToast('Alerted associate of your location')
   }
 
   const completeRequest = (wasResolved: boolean) => {
     if (!activeRequest) return
-    if (wasResolved) {
-      confirmMetStaff()
-    } else {
-      reopenRequest()
-    }
+    if (wasResolved) confirmMetStaff()
+    else reopenRequest()
   }
 
   const reopenRequest = () => {
     if (!activeRequest) return
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    const updated: CustomerAssistRequest = {
+    saveRequestState({
       ...activeRequest,
       status: 'ON_THE_WAY',
       timeline: [
@@ -392,13 +381,17 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
           note: 'Customer requested continued assistance',
         },
       ],
+    })
+    if (activeRequest.id.startsWith('assist-')) {
+      void realStoreApi
+        .updateTaskStatus(activeRequest.id, 'IN_PROGRESS', activeRequest.assignedAssociate ? undefined : undefined)
+        .catch((error) => console.warn('Could not reopen assist request', error))
     }
-    saveRequestState(updated)
-    showToast('Request escalated to supervisor')
+    showToast('Request escalated to floor team')
   }
 
   const clearCompletedRequest = () => {
-    clearTimers()
+    clearPoll()
     saveRequestState(null)
     setActiveTab('HOME')
   }

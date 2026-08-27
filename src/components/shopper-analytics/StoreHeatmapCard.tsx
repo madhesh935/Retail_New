@@ -4,12 +4,13 @@ import {
   Layers,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { CANONICAL_ZONE_ANALYTICS, CanonicalZoneAnalytics } from './shopperData'
+import { CanonicalZoneAnalytics } from './shopperData'
 
 export type TrafficTimeRange = 'LIVE' | 'LAST_HOUR' | 'TODAY' | '7_DAYS'
 export type MapViewMode = 'HEATMAP' | 'ZONE_VIEW'
 
 interface StoreHeatmapCardProps {
+  zones: CanonicalZoneAnalytics[]
   selectedZoneId?: string | null
   onSelectZone: (zone: CanonicalZoneAnalytics) => void
 }
@@ -18,6 +19,7 @@ const zoneCardBase =
   'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group bg-white shadow-sm'
 
 export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
+  zones,
   selectedZoneId,
   onSelectZone,
 }) => {
@@ -25,12 +27,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
   const [viewMode, setViewMode] = useState<MapViewMode>('HEATMAP')
   const [hoveredZone, setHoveredZone] = useState<CanonicalZoneAnalytics | null>(null)
 
-  const produceZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-produce')!
-  const beverageZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-beverages')!
-  const dairyZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-dairy')!
-  const electronicsZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-electronics')!
-  const householdZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-household')!
-  const checkoutZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-checkout')!
+  const shopping = zones.filter((z) => !z.isCheckout)
+  const checkoutZone = zones.find((z) => z.isCheckout)
 
   const cardClass = (zoneId: string, extraIdle?: string) =>
     cn(
@@ -131,134 +129,37 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={() => onSelectZone(produceZone)}
-              onMouseEnter={() => setHoveredZone(produceZone)}
-              onMouseLeave={() => setHoveredZone(null)}
-              className={cardClass(produceZone.id)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 text-xs">{produceZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                  HIGH
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-600">
-                <span>{produceZone.visitors} visitors today</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                <span>Dwell: <strong className="text-slate-800">{produceZone.avgDwellLabel}</strong></span>
-                <span>Shelf: <strong className="text-emerald-700">{produceZone.shelfAvailability}%</strong></span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onSelectZone(dairyZone)}
-              onMouseEnter={() => setHoveredZone(dairyZone)}
-              onMouseLeave={() => setHoveredZone(null)}
-              className={cardClass(dairyZone.id)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 text-xs">{dairyZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                  MEDIUM
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-600">
-                <span>{dairyZone.visitors} visitors today</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                <span>Dwell: <strong className="text-slate-800">{dairyZone.avgDwellLabel}</strong></span>
-                <span>Shelf: <strong className="text-amber-700">{dairyZone.shelfAvailability}%</strong></span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onSelectZone(beverageZone)}
-              onMouseEnter={() => setHoveredZone(beverageZone)}
-              onMouseLeave={() => setHoveredZone(null)}
-              className={cardClass(beverageZone.id, 'border-rose-200 hover:border-rose-300')}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 text-xs">{beverageZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                  HIGH
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-600">
-                <span>{beverageZone.visitors} visitors today</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                <span>Dwell: <strong className="text-slate-800">{beverageZone.avgDwellLabel}</strong></span>
-                <span>Shelf: <strong className="text-rose-700">{beverageZone.shelfAvailability}%</strong></span>
-              </div>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={() => onSelectZone(householdZone)}
-              onMouseEnter={() => setHoveredZone(householdZone)}
-              onMouseLeave={() => setHoveredZone(null)}
-              className={cardClass(householdZone.id)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 text-xs">{householdZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 border border-slate-200">
-                  LOW
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-600">
-                <span>{householdZone.visitors} visitors today</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                <span>Dwell: <strong className="text-slate-800">{householdZone.avgDwellLabel}</strong></span>
-                <span>Shelf: <strong className="text-emerald-700">{householdZone.shelfAvailability}%</strong></span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onSelectZone(electronicsZone)}
-              onMouseEnter={() => setHoveredZone(electronicsZone)}
-              onMouseLeave={() => setHoveredZone(null)}
-              className={cardClass(electronicsZone.id)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 text-xs">{electronicsZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
-                  HIGH DWELL
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-600">
-                <span>{electronicsZone.visitors} visitors today</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                <span>Dwell: <strong className="text-violet-700">{electronicsZone.avgDwellLabel}</strong></span>
-                <span>Shelf: <strong className="text-emerald-700">{electronicsZone.shelfAvailability}%</strong></span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onSelectZone(checkoutZone)}
-              onMouseEnter={() => setHoveredZone(checkoutZone)}
-              onMouseLeave={() => setHoveredZone(null)}
-              className={cardClass(checkoutZone.id)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 text-xs">{checkoutZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                  REGISTERS C1–C4
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-600">
-                <span>{checkoutZone.visitors} transitions</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                <span>Queue Wait: <strong className="text-amber-800">{checkoutZone.avgDwellLabel}</strong></span>
-                <span>Staff: <strong className="text-emerald-700">3 Active</strong></span>
-              </div>
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 flex-1 content-center">
+            {[...shopping, ...(checkoutZone ? [checkoutZone] : [])].map((zone) => (
+              <button
+                key={zone.id}
+                onClick={() => onSelectZone(zone)}
+                onMouseEnter={() => setHoveredZone(zone)}
+                onMouseLeave={() => setHoveredZone(null)}
+                className={cardClass(
+                  zone.id,
+                  zone.opportunityRisk === 'HIGH' ? 'border-rose-200 hover:border-rose-300' : undefined
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-900 text-xs">{zone.name}</span>
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                    {zone.trafficLevel.toUpperCase()}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  <span>{zone.visitors} visitors today</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                  <span>
+                    Dwell: <strong className="text-slate-800">{zone.avgDwellLabel}</strong>
+                  </span>
+                  <span>
+                    Shelf: <strong className="text-emerald-700">{zone.shelfAvailability}%</strong>
+                  </span>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 

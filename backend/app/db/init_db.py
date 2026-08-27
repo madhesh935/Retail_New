@@ -82,6 +82,7 @@ SQLITE_COLUMN_MIGRATIONS: dict[str, dict[str, str]] = {
         "contact_channel": "VARCHAR",
     },
     "staff_tasks": {"details": "JSON"},
+    "waste_records": {"evidence_photo": "VARCHAR"},
     "incidents": {
         "description": "VARCHAR",
         "zone_id": "VARCHAR",

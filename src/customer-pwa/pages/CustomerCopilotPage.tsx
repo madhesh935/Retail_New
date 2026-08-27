@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { formatCopilotDisplayText } from '@/customer-pwa/lib/customerCopilotEnrichment'
 import {
   Sparkles,
   Send,
@@ -13,7 +14,6 @@ import {
   Tag,
   AlertTriangle,
   RotateCcw,
-  Zap,
   Check,
   Bot,
 } from 'lucide-react'
@@ -24,6 +24,7 @@ import {
 } from '../context/CustomerShoppingContext'
 import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerMiniRoutePreview } from '../components/CustomerMiniRoutePreview'
+import { CheckoutRecommendationCard } from '../components/CheckoutRecommendationCard'
 import { CopilotRobotIcon } from '../components/CopilotRobotIcon'
 import { HandHelping } from 'lucide-react'
 
@@ -38,6 +39,8 @@ export const CustomerCopilotPage: React.FC = () => {
     addMultipleToShoppingList,
     setActiveTab,
     setIsNavigating,
+    navigateToProduct,
+    setRouteFocusProductIds,
   } = useCustomerShopping()
   const { openHelpSheet } = useCustomerAssist()
 
@@ -50,12 +53,13 @@ export const CustomerCopilotPage: React.FC = () => {
   }, [copilotMessages, copilotIsTyping])
 
   const quickIdeas = [
+    { label: 'Where is Milk?', prompt: 'Where can I find milk?' },
+    { label: 'Buy Dove shampoo', prompt: 'I want to buy Dove shampoo' },
+    { label: 'Find bread', prompt: 'Is bread available? Show me the route' },
+    { label: 'Tea location', prompt: 'Where is Tata tea in the store?' },
     { label: 'Breakfast for 4', prompt: 'I need groceries for breakfast for 4 people' },
     { label: 'Snacks under ₹500', prompt: 'I want snacks for 5 people under ₹500' },
-    { label: 'Tea & Biscuits for 6', prompt: 'I need tea, milk and biscuits for 6 people' },
-    { label: 'Where is Milk?', prompt: 'Where can I find milk?' },
-    { label: 'Pasta Dinner', prompt: 'Help me buy ingredients for pasta' },
-    { label: 'Dove Alternative', prompt: 'I want something similar to Dove shampoo' },
+    { label: 'Pasta Dinner', prompt: 'Help me buy ingredients for pasta dinner' },
     { label: 'Fastest Checkout', prompt: 'Which checkout lane is fastest right now?' },
   ]
 
@@ -66,37 +70,40 @@ export const CustomerCopilotPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-3 pb-24 select-none">
-      {/* 1. Header */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center font-bold shadow-2xs">
-            <CopilotRobotIcon className="h-5.5 w-5.5" stroke="#0F766E" />
+    <div className="flex h-full min-h-0 flex-col select-none">
+      {/* Header */}
+      <div className="shrink-0 px-4 pb-2 pt-4">
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-cyan-200 bg-cyan-50 font-bold text-cyan-700 shadow-2xs">
+              <CopilotRobotIcon className="h-5.5 w-5.5" stroke="#0F766E" />
+            </div>
+            <div>
+              <h1 className="flex items-center gap-1.5 text-sm font-extrabold tracking-tight text-slate-900">
+                <span>Shopping Copilot</span>
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              </h1>
+              <p className="text-[11px] font-medium text-slate-500">
+                {storeName} • Live Store Availability
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
-              <span>Shopping Copilot</span>
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            </h1>
-            <p className="text-[11px] text-slate-500 font-medium">
-              {storeName} • Live Store Availability
-            </p>
-          </div>
-        </div>
 
-        {copilotMessages.length > 1 && (
-          <button
-            onClick={clearCopilotMessages}
-            className="text-xs text-slate-400 hover:text-slate-600 font-semibold p-1 cursor-pointer"
-            title="Reset Chat"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
-        )}
+          {copilotMessages.length > 1 && (
+            <button
+              type="button"
+              onClick={clearCopilotMessages}
+              className="cursor-pointer p-1 text-xs font-semibold text-slate-400 hover:text-slate-600"
+              title="Reset Chat"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* 2. Messages Stream */}
-      <div className="space-y-3 flex-1 overflow-y-auto pr-0.5">
+      {/* Messages */}
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-3">
         {/* Starter Welcome & Smart Now module when only greeting exists */}
         {copilotMessages.length <= 1 && (
           <div className="space-y-3 animate-in fade-in-50 duration-300">
@@ -129,43 +136,6 @@ export const CustomerCopilotPage: React.FC = () => {
                 ))}
               </div>
             </div>
-
-            {/* SMART RIGHT NOW LIVE MODULE */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold text-cyan-800 uppercase tracking-wider flex items-center gap-1">
-                  <Zap className="h-3 w-3 text-cyan-600" />
-                  <span>SMART RIGHT NOW</span>
-                </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  Live
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div
-                  onClick={() => handleSend('Which checkout is fastest?')}
-                  className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 cursor-pointer hover:bg-emerald-100/70 transition-colors"
-                >
-                  <span className="text-[10px] text-emerald-800 font-bold block flex items-center gap-1">
-                    ⚡ Fastest Checkout
-                  </span>
-                  <span className="font-extrabold text-slate-900 block mt-0.5">Counter C2</span>
-                  <span className="text-[10px] text-emerald-700">~1.8 min wait</span>
-                </div>
-
-                <div
-                  onClick={() => handleSend('Can I avoid crowded Aisle 4?')}
-                  className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 cursor-pointer hover:bg-amber-100/70 transition-colors"
-                >
-                  <span className="text-[10px] text-amber-800 font-bold block flex items-center gap-1">
-                    ⚠️ Busy Area
-                  </span>
-                  <span className="font-extrabold text-slate-900 block mt-0.5">Aisle 4 (Snacks)</span>
-                  <span className="text-[10px] text-amber-700">Bypass available</span>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -192,7 +162,7 @@ export const CustomerCopilotPage: React.FC = () => {
                     <span>Shopping Copilot</span>
                   </div>
                 )}
-                <p>{msg.text}</p>
+                <p className="whitespace-pre-line">{formatCopilotDisplayText(msg)}</p>
                 <span
                   className={`text-[9px] block mt-1 text-right ${
                     isUser ? 'text-cyan-200' : 'text-slate-400'
@@ -283,6 +253,8 @@ export const CustomerCopilotPage: React.FC = () => {
                           qty: i.suggestedQty,
                         }))
                         addMultipleToShoppingList(items)
+                        setRouteFocusProductIds(items.map((i) => i.product.id))
+                        setIsNavigating(true)
                         setActiveTab('ROUTE')
                       }}
                       className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition-all"
@@ -294,48 +266,83 @@ export const CustomerCopilotPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 2. Structured Matched Products */}
+              {/* 2. Structured Matched Products + live availability */}
               {msg.matchedProducts && (
                 <div className="w-full space-y-2">
-                  {msg.matchedProducts.map((prod) => (
-                    <div
-                      key={prod.id}
-                      className="p-3 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between gap-3 text-slate-800"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {prod.isLowStock ? 'LOW STOCK' : 'IN STOCK'}
+                  {msg.matchedProducts.map((prod) => {
+                    const unavailable = !prod.isAvailable || prod.stockCount <= 0
+                    return (
+                      <div
+                        key={prod.id}
+                        className="p-3 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between gap-3 text-slate-800"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                                unavailable
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : prod.isLowStock
+                                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}
+                            >
+                              {unavailable ? 'OUT OF STOCK' : prod.isLowStock ? 'LOW STOCK' : 'IN STOCK'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-semibold">
+                              {prod.stockCount} on shelf
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-bold text-slate-900 mt-1 truncate">{prod.name}</h4>
+                          <span className="text-[11px] font-extrabold text-cyan-800">{prod.price}</span>
+                          <span className="text-slate-400 text-xs mx-1">•</span>
+                          <span className="text-[11px] text-slate-600">
+                            {prod.aisle} • {prod.shelf}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-semibold">{prod.stockCount} on shelf</span>
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 mt-1 truncate">{prod.name}</h4>
-                        <span className="text-[11px] font-extrabold text-cyan-800">{prod.price}</span>
-                        <span className="text-slate-400 text-xs mx-1">•</span>
-                        <span className="text-[11px] text-slate-600">{prod.aisle} • {prod.shelf}</span>
-                      </div>
 
-                      <div className="flex flex-col gap-1.5 shrink-0">
-                        <button
-                          onClick={() => addToShoppingList(prod, 1)}
-                          className="bg-cyan-600 hover:bg-cyan-700 text-white text-[11px] font-bold py-1.5 px-2.5 rounded-xl flex items-center gap-1 cursor-pointer shadow-2xs"
-                        >
-                          <Plus className="h-3 w-3" />
-                          <span>Add</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            addToShoppingList(prod, 1)
-                            setIsNavigating(true)
-                            setActiveTab('ROUTE')
-                          }}
-                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold py-1 px-2 rounded-lg cursor-pointer"
-                        >
-                          Navigate
-                        </button>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => addToShoppingList(prod, 1)}
+                            className="bg-cyan-600 hover:bg-cyan-700 text-white text-[11px] font-bold py-1.5 px-2.5 rounded-xl flex items-center gap-1 cursor-pointer shadow-2xs"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>Add</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigateToProduct(prod)}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold py-1 px-2 rounded-lg cursor-pointer"
+                          >
+                            Navigate
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* 2b. Primary product location pin */}
+              {msg.singleProductLocation && !msg.productRoute && (
+                <div className="w-full p-3 rounded-2xl bg-white border border-cyan-200 shadow-sm text-slate-800 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-cyan-800 uppercase tracking-wide">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>Product Location</span>
+                  </div>
+                  <div className="text-xs font-bold text-slate-900">{msg.singleProductLocation.product.name}</div>
+                  <div className="text-[11px] text-slate-600">
+                    {msg.singleProductLocation.aisle} · {msg.singleProductLocation.shelf}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToProduct(msg.singleProductLocation!.product)}
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5"
+                  >
+                    <Navigation className="h-3.5 w-3.5" />
+                    Open walking route
+                  </button>
                 </div>
               )}
 
@@ -355,54 +362,38 @@ export const CustomerCopilotPage: React.FC = () => {
                         <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                           <span className="font-extrabold text-cyan-800">{alt.price}</span>
                           <span>•</span>
-                          <span className="text-emerald-700 font-bold">IN STOCK</span>
+                          <span className={alt.isAvailable === false ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}>
+                            {alt.isAvailable === false ? 'CHECK STOCK' : 'IN STOCK'}
+                          </span>
                           <span>•</span>
-                          <span>{alt.aisle} ({alt.shelf})</span>
+                          <span>
+                            {alt.aisle} ({alt.shelf})
+                          </span>
                         </div>
                       </div>
 
                       <button
-                        onClick={() => addToShoppingList(alt, 1)}
+                        type="button"
+                        onClick={() => navigateToProduct(alt)}
                         className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl shrink-0 cursor-pointer shadow-2xs"
                       >
-                        Use This
+                        Navigate
                       </button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* 4. Inline Route Preview Card */}
-              {msg.showRoutePreview && <CustomerMiniRoutePreview />}
+              {/* 4. Product-specific route (unique per shelf) */}
+              {msg.productRoute && <CustomerMiniRoutePreview productRoute={msg.productRoute} />}
 
-              {/* 5. Checkout Recommendation Card */}
+              {/* 4b. Full-list route preview */}
+              {msg.showRoutePreview && !msg.productRoute && <CustomerMiniRoutePreview />}
+
+              {/* 5. Live checkout recommendation */}
               {msg.showCheckoutRecommendation && (
-                <div className="w-full p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-300 text-slate-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wide flex items-center gap-1">
-                      <Zap className="h-3 w-3" />
-                      <span>FASTEST CHECKOUT</span>
-                    </span>
-                    <span className="text-[10px] font-bold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">
-                      ~1.8 min wait
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900">Counter C2</h4>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
-                      Only 2 shoppers in queue. Fast cashless UPI & card scanning active.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setIsNavigating(true)
-                      setActiveTab('ROUTE')
-                    }}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <Navigation className="h-3.5 w-3.5" />
-                    <span>Navigate to Checkout C2</span>
-                  </button>
+                <div className="w-full">
+                  <CheckoutRecommendationCard />
                 </div>
               )}
 
@@ -468,8 +459,8 @@ export const CustomerCopilotPage: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Sticky Input Composer (Mobile Keyboard resilient) */}
-      <div className="fixed bottom-14 left-0 right-0 max-w-md mx-auto px-4 py-2 bg-slate-50/90 backdrop-blur-md border-t border-slate-200 z-30">
+      {/* Input — in page flow, not fixed over messages */}
+      <div className="shrink-0 border-t border-slate-200 bg-white/95 px-4 py-2 backdrop-blur-md">
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -482,12 +473,12 @@ export const CustomerCopilotPage: React.FC = () => {
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             placeholder="Ask Copilot (e.g. breakfast for 4, find milk)..."
-            className="w-full bg-white border border-slate-300 rounded-2xl pl-3.5 pr-11 py-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500 shadow-sm"
+            className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-3.5 pr-11 text-xs text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none"
           />
           <button
             type="submit"
             disabled={!inputPrompt.trim() || copilotIsTyping}
-            className="absolute right-2 p-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-40 text-white transition-colors cursor-pointer shadow-2xs"
+            className="absolute right-2 cursor-pointer rounded-xl bg-cyan-600 p-2 text-white shadow-2xs transition-colors hover:bg-cyan-700 disabled:opacity-40"
           >
             <Send className="h-3.5 w-3.5" />
           </button>

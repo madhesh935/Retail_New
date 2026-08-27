@@ -1,6 +1,15 @@
 import { StateCreator } from 'zustand'
 import { CameraFeed, CameraAnalyticsSummary } from '@/types'
-import { MOCK_CAMERAS, MOCK_CAMERA_ANALYTICS } from '@/services/mock/mockData'
+
+const EMPTY_CAMERA_SUMMARY: CameraAnalyticsSummary = {
+  totalCameras: 0,
+  onlineCameras: 0,
+  degradedCameras: 0,
+  offlineCameras: 0,
+  averageInferenceLatencyMs: 0,
+  averageFps: 0,
+  totalDetectionsLastMinute: 0,
+}
 
 export interface CameraSlice {
   cameras: CameraFeed[]
@@ -16,8 +25,8 @@ export interface CameraSlice {
 }
 
 export const createCameraSlice: StateCreator<CameraSlice, [], [], CameraSlice> = (set) => ({
-  cameras: MOCK_CAMERAS,
-  cameraSummary: MOCK_CAMERA_ANALYTICS,
+  cameras: [],
+  cameraSummary: EMPTY_CAMERA_SUMMARY,
   selectedCameraId: null,
   isLoadingCameras: false,
 

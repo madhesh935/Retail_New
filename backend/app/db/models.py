@@ -344,6 +344,7 @@ class WasteRecordModel(Base):
     unit_cost = Column(Float, nullable=True)
     total_loss_cost = Column(Float, nullable=True)
     notes = Column(String, nullable=True)
+    evidence_photo = Column(String, nullable=True)
 
 
 class RetailMetricModel(Base):

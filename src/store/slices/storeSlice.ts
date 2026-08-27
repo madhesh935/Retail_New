@@ -1,6 +1,5 @@
 import { StateCreator } from 'zustand'
 import { StoreStatus, StoreState, StoreZone } from '@/types'
-import { MOCK_STORE_STATUS, MOCK_STORE_STATE } from '@/services/mock/mockData'
 
 export interface StoreSlice {
   activeStoreId: string
@@ -20,9 +19,9 @@ export interface StoreSlice {
 
 export const createStoreSlice: StateCreator<StoreSlice, [], [], StoreSlice> = (set) => ({
   activeStoreId: 'store-01',
-  storeInfo: MOCK_STORE_STATUS,
-  storeState: MOCK_STORE_STATE,
-  zones: MOCK_STORE_STATE.zones,
+  storeInfo: null,
+  storeState: null,
+  zones: [],
   isLoadingStore: false,
   storeError: null,
 

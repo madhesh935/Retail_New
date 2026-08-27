@@ -2,18 +2,14 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   ScanBarcode,
   Search,
-  MapPin,
   Tag,
   CheckCircle2,
   ArrowRight,
   ShieldAlert,
   Compass,
-  Layers,
   CalendarClock,
   RotateCw,
   Trash2,
-  Edit3,
-  Sparkles,
 } from 'lucide-react'
 import { QuickShelfCheckModal } from '../components/QuickShelfCheckModal'
 import { PriceCheckModal } from '../components/PriceCheckModal'
@@ -21,6 +17,13 @@ import { RecordWasteModal } from '../components/RecordWasteModal'
 import { useAppStore } from '@/store/useAppStore'
 import { formatExpiryTime, calculateHoursRemaining } from '@/services/expiry/expiryRiskEngine'
 import { cn } from '@/lib/utils'
+import { realStoreApi } from '@/services/api/realStoreApi'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+import {
+  resolveBarcodeScan,
+  type ScannedProductResult,
+  type ScannedShelfResult,
+} from '@/staff-pwa/lib/demoBarcodes'
 
 interface StaffScanPageProps {
   onOpenMap: (destination: string, zone?: string, shelf?: string) => void
@@ -33,15 +36,22 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
   const {
     inventoryBatches,
     expiryRiskAssessments,
-    createRotationTask,
     correctBatchExpiryAudit,
+    dispatchRealTask,
+    fetchStoreData,
     authenticatedStaff,
+    shelfItems,
   } = useAppStore()
 
   const [scanType, setScanType] = useState<ScanType>('EXPIRY_BATCH')
   const [manualQuery, setManualQuery] = useState('')
+  const [manualFeedback, setManualFeedback] = useState<string | null>(null)
+  const [scannedBatchId, setScannedBatchId] = useState<string | null>(null)
+  const [scannedProduct, setScannedProduct] = useState<ScannedProductResult | null>(null)
+  const [scannedShelf, setScannedShelf] = useState<ScannedShelfResult | null>(null)
   const [isScanning, setIsScanning] = useState(false)
-  const [activeResult, setActiveResult] = useState<'PRODUCT' | 'EXPIRY_BATCH' | 'SHELF' | null>('EXPIRY_BATCH')
+  const [activeResult, setActiveResult] = useState<'PRODUCT' | 'EXPIRY_BATCH' | 'SHELF' | null>(null)
+  const scanCooldownRef = useRef<string | null>(null)
 
   // Modals
   const [isShelfCheckOpen, setIsShelfCheckOpen] = useState(false)
@@ -52,6 +62,7 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
 
   // In-line Expiry Verification Audit State
   const [isVerifyingExpiry, setIsVerifyingExpiry] = useState(false)
+  const [correctedExpiryDate, setCorrectedExpiryDate] = useState('')
   const [verifiedToast, setVerifiedToast] = useState<string | null>(null)
 
   // Camera video ref and state
@@ -60,10 +71,64 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
 
-  // Find sample batch (Milk 1L)
-  const scannedBatch = inventoryBatches.find((b) => b.batchNumber === 'MILK-0827') || inventoryBatches[0]
+  // Resolved batch from scan (no default until something is scanned)
+  const scannedBatch = scannedBatchId
+    ? inventoryBatches.find((batch) => batch.id === scannedBatchId)
+    : undefined
   const batchAssessment = expiryRiskAssessments.find((a) => a.batchId === scannedBatch?.id)
-  const hoursLeft = scannedBatch ? calculateHoursRemaining(scannedBatch.expiresAt) : 20
+  const hoursLeft = scannedBatch ? calculateHoursRemaining(scannedBatch.expiresAt) : 0
+
+  const applyBarcodeScan = (rawCode: string) => {
+    const normalized = rawCode.trim()
+    if (!normalized) return
+    if (scanCooldownRef.current === normalized) return
+    scanCooldownRef.current = normalized
+    window.setTimeout(() => {
+      scanCooldownRef.current = null
+    }, 2500)
+
+    setIsScanning(true)
+    const result = resolveBarcodeScan(normalized, shelfItems, inventoryBatches)
+    window.setTimeout(() => {
+      setIsScanning(false)
+      if (!result) {
+        setManualFeedback(`No product matched barcode “${normalized}”. Try a demo code from /barcodes/.`)
+        return
+      }
+
+      setManualFeedback(null)
+      if (result.kind === 'BATCH') {
+        setScannedBatchId(result.batchId)
+        setScannedProduct(null)
+        setScannedShelf(null)
+        setActiveResult('EXPIRY_BATCH')
+        setScanType('EXPIRY_BATCH')
+        setManualFeedback(`Loaded ${result.batch.productName} · Batch ${result.batch.batchNumber}`)
+        return
+      }
+
+      if (result.kind === 'PRODUCT') {
+        const batch = inventoryBatches.find((item) => item.productSku === result.sku)
+        setScannedProduct({
+          ...result,
+          backroomStock: batch?.backroomQuantity ?? result.backroomStock,
+        })
+        setScannedBatchId(null)
+        setScannedShelf(null)
+        setActiveResult('PRODUCT')
+        setScanType('PRODUCT')
+        setManualFeedback(`Scanned ${result.name} · ${result.sku}`)
+        return
+      }
+
+      setScannedShelf(result)
+      setScannedBatchId(null)
+      setScannedProduct(null)
+      setActiveResult('SHELF')
+      setScanType('SHELF')
+      setManualFeedback(`Shelf ${result.shelfCode} · ${result.name}`)
+    }, 280)
+  }
 
   const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
     setCameraError(null)
@@ -129,26 +194,85 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
     }
   }, [])
 
-  const handleSimulateScan = (type: 'PRODUCT' | 'EXPIRY_BATCH' | 'SHELF') => {
-    setIsScanning(true)
-    setTimeout(() => {
-      setIsScanning(false)
-      setActiveResult(type)
-      setScanType(type)
-    }, 350)
-  }
+  useEffect(() => {
+    const modalOpen = isWasteModalOpen || isShelfCheckOpen || isPriceCheckOpen
+    if (modalOpen) {
+      stopCamera()
+      return
+    }
+    void startCamera(facingMode)
+  }, [isWasteModalOpen, isShelfCheckOpen, isPriceCheckOpen])
+
+  useEffect(() => {
+    if (!cameraActive || !videoRef.current) return
+
+    let stopped = false
+    const reader = new BrowserMultiFormatReader()
+
+    void reader
+      .decodeFromVideoElement(videoRef.current, (result) => {
+        if (!stopped && result?.getText()) {
+          applyBarcodeScan(result.getText())
+        }
+      })
+      .catch((error) => {
+        console.warn('Barcode reader could not start', error)
+      })
+
+    return () => {
+      stopped = true
+    }
+  }, [cameraActive, shelfItems, inventoryBatches])
 
   const handleRotateStock = () => {
     if (scannedBatch) {
-      createRotationTask(scannedBatch.id)
-      setToastMessage(`✓ Stock Rotation task dispatched for Shelf ${scannedBatch.shelfCode || 'C2'}!`)
-      setTimeout(() => setToastMessage(null), 3000)
+      void dispatchRealTask({
+        title: `Rotate Stock: ${scannedBatch.productName} (${scannedBatch.shelfCode || 'Floor'})`,
+        type: 'STOCK_ROTATION',
+        priority: batchAssessment?.riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM',
+        target_location: `${scannedBatch.category} · Shelf ${scannedBatch.shelfCode || 'Floor'}`,
+        description: `FEFO rotation for batch ${scannedBatch.batchNumber}. Move earliest-expiry units to the front and verify the shelf label.`,
+        assigned_staff_id: authenticatedStaff?.id,
+      }).then(() => {
+        setToastMessage(`✓ Stock Rotation task dispatched for Shelf ${scannedBatch.shelfCode || 'C2'}!`)
+        setTimeout(() => setToastMessage(null), 3000)
+      })
     }
   }
 
   const handleConfirmExpiryCorrect = () => {
     setVerifiedToast('✓ Worker Confirmed: Physical packaging date matches system record.')
     setTimeout(() => setVerifiedToast(null), 2500)
+  }
+
+  const handleManualLookup = (event: React.FormEvent) => {
+    event.preventDefault()
+    applyBarcodeScan(manualQuery)
+  }
+
+  const handleCorrectExpiry = async () => {
+    if (!scannedBatch || !correctedExpiryDate) return
+    const corrected = new Date(`${correctedExpiryDate}T23:59:59`).toISOString()
+    try {
+      await realStoreApi.updateBatchExpiry(
+        scannedBatch.id,
+        corrected,
+        'Physical package date verified by staff scanner',
+        authenticatedStaff?.id || 'staff'
+      )
+      correctBatchExpiryAudit(
+        scannedBatch.id,
+        corrected,
+        'Physical package date verified by staff scanner',
+        authenticatedStaff?.id || 'staff'
+      )
+      setIsVerifyingExpiry(false)
+      setCorrectedExpiryDate('')
+      setVerifiedToast('✓ Corrected expiry date saved to the store database.')
+      setTimeout(() => setVerifiedToast(null), 2500)
+    } catch (error) {
+      setVerifiedToast(error instanceof Error ? error.message : 'Could not save expiry date')
+    }
   }
 
   return (
@@ -158,7 +282,7 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
         <div className="grid grid-cols-4 gap-1">
           <button
             type="button"
-            onClick={() => handleSimulateScan('EXPIRY_BATCH')}
+            onClick={() => setScanType('EXPIRY_BATCH')}
             className={cn(
               'py-2 px-1 text-[11px] font-bold rounded-xl text-center transition-all cursor-pointer',
               scanType === 'EXPIRY_BATCH'
@@ -170,7 +294,7 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
           </button>
           <button
             type="button"
-            onClick={() => handleSimulateScan('PRODUCT')}
+            onClick={() => setScanType('PRODUCT')}
             className={cn(
               'py-2 px-1 text-[11px] font-bold rounded-xl text-center transition-all cursor-pointer',
               scanType === 'PRODUCT'
@@ -182,7 +306,7 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
           </button>
           <button
             type="button"
-            onClick={() => handleSimulateScan('SHELF')}
+            onClick={() => setScanType('SHELF')}
             className={cn(
               'py-2 px-1 text-[11px] font-bold rounded-xl text-center transition-all cursor-pointer',
               scanType === 'SHELF'
@@ -266,54 +390,30 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
             />
           </div>
         </div>
-
-        {/* Quick Sample Scan Chips */}
-        <div className="space-y-1">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Sample Barcodes</div>
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-1">
-            <button
-              type="button"
-              onClick={() => handleSimulateScan('EXPIRY_BATCH')}
-              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[10px] font-bold text-amber-900 rounded-lg whitespace-nowrap border border-amber-200 transition-colors cursor-pointer"
-            >
-              🥛 Milk 1L (Batch MILK-0827)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSimulateScan('PRODUCT')}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-800 rounded-lg whitespace-nowrap border border-slate-200 transition-colors cursor-pointer"
-            >
-              🥤 Cola Zero (B4)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSimulateScan('SHELF')}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-800 rounded-lg whitespace-nowrap border border-slate-200 transition-colors cursor-pointer"
-            >
-              📍 Shelf B4 QR
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsWasteModalOpen(true)}
-              className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-[10px] font-bold text-rose-900 rounded-lg whitespace-nowrap border border-rose-200 transition-colors cursor-pointer"
-            >
-              🗑️ Record Waste
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Manual Search Fallback */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      <form onSubmit={handleManualLookup} className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-[1.35rem] -translate-y-1/2" />
         <input
           type="text"
           value={manualQuery}
           onChange={(e) => setManualQuery(e.target.value)}
-          placeholder="Manual SKU or Batch entry (e.g. MILK-0827)..."
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
+          placeholder="Scan EAN / enter SKU, batch, or barcode (e.g. 8901001101012)..."
+          className="w-full pl-10 pr-20 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
         />
-      </div>
+        <button
+          type="submit"
+          className="absolute right-1.5 top-1.5 min-h-8 px-3 rounded-xl bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700"
+        >
+          Find
+        </button>
+        {manualFeedback && (
+          <p className="px-2 pt-1.5 text-[11px] font-medium text-slate-600" role="status">
+            {manualFeedback}
+          </p>
+        )}
+      </form>
 
       {/* ======================================================= */}
       {/* 1. EXPIRY BATCH SCAN RESULT (Smart Expiry Scanner) */}
@@ -408,6 +508,25 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
                 </button>
               </div>
             )}
+            {isVerifyingExpiry && (
+              <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
+                <input
+                  type="date"
+                  value={correctedExpiryDate}
+                  onChange={(event) => setCorrectedExpiryDate(event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-xs"
+                  aria-label="Corrected expiry date"
+                />
+                <button
+                  type="button"
+                  onClick={handleCorrectExpiry}
+                  disabled={!correctedExpiryDate}
+                  className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                >
+                  Save date
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 4 Dedicated Staff Actions */}
@@ -452,88 +571,137 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
       )}
 
       {/* 2. STANDARD PRODUCT SCAN RESULT */}
-      {activeResult === 'PRODUCT' && (
+      {activeResult === 'PRODUCT' && scannedProduct && (
         <div className="bg-white rounded-2xl border border-slate-200/90 p-4.5 space-y-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] animate-in fade-in">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono">
-                  SKU-BEV-1029
+                  {scannedProduct.sku}
                 </span>
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/70 uppercase">
-                  Replenishment Needed
-                </span>
+                {scannedProduct.needsReplenishment && (
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/70 uppercase">
+                    Replenishment Needed
+                  </span>
+                )}
               </div>
-              <h3 className="text-base font-bold text-slate-900 mt-1">Sparkling Cola Zero 12-Pack</h3>
-              <div className="text-xs text-slate-500 font-medium">Wave Beverages • 330ml Cans</div>
+              <h3 className="text-base font-bold text-slate-900 mt-1">{scannedProduct.name}</h3>
+              <div className="text-xs text-slate-500 font-medium">
+                {scannedProduct.brand} • {scannedProduct.category}
+              </div>
             </div>
             <div className="text-right">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">POS Price</span>
-              <span className="text-base font-bold text-slate-900 font-mono">₹64.00</span>
+              <span className="text-base font-bold text-slate-900 font-mono">
+                ₹{scannedProduct.unitPrice.toFixed(2)}
+              </span>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Shelf</span>
-              <span className="text-xs font-bold text-slate-900 font-mono mt-0.5 block">B4 (Aisle 4)</span>
+              <span className="text-xs font-bold text-slate-900 font-mono mt-0.5 block">
+                {scannedProduct.shelfCode} ({scannedProduct.aisle})
+              </span>
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Shelf Stock</span>
-              <span className="text-xs font-bold text-rose-600 font-mono mt-0.5 block">17% (8 units)</span>
+              <span
+                className={cn(
+                  'text-xs font-bold font-mono mt-0.5 block',
+                  scannedProduct.needsReplenishment ? 'text-rose-600' : 'text-slate-900'
+                )}
+              >
+                {scannedProduct.availabilityPct}% ({scannedProduct.shelfStock} units)
+              </span>
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Backroom</span>
-              <span className="text-xs font-bold text-emerald-700 font-mono mt-0.5 block">14 units</span>
+              <span className="text-xs font-bold text-emerald-700 font-mono mt-0.5 block">
+                {scannedProduct.backroomStock} units
+              </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
-              onClick={() => onOpenMap('Shelf B4 — Cold Beverages', 'Beverages', 'B4')}
+              onClick={() =>
+                onOpenMap(
+                  `Shelf ${scannedProduct.shelfCode} — ${scannedProduct.category}`,
+                  scannedProduct.category,
+                  scannedProduct.shelfCode
+                )
+              }
               className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Compass className="w-3.5 h-3.5 text-blue-600" />
-              <span>Locate Shelf B4</span>
+              <span>Locate Shelf {scannedProduct.shelfCode}</span>
             </button>
             <button
               type="button"
-              onClick={() => onOpenMap('Backroom Bay 3B (Pallet 3)', 'Stockroom', 'Bay 3B')}
+              onClick={() => setIsPriceCheckOpen(true)}
               className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <Layers className="w-3.5 h-3.5 text-slate-600" />
-              <span>Locate Backroom</span>
+              <Tag className="w-3.5 h-3.5 text-purple-600" />
+              <span>Verify Price Tag</span>
             </button>
           </div>
         </div>
       )}
 
       {/* 3. SHELF SCAN RESULT */}
-      {activeResult === 'SHELF' && (
+      {activeResult === 'SHELF' && scannedShelf && (
         <div className="bg-white rounded-2xl border border-slate-200/90 p-4.5 space-y-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] animate-in fade-in">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200/80 font-mono">
-                  SHELF B4
+                  SHELF {scannedShelf.shelfCode}
                 </span>
-                <span className="text-[10px] font-medium text-slate-500">Beverages & Snacks</span>
+                <span className="text-[10px] font-medium text-slate-500">{scannedShelf.zoneName}</span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mt-1">Cold Drinks & Cola Gondola</h3>
+              <h3 className="text-base font-bold text-slate-900 mt-1">{scannedShelf.name}</h3>
+              <p className="text-[11px] text-slate-500 font-mono mt-0.5">{scannedShelf.sku}</p>
             </div>
-            <span className="text-xs font-bold text-rose-600 font-mono">17% Availability</span>
+            {scannedShelf.shelfItem && (
+              <span
+                className={cn(
+                  'text-xs font-bold font-mono',
+                  scannedShelf.shelfItem.status === 'CRITICAL' || scannedShelf.shelfItem.status === 'LOW'
+                    ? 'text-rose-600'
+                    : 'text-emerald-700'
+                )}
+              >
+                {Math.round(
+                  (scannedShelf.shelfItem.currentCount /
+                    Math.max(scannedShelf.shelfItem.capacityCount, 1)) *
+                    100
+                )}
+                % Availability
+              </span>
+            )}
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-              <span className="text-slate-600">Total SKUs Monitored:</span>
-              <span className="font-bold text-slate-900 font-mono">3 SKUs</span>
-            </div>
-            <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200/80 flex items-center justify-between text-amber-900">
-              <span className="font-medium">Active Alert:</span>
-              <span className="font-bold">Sparkling Cola Zero Low Stock</span>
-            </div>
+            {scannedShelf.shelfItem && (
+              <>
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <span className="text-slate-600">On-shelf units:</span>
+                  <span className="font-bold text-slate-900 font-mono">
+                    {scannedShelf.shelfItem.currentCount} / {scannedShelf.shelfItem.capacityCount}
+                  </span>
+                </div>
+                {(scannedShelf.shelfItem.status === 'CRITICAL' ||
+                  scannedShelf.shelfItem.status === 'LOW') && (
+                  <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200/80 flex items-center justify-between text-amber-900">
+                    <span className="font-medium">Active Alert:</span>
+                    <span className="font-bold">{scannedShelf.name} — {scannedShelf.shelfItem.status}</span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {shelfObservation && (
@@ -554,7 +722,13 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
             </button>
             <button
               type="button"
-              onClick={() => onOpenMap('Shelf B4', 'Beverages', 'B4')}
+              onClick={() =>
+                onOpenMap(
+                  `Shelf ${scannedShelf.shelfCode}`,
+                  scannedShelf.zoneName,
+                  scannedShelf.shelfCode
+                )
+              }
               className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Compass className="w-3.5 h-3.5 text-blue-600" />
@@ -566,30 +740,70 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
 
       {/* Modals */}
       <QuickShelfCheckModal
-        shelfCode="B4"
-        shelfName="Shelf B4 — Cold Beverages"
+        shelfCode={scannedShelf?.shelfCode || scannedProduct?.shelfCode || 'B4'}
+        shelfName={
+          scannedShelf
+            ? `Shelf ${scannedShelf.shelfCode} — ${scannedShelf.zoneName}`
+            : scannedProduct
+              ? `Shelf ${scannedProduct.shelfCode} — ${scannedProduct.category}`
+              : 'Shelf B4 — Cold Beverages'
+        }
         isOpen={isShelfCheckOpen}
         onClose={() => setIsShelfCheckOpen(false)}
-        onSuccess={(obs) => setShelfObservation(obs)}
+        onSuccess={async (observation, status, photo) => {
+          setShelfObservation(observation)
+          const shelfCode = scannedShelf?.shelfCode || scannedProduct?.shelfCode || 'B4'
+          if (['OPTIMAL', 'LOW', 'OUT_OF_STOCK', 'MISPLACED'].includes(status)) {
+            await realStoreApi.updateShelf(shelfCode, { status })
+            await fetchStoreData()
+            return
+          }
+
+          await realStoreApi.createStaffTask({
+            title: `Shelf ${shelfCode} check: ${observation}`,
+            type: status === 'PRICE_MISMATCH' ? 'FACILITY' : 'SHELF_INSPECTION',
+            priority: status === 'DAMAGED' ? 'HIGH' : 'MEDIUM',
+            target_location: `${scannedShelf?.zoneName || scannedProduct?.category || 'Beverages'} · Shelf ${shelfCode}`,
+            description: `Staff scanner observation: ${observation}`,
+            assigned_staff_id: authenticatedStaff?.id,
+            customer_request_data: photo
+              ? { evidence_photo: photo, source: 'staff_shelf_qr_check', shelf_code: shelfCode }
+              : { source: 'staff_shelf_qr_check', shelf_code: shelfCode },
+          })
+          await fetchStoreData()
+        }}
       />
 
       <PriceCheckModal
         isOpen={isPriceCheckOpen}
         onClose={() => setIsPriceCheckOpen(false)}
-        productName="Fresh Whole Milk 1L"
-        sku="SKU-DAIRY-101"
-        systemPrice={64}
-        shelfTagPrice={64}
+        productName={scannedProduct?.name || scannedBatch?.productName || 'Fresh Whole Milk 1L'}
+        sku={scannedProduct?.sku || scannedBatch?.productSku || 'SKU-DAIRY-101'}
+        systemPrice={scannedProduct?.unitPrice || scannedBatch?.unitPrice || 64}
+        shelfTagPrice={scannedProduct?.unitPrice || scannedBatch?.unitPrice || 64}
+        onReportMismatch={(shelfPrice) =>
+          dispatchRealTask({
+            title: `Correct price label: ${scannedProduct?.name || scannedBatch?.productName || 'Product'}`,
+            type: 'FACILITY',
+            priority: 'HIGH',
+            target_location: `${scannedProduct?.category || scannedBatch?.category || 'Dairy'} · Shelf ${scannedProduct?.shelfCode || scannedBatch?.shelfCode || 'C2'}`,
+            description: `Shelf label ₹${shelfPrice} does not match POS price ₹${scannedProduct?.unitPrice || scannedBatch?.unitPrice || 64}. Print and replace label.`,
+            assigned_staff_id: authenticatedStaff?.id,
+          })
+        }
       />
 
       <RecordWasteModal
         isOpen={isWasteModalOpen}
         onClose={() => setIsWasteModalOpen(false)}
         productName={scannedBatch?.productName || 'Fresh Whole Milk 1L'}
+        productId={scannedBatch?.productId}
         productSku={scannedBatch?.productSku || 'SKU-DAIRY-101'}
         batchId={scannedBatch?.id}
         batchNumber={scannedBatch?.batchNumber || 'MILK-0827'}
         shelfCode={scannedBatch?.shelfCode || 'C2'}
+        defaultQuantity={1}
+        maxQuantity={scannedBatch?.quantity}
         unitCost={scannedBatch?.unitCost || 42}
       />
     </div>

@@ -75,11 +75,36 @@ export const realStoreApi = {
     });
   },
 
-  async updateTaskStatus(taskId: string, status: string) {
+  async updateTaskStatus(
+    taskId: string,
+    status: string,
+    assignedStaffId?: string,
+    blocker?: { reason?: string; note?: string; photo?: string }
+  ) {
     return fetchJson<any>(`/api/v1/staff/tasks/${taskId}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status })
+      body: JSON.stringify({
+        status,
+        ...(assignedStaffId ? { assigned_staff_id: assignedStaffId } : {}),
+        ...(blocker?.reason ? { blocker_reason: blocker.reason } : {}),
+        ...(blocker?.note ? { blocker_note: blocker.note } : {}),
+        ...(blocker?.photo ? { blocker_photo: blocker.photo } : {}),
+      }),
     });
+  },
+
+  async updateTaskDetails(taskId: string, details: Record<string, unknown>) {
+    return fetchJson<{ status: string; task_id: string; details: Record<string, unknown> }>(
+      `/api/v1/staff/tasks/${encodeURIComponent(taskId)}/details`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ details }),
+      }
+    );
+  },
+
+  async getStaffTask(taskId: string) {
+    return fetchJson<any>(`/api/v1/staff/tasks/${taskId}`);
   },
 
   // Incidents
@@ -109,8 +134,66 @@ export const realStoreApi = {
     return fetchJson<any>('/api/v1/queue/status');
   },
 
+  async getQueueLanes() {
+    return fetchJson<any[]>('/api/v1/queue/lanes');
+  },
+
   async getEntranceStatus() {
     return fetchJson<any>('/api/v1/entrance/status');
+  },
+
+  async getInventoryBatches() {
+    return fetchJson<any[]>('/api/v1/inventory/batches');
+  },
+
+  async getMarkdownCandidates() {
+    return fetchJson<any[]>('/api/v1/inventory/markdown-candidates');
+  },
+
+  async getWasteRecords() {
+    return fetchJson<any[]>('/api/v1/inventory/waste');
+  },
+
+  async recordWaste(payload: {
+    store_id: string;
+    product_id: string;
+    product_sku: string;
+    product_name: string;
+    batch_id?: string;
+    batch_number?: string;
+    quantity: number;
+    reason: string;
+    recorded_by_staff_id: string;
+    recorded_by_staff_name: string;
+    location_id: string;
+    location_name: string;
+    unit_cost?: number;
+    notes?: string;
+    evidence_photo?: string;
+  }) {
+    return fetchJson<{
+      status: string;
+      waste_id: string;
+      batch_id: string;
+      remaining_quantity: number;
+    }>('/api/v1/inventory/waste', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateBatchExpiry(batchId: string, expiresAt: string, reason: string, staffId: string) {
+    return fetchJson<{ status: string; batch_id: string; expires_at: string }>(
+      `/api/v1/inventory/batches/${encodeURIComponent(batchId)}/expiry`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ expires_at: expiresAt, reason, staff_id: staffId }),
+      }
+    );
+  },
+
+  async getProducts() {
+    return fetchJson<any[]>('/api/v1/inventory/products');
   },
 
   // Customer Catalog & Assist
@@ -169,9 +252,53 @@ export const realStoreApi = {
     product_name?: string;
     customer_notes?: string;
   }) {
-    return fetchJson<any>('/api/v1/customer/assist', {
+    return fetchJson<{
+      status: string;
+      request_id: string;
+      assigned_staff_name: string | null;
+      estimated_arrival_minutes: number;
+    }>('/api/v1/customer/assist', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+  },
+
+  async getCustomerAssistStatus(requestId: string) {
+    return fetchJson<{
+      request_id: string;
+      status: string;
+      assigned_staff_id: string | null;
+      assigned_staff_name: string | null;
+      target_location: string;
+      title: string;
+      customer_request_data: Record<string, unknown>;
+      created_at: string | null;
+      completed_at: string | null;
+    }>(`/api/v1/customer/assist/${encodeURIComponent(requestId)}`);
+  },
+
+  async sendCustomerAssistMessage(requestId: string, sender: 'CUSTOMER' | 'ASSOCIATE', text: string) {
+    return fetchJson<{
+      id: string;
+      sender: 'CUSTOMER' | 'ASSOCIATE';
+      text: string;
+      timestamp: string;
+    }>(`/api/v1/customer/assist/${encodeURIComponent(requestId)}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ sender, text }),
+    });
+  },
+
+  async updateCustomerAssistDetails(
+    requestId: string,
+    details: { backroom_item_found?: boolean }
+  ) {
+    return fetchJson<{ status: string; request_id: string }>(
+      `/api/v1/customer/assist/${encodeURIComponent(requestId)}/details`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(details),
+      }
+    );
   }
 };

@@ -1,45 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { X, Send, Mic, ArrowRight } from 'lucide-react'
+import { X, Send, Mic, ArrowRight, ClipboardList, Headphones } from 'lucide-react'
 import { CopilotRobotIcon } from './CopilotRobotIcon'
 import { useAppStore } from '@/store/useAppStore'
 import { sendCopilotChat } from '@/services/api/chat.service'
+import {
+  buildStaffCopilotEnrichment,
+  buildStaffCopilotReplyText,
+  formatStaffCopilotDisplayText,
+  type StaffCopilotMessage,
+  type StaffCopilotTab,
+} from '@/staff-pwa/lib/staffCopilotEnrichment'
 
 interface StaffCopilotModalProps {
   isOpen: boolean
   onClose: () => void
-  onNavigateTab?: (tab: 'today' | 'assist' | 'scan' | 'work' | 'more') => void
+  onNavigateTab?: (tab: StaffCopilotTab) => void
   onOpenTaskDetails?: (taskId: string) => void
-}
-
-interface ChatMessage {
-  id: string
-  sender: 'AI' | 'USER'
-  text: string
-  timestamp: string
-  actionLabel?: string
-  actionTab?: 'today' | 'assist' | 'scan' | 'work' | 'more'
-  taskId?: string
-}
-
-function inferStaffAction(query: string, pendingCount: number, helpCount: number): {
-  actionLabel?: string
-  actionTab?: ChatMessage['actionTab']
-  taskId?: string
-} {
-  const q = query.toLowerCase()
-  if (q.includes('customer') || q.includes('help') || q.includes('assist') || helpCount > 0 && q.includes('request')) {
-    return { actionLabel: 'View Customer Requests', actionTab: 'assist' }
-  }
-  if (q.includes('scan') || q.includes('barcode') || q.includes('markdown') || q.includes('price')) {
-    return { actionLabel: 'Open Scan Tab', actionTab: 'scan' }
-  }
-  if (q.includes('spill') || q.includes('safety') || q.includes('hazard')) {
-    return { actionLabel: 'View Safety Task', actionTab: 'work', taskId: 'task-b4-spill' }
-  }
-  if (q.includes('b4') || q.includes('refill') || q.includes('restock') || q.includes('backroom') || q.includes('next') || q.includes('urgent') || pendingCount > 0) {
-    return { actionLabel: 'Open Work Tasks', actionTab: 'work' }
-  }
-  return {}
 }
 
 export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
@@ -48,8 +24,9 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
   onNavigateTab,
   onOpenTaskDetails,
 }) => {
-  const { pendingTasks, customerRequests, authenticatedStaff } = useAppStore()
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const { pendingTasks, customerRequests, authenticatedStaff, markdownCandidates, inventoryBatches } =
+    useAppStore()
+  const [messages, setMessages] = useState<StaffCopilotMessage[]>([
     {
       id: 'welcome',
       sender: 'AI',
@@ -82,7 +59,17 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
     busyRef.current = true
     const requestId = ++requestIdRef.current
     const trimmed = query.trim()
-    const userMsg: ChatMessage = {
+    const copilotCtx = {
+      query: trimmed,
+      staffId: authenticatedStaff?.id,
+      pendingTasks: pendingTasks || [],
+      customerRequests,
+      markdownCandidates,
+      inventoryBatches,
+    }
+    const enrichment = buildStaffCopilotEnrichment(copilotCtx)
+
+    const userMsg: StaffCopilotMessage = {
       id: `u-${Date.now()}`,
       sender: 'USER',
       text: trimmed,
@@ -94,40 +81,46 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
     setInputText('')
     setIsThinking(true)
 
-    const pendingCount = pendingTasks?.length || 0
-    const helpCount = customerRequests.filter((r) => r.status === 'REQUESTED').length
-    const action = inferStaffAction(trimmed, pendingCount, helpCount)
-
     try {
-      const { reply } = await sendCopilotChat({
-        persona: 'staff',
-        messages: nextMessages
-          .filter((m) => m.id !== 'welcome')
-          .map((m) => ({
-            role: m.sender === 'USER' ? ('user' as const) : ('assistant' as const),
-            content: m.text,
-          })),
-        context: {
-          surface: 'staff_pwa',
-          staffName: authenticatedStaff?.name,
-          staffRole: authenticatedStaff?.role,
-          pendingTaskCount: pendingCount,
-          pendingTaskTitles: (pendingTasks || []).slice(0, 5).map((t: { title?: string }) => t.title),
-          openCustomerHelpRequests: helpCount,
-          zone: authenticatedStaff?.zoneName,
-        },
-      })
+      let reply = ''
+      try {
+        const chat = await sendCopilotChat({
+          persona: 'staff',
+          messages: nextMessages
+            .filter((m) => m.id !== 'welcome')
+            .map((m) => ({
+              role: m.sender === 'USER' ? ('user' as const) : ('assistant' as const),
+              content: m.text,
+            })),
+          context: {
+            surface: 'staff_pwa',
+            staffName: authenticatedStaff?.name,
+            staffRole: authenticatedStaff?.role,
+            pendingTaskCount: (pendingTasks || []).length,
+            pendingTaskTitles: (pendingTasks || []).slice(0, 5).map((t) => t.title),
+            openCustomerHelpRequests: customerRequests.filter((r) =>
+              ['REQUESTED', 'ASSIGNED', 'ACCEPTED'].includes(r.status)
+            ).length,
+            zone: authenticatedStaff?.zoneName,
+          },
+        })
+        reply = chat.reply
+      } catch (chatErr) {
+        console.warn('Staff copilot chat unavailable; using structured reply.', chatErr)
+      }
 
       if (requestId !== requestIdRef.current) return
+
+      const finalText = buildStaffCopilotReplyText(enrichment, copilotCtx, reply)
 
       setMessages((prev) => [
         ...prev,
         {
           id: `ai-${Date.now()}`,
           sender: 'AI',
-          text: reply,
+          text: finalText,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          ...action,
+          ...enrichment,
         },
       ])
     } catch (err) {
@@ -138,10 +131,13 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
         {
           id: `ai-${Date.now()}`,
           sender: 'AI',
-          text: `Sorry — ${detail}. Check that the backend is running and OpenRouter is configured.`,
+          text:
+            buildStaffCopilotReplyText(enrichment, copilotCtx) ||
+            `Sorry — ${detail}. Check that the backend is running and OpenRouter is configured.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          actionLabel: 'Open Work',
-          actionTab: 'work',
+          ...enrichment,
+          actionLabel: enrichment.actionLabel || 'Open Work',
+          actionTab: enrichment.actionTab || 'work',
         },
       ])
     } finally {
@@ -238,7 +234,7 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
                     : 'bg-white border border-slate-200/90 text-slate-800 rounded-bl-xs'
                 }`}
               >
-                <div className="whitespace-pre-line">{m.text}</div>
+                <div className="whitespace-pre-line">{formatStaffCopilotDisplayText(m)}</div>
                 {m.actionLabel && (
                   <button
                     type="button"
@@ -257,6 +253,64 @@ export const StaffCopilotModal: React.FC<StaffCopilotModalProps> = ({
                   </button>
                 )}
               </div>
+
+              {m.taskCards && m.taskCards.length > 0 && (
+                <div className="w-full mt-1 space-y-1.5">
+                  {m.taskCards.map((task) => (
+                    <div
+                      key={task.id}
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs text-[11px]"
+                    >
+                      <div className="flex items-start gap-2">
+                        <ClipboardList className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-slate-900 leading-snug">{task.title}</p>
+                          <p className="text-slate-500 mt-0.5">
+                            {task.zoneName}
+                            {task.shelfCode ? ` • Shelf ${task.shelfCode}` : ''}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[9px] font-bold uppercase">
+                              {task.priority}
+                            </span>
+                            {task.etaMinutes != null && (
+                              <span className="text-[9px] text-slate-400 font-medium">
+                                ~{task.etaMinutes} min
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {m.helpCards && m.helpCards.length > 0 && (
+                <div className="w-full mt-1 space-y-1.5">
+                  {m.helpCards.map((req) => (
+                    <div
+                      key={req.id}
+                      className="p-2.5 rounded-xl bg-white border border-violet-200 shadow-xs text-[11px]"
+                    >
+                      <div className="flex items-start gap-2">
+                        <Headphones className="w-3.5 h-3.5 text-violet-600 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-slate-900 leading-snug">{req.typeLabel}</p>
+                          <p className="text-slate-500 mt-0.5">
+                            {req.zoneName}
+                            {req.productName ? ` • ${req.productName}` : ''}
+                            {req.shelfCode ? ` • Shelf ${req.shelfCode}` : ''}
+                          </p>
+                          <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-800 text-[9px] font-bold uppercase">
+                            {req.status.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <span className="text-[9px] text-slate-400 mt-1 px-1">{m.timestamp}</span>
             </div>
           ))}

@@ -1,17 +1,19 @@
 import React, { useMemo } from 'react'
 import ReactECharts from 'echarts-for-react'
-import { SHOPPING_ZONES, CanonicalZoneAnalytics } from './shopperData'
+import { CanonicalZoneAnalytics } from './shopperData'
 
 interface EngagementVsAvailabilityChartProps {
+  zones?: CanonicalZoneAnalytics[]
   onSelectZone?: (zone: CanonicalZoneAnalytics) => void
 }
 
 export const EngagementVsAvailabilityChart: React.FC<EngagementVsAvailabilityChartProps> = ({
+  zones = [],
   onSelectZone,
 }) => {
   const option = useMemo(() => {
     // Data format: [interestScore, shelfAvailability, zoneName, zoneObject, color]
-    const scatterData = SHOPPING_ZONES.map((zone) => {
+    const scatterData = zones.map((zone) => {
       let color = '#2DD4BF'
       if (zone.opportunityRisk === 'HIGH') color = '#F43F5E'
       else if (zone.shelfAvailability >= 85) color = '#10B981'
@@ -136,7 +138,7 @@ export const EngagementVsAvailabilityChart: React.FC<EngagementVsAvailabilityCha
         },
       ],
     }
-  }, [])
+  }, [zones, onSelectZone])
 
   return (
     <div className="w-full h-64">

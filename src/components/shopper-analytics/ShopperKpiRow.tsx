@@ -10,21 +10,22 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { formatNumber } from '@/lib/utils'
-import { SHOPPING_ZONES } from './shopperData'
+import type { CanonicalZoneAnalytics } from './shopperData'
 
-export const ShopperKpiRow: React.FC = () => {
-  const currentOccupancy = useAppStore((s) => s.currentOccupancy) || 142
-  const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall) || 1840
+interface ShopperKpiRowProps {
+  shoppingZones?: CanonicalZoneAnalytics[]
+}
+
+export const ShopperKpiRow: React.FC<ShopperKpiRowProps> = ({ shoppingZones = [] }) => {
+  const currentOccupancy = useAppStore((s) => s.currentOccupancy)
+  const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall)
   const storeInfo = useAppStore((s) => s.storeInfo)
 
-  const maxCap = storeInfo?.maxCapacity || 350
+  const maxCap = storeInfo?.maxCapacity || 1
   const occupancyPct = Math.round((currentOccupancy / maxCap) * 100)
 
-  // Find canonical busiest shopping zone by visitor count (Produce: 410)
-  const busiestZone = [...SHOPPING_ZONES].sort((a, b) => b.visitors - a.visitors)[0]
-
-  // Find canonical highest engagement zone by dwell (Electronics: 4.2 min)
-  const highestEngagementZone = [...SHOPPING_ZONES].sort(
+  const busiestZone = [...shoppingZones].sort((a, b) => b.visitors - a.visitors)[0]
+  const highestEngagementZone = [...shoppingZones].sort(
     (a, b) => b.avgDwellMinutes - a.avgDwellMinutes
   )[0]
 
@@ -111,12 +112,12 @@ export const ShopperKpiRow: React.FC = () => {
         </div>
         <div>
           <div className="text-lg font-bold text-slate-900 tracking-tight truncate">
-            {busiestZone.name}
+            {busiestZone?.name || '—'}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">{busiestZone.visitors} visitors</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">{busiestZone?.visitors ?? 0} visitors</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-sky-700 font-semibold truncate">
-          {busiestZone.aisle}
+          {busiestZone?.aisle || 'Awaiting zone data'}
         </div>
       </div>
 
@@ -128,10 +129,10 @@ export const ShopperKpiRow: React.FC = () => {
         </div>
         <div>
           <div className="text-lg font-bold text-purple-700 tracking-tight truncate">
-            {highestEngagementZone.name}
+            {highestEngagementZone?.name || '—'}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            {highestEngagementZone.avgDwellLabel} avg dwell
+            {highestEngagementZone?.avgDwellLabel || '—'} avg dwell
           </div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-purple-700 font-semibold">

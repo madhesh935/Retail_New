@@ -16,7 +16,7 @@ import {
   X,
   CreditCard,
 } from 'lucide-react'
-import { useCustomerShopping, STORE_CATALOG, CustomerProduct } from '../context/CustomerShoppingContext'
+import { useCustomerShopping, CustomerProduct } from '../context/CustomerShoppingContext'
 import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerIndoorMap2D } from '../components/CustomerIndoorMap2D'
 import { CheckoutRecommendationCard } from '../components/CheckoutRecommendationCard'
@@ -43,6 +43,8 @@ export const SmartMapRoutePage: React.FC = () => {
     setIsNavigatingToCheckout,
     showToast,
     setActiveTab,
+    routeFocusProductIds,
+    setRouteFocusProductIds,
   } = useCustomerShopping()
   const { openHelpSheet } = useCustomerAssist()
 
@@ -50,6 +52,7 @@ export const SmartMapRoutePage: React.FC = () => {
   const [showOtherCountersModal, setShowOtherCountersModal] = useState(false)
   const [reachedCheckoutConfirmation, setReachedCheckoutConfirmation] = useState(false)
 
+  const focusMode = Boolean(routeFocusProductIds?.length)
   const itemsOnly = optimizedRoute.filter((step) => step.item)
   const completedCount = itemsOnly.filter((step) => step.item?.isCollected).length
   const skippedCount = itemsOnly.filter((step) => step.item?.isSkipped).length
@@ -113,6 +116,25 @@ export const SmartMapRoutePage: React.FC = () => {
   if (!isNavigating) {
     return (
       <div className="space-y-4 pb-8 select-none">
+        {focusMode && (
+          <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-[10px] font-extrabold uppercase tracking-wide text-cyan-800">
+                Product route focus
+              </div>
+              <div className="text-xs font-bold text-slate-900 truncate">
+                Showing path for {itemsOnly.map((s) => s.item?.name.split(' (')[0]).join(', ') || 'selected item'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRouteFocusProductIds(null)}
+              className="text-[10px] font-bold text-cyan-800 bg-white border border-cyan-200 px-2 py-1 rounded-lg shrink-0"
+            >
+              Show full list
+            </button>
+          </div>
+        )}
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
@@ -122,10 +144,10 @@ export const SmartMapRoutePage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-sm font-extrabold text-slate-900 leading-tight">
-                  Your Smart Route
+                  {focusMode ? 'Product Walking Route' : 'Your Smart Route'}
                 </h1>
                 <span className="text-[11px] text-slate-500 font-medium">
-                  {totalItemsCount} items • Optimized for shortest walking distance
+                  {totalItemsCount} stop{totalItemsCount === 1 ? '' : 's'} • Live shelf navigation
                 </span>
               </div>
             </div>

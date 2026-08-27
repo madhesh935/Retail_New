@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/useAppStore'
+import { realStoreApi } from '@/services/api/realStoreApi'
+import { mapStaffMember } from '@/services/api/mappers'
 import {
   ArrowRight,
   Eye,
@@ -11,192 +13,164 @@ import {
   User,
 } from 'lucide-react'
 
-const KNOWN_WORKERS: Record<
-  string,
-  { name: string; role: string; shift: string; zoneName: string }
-> = {
-  S03: {
-    name: "Liam O'Connor",
-    role: 'Inventory Restocker',
-    shift: 'Shift B',
-    zoneName: 'Beverages',
-  },
-  S01: {
-    name: 'Elena Rostova',
-    role: 'Floor Lead',
-    shift: 'Shift B',
-    zoneName: 'Fresh Produce',
-  },
-  S02: {
-    name: 'Marcus Chen',
-    role: 'Checkout Associate',
-    shift: 'Shift B',
-    zoneName: 'Checkout Front',
-  },
-}
-
 export const StaffLoginPage: React.FC = () => {
   const navigate = useNavigate()
-  const { loginStaff } = useAppStore()
+  const { loginStaff, staffMembers, setStaffPayload, fetchStoreData, authenticatedStaff, attendanceState } = useAppStore()
 
-  const [employeeId, setEmployeeId] = useState('S03')
+  const [employeeId, setEmployeeId] = useState('EMP-403')
   const [pin, setPin] = useState('1234')
   const [showPin, setShowPin] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (staffMembers.length === 0) {
+      realStoreApi
+        .getStaffMembers()
+        .then((members) => {
+          const mapped = members.map(mapStaffMember)
+          setStaffPayload({
+            totalStaffOnShift: mapped.filter((m) => m.status !== 'OFF_DUTY').length,
+            availableStaffCount: mapped.filter((m) => m.status === 'ON_DUTY_AVAILABLE').length,
+            busyStaffCount: mapped.filter((m) => m.status === 'ON_DUTY_BUSY').length,
+            breakStaffCount: mapped.filter((m) => m.status === 'ON_BREAK').length,
+            activeTasksCount: 0,
+            staffMembers: mapped,
+            pendingTasks: [],
+            recommendedReallocations: [],
+          })
+        })
+        .catch(console.warn)
+    }
+  }, [staffMembers.length, setStaffPayload])
+
+  useEffect(() => {
+    if (!authenticatedStaff) return
+    navigate(attendanceState.status === 'NOT_CHECKED_IN' ? '/staff/attendance' : '/staff', {
+      replace: true,
+    })
+  }, [authenticatedStaff, attendanceState.status, navigate])
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
 
-    setTimeout(() => {
+    try {
       const cleanId = employeeId.trim().toUpperCase()
-      const workerInfo = KNOWN_WORKERS[cleanId] || {
-        name: `Worker ${cleanId}`,
-        role: 'Store Associate',
-        shift: 'Shift B',
-        zoneName: 'Store Floor',
+      if (!cleanId || !/^\d{4}$/.test(pin)) {
+        setError('Please enter a valid Employee ID and 4-digit PIN.')
+        return
+      }
+      if (pin !== '1234') {
+        setError('Incorrect PIN. Use the store demo PIN 1234.')
+        return
       }
 
-      if (cleanId && pin.length >= 4) {
-        loginStaff({
-          id: `STAFF-${cleanId}`,
-          name: workerInfo.name,
-          employeeId: cleanId,
-          role: workerInfo.role,
-          storeId: 'STORE-01',
-          storeName: 'Chennai Central',
-          shift: workerInfo.shift,
-          zoneName: workerInfo.zoneName,
-        })
-        navigate('/staff/attendance')
-      } else {
-        setError('Please enter a valid Employee ID and 4-digit PIN.')
-        setIsLoading(false)
+      let members = staffMembers
+      if (members.length === 0) {
+        const raw = await realStoreApi.getStaffMembers()
+        members = raw.map(mapStaffMember)
       }
-    }, 600)
+
+      const worker =
+        members.find((m) => m.employeeId.toUpperCase() === cleanId) ||
+        members.find((m) => m.id.toUpperCase() === cleanId) ||
+        members.find((m) => m.employeeId.toUpperCase().endsWith(cleanId.replace(/^S0?/, ''))) ||
+        members.find((m) => m.name.toLowerCase().includes(cleanId.toLowerCase()))
+
+      if (!worker) {
+        setError('Employee ID not found in store roster. Try EMP-403 (Madhesh).')
+        return
+      }
+
+      loginStaff({
+        id: worker.id,
+        name: worker.name,
+        employeeId: worker.employeeId,
+        role: worker.role,
+        storeId: 'STORE-01',
+        storeName: 'Chennai Central',
+        shift: `${worker.shiftStartTime} - ${worker.shiftEndTime}`,
+        zoneName: worker.currentZoneName || 'Store Floor',
+      })
+      void fetchStoreData()
+      navigate('/staff/attendance')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4F6F8] text-slate-900 justify-between p-6 select-none font-sans max-w-md mx-auto relative overflow-hidden shadow-2xl">
-      {/* Top Header Bar */}
-      <div className="flex items-center justify-between pt-2">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-blue-600 text-white flex items-center justify-center font-black text-sm rounded-xl shadow-xs shadow-blue-500/20">
-            RE
-          </div>
-          <div>
-            <span className="text-xs font-bold text-slate-900 leading-none block">Retail Edge</span>
-            <span className="text-[10px] text-slate-500 font-medium font-mono">Store Companion</span>
-          </div>
-        </div>
-
-        {/* Edge Connectivity status */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full text-[10px] font-bold text-emerald-700">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Edge Online (2ms)</span>
-        </div>
-      </div>
-
-      {/* Main Form Content */}
-      <div className="my-auto py-6 space-y-6">
-        {/* Welcome Title */}
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl shadow-xl p-6 space-y-5">
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 uppercase tracking-wider">
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Chennai Central • Store 01</span>
+          <div className="inline-flex items-center gap-2 text-teal-700 text-xs font-bold uppercase tracking-wider">
+            <Building2 className="h-4 w-4" />
+            Staff Companion
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Worker Sign In</h1>
-          <p className="text-xs text-slate-500 font-medium">
-            Enter your employee ID and PIN to start your shift.
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Sign in</h1>
+          <p className="text-sm text-slate-500">
+            Sign in as Madhesh with employee ID EMP-403 and demo PIN 1234.
           </p>
         </div>
 
-        {/* Individual Sign In Form Card */}
-        <form onSubmit={handleLogin} className="space-y-4 bg-white p-5 rounded-3xl border border-slate-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          {/* Employee ID Field */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-400" />
-                <span>Employee ID</span>
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono font-normal">e.g. S03</span>
-            </label>
-            <input
-              type="text"
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200/90 rounded-xl text-base font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all uppercase font-mono tracking-wider"
-              placeholder="S03"
-              required
-            />
-          </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <label className="block space-y-1.5">
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Employee ID</span>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm font-semibold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="EMP-403"
+                autoComplete="username"
+              />
+            </div>
+          </label>
 
-          {/* Security PIN Field */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-slate-400" />
-                <span>Shift PIN (4 digits)</span>
-              </span>
+          <label className="block space-y-1.5">
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">PIN</span>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type={showPin ? 'text' : 'password'}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 py-2.5 text-sm font-semibold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                placeholder="••••"
+                autoComplete="current-password"
+              />
               <button
                 type="button"
-                onClick={() => setShowPin(!showPin)}
-                className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+                onClick={() => setShowPin((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                {showPin ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                <span>{showPin ? 'Hide' : 'Show'}</span>
+                {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </label>
-            <input
-              type={showPin ? 'text' : 'password'}
-              value={pin}
-              maxLength={6}
-              onChange={(e) => setPin(e.target.value)}
-              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200/90 rounded-xl text-base font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-mono tracking-widest"
-              placeholder="••••"
-              required
-            />
-          </div>
-
-          {/* Shift Schedule Alert */}
-          <div className="flex items-center gap-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-900">
-            <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span className="text-[11px] font-medium">
-              Active Shift: <strong className="font-bold">Shift B (14:00 – 22:00)</strong>
-            </span>
-          </div>
-
-          {error && (
-            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold">
-              {error}
             </div>
-          )}
+          </label>
 
-          {/* Sign In CTA Button */}
+          {error && <p className="text-xs font-semibold text-rose-600">{error}</p>}
+
           <button
             type="submit"
-            disabled={isLoading || !employeeId || !pin}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
+            disabled={isLoading}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 text-sm disabled:opacity-60"
           >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                <span>Signing In...</span>
-              </span>
-            ) : (
-              <>
-                <span>Sign In to Shift</span>
-                <ArrowRight className="w-4 h-4 text-white/90" />
-              </>
-            )}
+            {isLoading ? 'Signing in…' : 'Continue to shift'}
+            <ArrowRight className="h-4 w-4" />
           </button>
         </form>
-      </div>
 
-      <div />
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+          <Clock className="h-3.5 w-3.5" />
+          Shift window loads from the live staff roster after sign-in.
+        </div>
+      </div>
     </div>
   )
 }

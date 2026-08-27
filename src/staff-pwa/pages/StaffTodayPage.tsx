@@ -26,7 +26,7 @@ export const StaffTodayPage: React.FC<StaffTodayPageProps> = ({
 }) => {
   const { authenticatedStaff, attendanceState, pendingTasks, storeAnnouncements, handoverItems } = useAppStore()
 
-  const staffName = authenticatedStaff?.name || 'Liam'
+  const staffName = authenticatedStaff?.name || 'Madhesh'
   const staffRole = authenticatedStaff?.role || 'Inventory Restocker'
   const shiftName = authenticatedStaff?.shift || 'Shift B'
   const zoneName = authenticatedStaff?.zoneName || 'Beverages'

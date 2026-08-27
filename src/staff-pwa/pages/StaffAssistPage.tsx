@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import {
   HandHelping,
   MapPin,
-  Clock,
   CheckCircle2,
   Inbox,
   MessageCircle,
@@ -14,17 +13,14 @@ import { CustomerHelpRequest } from '@/store/slices/customerRequestSlice'
 
 interface StaffAssistPageProps {
   onOpenAssistDetails: (request: CustomerHelpRequest) => void
-  onOpenMap: (zoneName: string, shelfCode?: string) => void
 }
 
 export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
   onOpenAssistDetails,
-  onOpenMap,
 }) => {
-  const { customerRequests, acceptCustomerRequest, authenticatedStaff } = useAppStore()
+  const { customerRequests, syncTaskStatus, authenticatedStaff } = useAppStore()
   const [activeFilter, setActiveFilter] = useState<'NEW' | 'HELPING' | 'DONE'>('NEW')
 
-  const staffName = authenticatedStaff?.name || 'Liam'
   const staffId = authenticatedStaff?.id || 'STAFF-03'
 
   const newRequests = customerRequests.filter((r) => r.status === 'REQUESTED')
@@ -38,7 +34,7 @@ export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
 
   const handleQuickAccept = (e: React.MouseEvent, reqId: string) => {
     e.stopPropagation()
-    acceptCustomerRequest(reqId, staffId, staffName)
+    void syncTaskStatus(reqId, 'IN_PROGRESS', staffId)
   }
 
   return (

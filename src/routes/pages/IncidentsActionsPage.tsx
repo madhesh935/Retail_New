@@ -22,17 +22,35 @@ import {
 } from '@/components/command-center/WhyRecommendationDialog'
 import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import {
-  CANONICAL_INCIDENTS,
-  CANONICAL_RESOLUTIONS,
   OperationalIncident,
+  CANONICAL_INCIDENTS,
 } from '@/components/incidents-actions/incidentData'
 import { useAppStore } from '@/store/useAppStore'
+import { toOperationalIncident, toResolvedIncidents } from '@/services/api/livePageAdapters'
 import { cn } from '@/lib/utils'
 
 export const IncidentsActionsPage: React.FC = () => {
   const storeInfo = useAppStore((s) => s.storeInfo)
+  const storeIncidents = useAppStore((s) => s.incidents)
 
-  const [incidents, setIncidents] = useState<OperationalIncident[]>(CANONICAL_INCIDENTS)
+  const liveIncidents = useMemo<OperationalIncident[]>(() => {
+    if (storeIncidents && storeIncidents.length > 0) {
+      return storeIncidents.map((inc, i) => toOperationalIncident(inc, i))
+    }
+    return CANONICAL_INCIDENTS
+  }, [storeIncidents])
+
+  const [incidents, setIncidents] = useState<OperationalIncident[]>([])
+  const [hydrated, setHydrated] = useState(false)
+
+  React.useEffect(() => {
+    setIncidents(liveIncidents)
+    setHydrated(true)
+  }, [liveIncidents])
+
+  const effectiveIncidents: OperationalIncident[] = hydrated ? incidents : liveIncidents
+  const resolutions = useMemo(() => toResolvedIncidents(effectiveIncidents), [effectiveIncidents])
+
   const [selectedIncident, setSelectedIncident] = useState<OperationalIncident | null>(null)
 
   // Modals & Drawers state
@@ -53,13 +71,13 @@ export const IncidentsActionsPage: React.FC = () => {
   })
 
   // Derived counts and dynamic messages
-  const activeCritical = incidents.filter((i) => i.severity === 'CRITICAL' && i.status !== 'RESOLVED')
-  const activeHigh = incidents.filter((i) => i.severity === 'HIGH' && i.status !== 'RESOLVED')
+  const activeCritical = effectiveIncidents.filter((i) => i.severity === 'CRITICAL' && i.status !== 'RESOLVED')
+  const activeHigh = effectiveIncidents.filter((i) => i.severity === 'HIGH' && i.status !== 'RESOLVED')
   
   const criticalCount = activeCritical.length
   const highCount = activeHigh.length
-  const activeCount = incidents.filter((i) => i.status !== 'RESOLVED').length
-  const resolvedTodayCount = CANONICAL_RESOLUTIONS.length + incidents.filter((i) => i.status === 'RESOLVED').length + 15
+  const activeCount = effectiveIncidents.filter((i) => i.status !== 'RESOLVED').length
+  const resolvedTodayCount = resolutions.length
 
   const latestCriticalMessage = activeCritical.length > 0
     ? `${activeCritical[0].title} · ${activeCritical[0].zone}`
@@ -71,7 +89,7 @@ export const IncidentsActionsPage: React.FC = () => {
 
   // Filtered Incidents
   const filteredIncidents = useMemo(() => {
-    return incidents.filter((inc) => {
+    return effectiveIncidents.filter((inc) => {
       // Severity Filter
       if (filters.severity !== 'ALL' && inc.severity !== filters.severity) return false
 
@@ -93,7 +111,7 @@ export const IncidentsActionsPage: React.FC = () => {
 
       return true
     })
-  }, [incidents, filters])
+  }, [effectiveIncidents, filters])
 
   // Handle staff assignment confirmation
   const handleConfirmAssignment = (inc: OperationalIncident) => {
@@ -264,7 +282,7 @@ export const IncidentsActionsPage: React.FC = () => {
       />
 
       {/* 4. Recent Resolutions Showcase */}
-      <ResolvedIncidentShowcase />
+      <ResolvedIncidentShowcase resolutions={resolutions} />
 
       {/* ======================================================= */}
       {/* DRAWERS & MODALS */}

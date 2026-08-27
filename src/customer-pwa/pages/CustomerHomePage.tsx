@@ -7,21 +7,21 @@ import {
   ArrowRight,
   HandHelping,
 } from 'lucide-react'
-import { useCustomerShopping, STORE_CATALOG } from '../context/CustomerShoppingContext'
+import { useCustomerShopping } from '../context/CustomerShoppingContext'
 import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerProductCard } from '../components/CustomerProductCard'
 import { AssistanceStatusCard } from '../components/assist/AssistanceStatusCard'
 import { CustomerSaveTodaySection } from '../components/CustomerSaveTodaySection'
 
 export const CustomerHomePage: React.FC = () => {
-  const { shoppingList, setActiveTab, setIsNavigating } = useCustomerShopping()
+  const { shoppingList, setActiveTab, setIsNavigating, catalog } = useCustomerShopping()
   const { openHelpSheet } = useCustomerAssist()
   const [showOffersModal, setShowOffersModal] = useState(false)
 
   const listCount = shoppingList.length
 
   return (
-    <div className="space-y-4 pb-6 select-none">
+    <div className="space-y-4 pb-20 select-none">
       {/* 1. Simplified Greeting Card */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-1">
         <div className="flex items-center justify-between">
@@ -136,7 +136,7 @@ export const CustomerHomePage: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          {STORE_CATALOG.slice(0, 3).map((product) => (
+          {catalog.slice(0, 3).map((product) => (
             <CustomerProductCard key={product.id} product={product} />
           ))}
         </div>

@@ -23,45 +23,107 @@ const initialAttendanceState: AttendanceStateModel = {
   shiftEnd: '22:00',
 }
 
+const STAFF_SESSION_KEY = 'retail-edge-staff-session'
+
+function loadStaffSession(): {
+  authenticatedStaff: AuthenticatedStaff | null
+  attendanceState: AttendanceStateModel
+} {
+  if (typeof window === 'undefined') {
+    return { authenticatedStaff: null, attendanceState: initialAttendanceState }
+  }
+  try {
+    const raw = window.localStorage.getItem(STAFF_SESSION_KEY)
+    if (!raw) return { authenticatedStaff: null, attendanceState: initialAttendanceState }
+    const parsed = JSON.parse(raw)
+    return {
+      authenticatedStaff: parsed.authenticatedStaff || null,
+      attendanceState: { ...initialAttendanceState, ...(parsed.attendanceState || {}) },
+    }
+  } catch {
+    window.localStorage.removeItem(STAFF_SESSION_KEY)
+    return { authenticatedStaff: null, attendanceState: initialAttendanceState }
+  }
+}
+
+function saveStaffSession(
+  authenticatedStaff: AuthenticatedStaff | null,
+  attendanceState: AttendanceStateModel
+) {
+  if (typeof window === 'undefined') return
+  if (!authenticatedStaff) {
+    window.localStorage.removeItem(STAFF_SESSION_KEY)
+    return
+  }
+  window.localStorage.setItem(
+    STAFF_SESSION_KEY,
+    JSON.stringify({ authenticatedStaff, attendanceState })
+  )
+}
+
+const savedSession = loadStaffSession()
+
 export const createAttendanceSlice: StateCreator<AttendanceSlice, [], [], AttendanceSlice> = (set) => ({
-  authenticatedStaff: null,
-  attendanceState: initialAttendanceState,
+  authenticatedStaff: savedSession.authenticatedStaff,
+  attendanceState: savedSession.attendanceState,
 
-  loginStaff: (staff) => set({ authenticatedStaff: staff }),
+  loginStaff: (staff) =>
+    set((state) => {
+      const attendanceState =
+        state.attendanceState.status === 'CHECKED_OUT'
+          ? initialAttendanceState
+          : state.attendanceState
+      saveStaffSession(staff, attendanceState)
+      return { authenticatedStaff: staff, attendanceState }
+    }),
   
-  logoutStaff: () => set({ 
-    authenticatedStaff: null, 
-    attendanceState: initialAttendanceState 
-  }),
+  logoutStaff: () =>
+    set(() => {
+      saveStaffSession(null, initialAttendanceState)
+      return {
+        authenticatedStaff: null,
+        attendanceState: initialAttendanceState,
+      }
+    }),
 
-  checkInShift: (checkInAt, status = 'PRESENT') => set((state) => ({
-    attendanceState: {
+  checkInShift: (checkInAt, status = 'PRESENT') => set((state) => {
+    const attendanceState = {
       ...state.attendanceState,
       status,
       checkInAt,
     }
-  })),
+    saveStaffSession(state.authenticatedStaff, attendanceState)
+    return { attendanceState }
+  }),
 
-  startStaffBreak: () => set((state) => ({
-    attendanceState: {
+  startStaffBreak: () => set((state) => {
+    const attendanceState = {
       ...state.attendanceState,
-      status: 'ON_BREAK',
+      status: 'ON_BREAK' as const,
     }
-  })),
+    saveStaffSession(state.authenticatedStaff, attendanceState)
+    return { attendanceState }
+  }),
 
-  endStaffBreak: () => set((state) => ({
-    attendanceState: {
+  endStaffBreak: () => set((state) => {
+    const attendanceState = {
       ...state.attendanceState,
-      status: 'PRESENT',
+      status: 'PRESENT' as const,
     }
-  })),
+    saveStaffSession(state.authenticatedStaff, attendanceState)
+    return { attendanceState }
+  }),
 
-  checkOutShift: (checkOutAt) => set((state) => ({
-    attendanceState: {
+  checkOutShift: (checkOutAt) => set((state) => {
+    const attendanceState = {
       ...state.attendanceState,
-      status: 'CHECKED_OUT',
+      status: 'CHECKED_OUT' as const,
       checkOutAt,
-    },
-    authenticatedStaff: null // Optional: clear auth on checkout depending on flow
-  })),
+    }
+    saveStaffSession(null, attendanceState)
+    return {
+      attendanceState,
+      authenticatedStaff: null,
+    }
+  }),
 })

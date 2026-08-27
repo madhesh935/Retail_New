@@ -55,6 +55,17 @@ export interface NavigationStop {
   node: StoreNavigationNode
 }
 
+export interface NavigationLegSegment {
+  edgeId: string
+  fromNodeId: string
+  toNodeId: string
+  direction: string
+  distanceMeters: number
+  estimatedSeconds: number
+  status: string
+  instruction: string
+}
+
 export interface NavigationLeg {
   id: string
   legIndex: number
@@ -66,6 +77,7 @@ export interface NavigationLeg {
   svgPath: string
   nodeIds: string[]
   nodes: StoreNavigationNode[]
+  segments?: NavigationLegSegment[]
   arrivalInstruction: string
 }
 

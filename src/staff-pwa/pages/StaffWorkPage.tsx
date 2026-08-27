@@ -2,8 +2,6 @@ import React, { useState } from 'react'
 import {
   ClipboardList,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
   MapPin,
   ArrowRight,
   Sparkles,
@@ -24,13 +22,19 @@ export const StaffWorkPage: React.FC<StaffWorkPageProps> = ({
   onOpenTaskDetails,
   onOpenMap,
 }) => {
-  const { pendingTasks, optimizedWorkRun, startStaffTask } = useAppStore()
+  const { pendingTasks, optimizedWorkRun, syncTaskStatus, authenticatedStaff } = useAppStore()
   const [activeTab, setActiveTab] = useState<TabCategory>('TODO')
 
-  const todoTasks = pendingTasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'ACCEPTED' || t.status === 'PENDING')
-  const inProgressTasks = pendingTasks.filter((t) => t.status === 'IN_PROGRESS')
-  const waitingTasks = pendingTasks.filter((t) => t.status === 'BLOCKED')
-  const completedTasks = pendingTasks.filter((t) => t.status === 'COMPLETED' || t.status === 'VERIFIED')
+  const myTasks = pendingTasks.filter((t) => {
+    if (t.category === 'CUSTOMER_ASSISTANCE') return false
+    if (!authenticatedStaff?.id) return true
+    return !t.assignedStaffId || t.assignedStaffId === authenticatedStaff.id
+  })
+
+  const todoTasks = myTasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'ACCEPTED' || t.status === 'PENDING')
+  const inProgressTasks = myTasks.filter((t) => t.status === 'IN_PROGRESS')
+  const waitingTasks = myTasks.filter((t) => t.status === 'BLOCKED')
+  const completedTasks = myTasks.filter((t) => t.status === 'COMPLETED' || t.status === 'VERIFIED')
 
   const displayedTasks =
     activeTab === 'TODO'
@@ -43,7 +47,7 @@ export const StaffWorkPage: React.FC<StaffWorkPageProps> = ({
 
   const handleStartRun = () => {
     if (optimizedWorkRun && optimizedWorkRun.taskIds.length > 0) {
-      startStaffTask(optimizedWorkRun.taskIds[0])
+      void syncTaskStatus(optimizedWorkRun.taskIds[0], 'IN_PROGRESS', authenticatedStaff?.id)
       setActiveTab('IN_PROGRESS')
     }
   }

@@ -49,99 +49,127 @@ export const getOperationalLanes = (
   ipCameraUrls: Record<string, string>,
   queues: CheckoutQueue[]
 ): OperationalLaneData[] => {
-  const getQueue = (laneNum: number) => queues.find(q => q.laneNumber === laneNum)
-  
+  const getQueue = (laneNum: number) => queues.find((q) => q.laneNumber === laneNum)
+
   const q1 = getQueue(1)
   const q2 = getQueue(2)
   const q3 = getQueue(3)
   const q4 = getQueue(4)
 
+  const q1Len = q1 ? q1.currentQueueLength : 4
+  const q1Wait = q1 ? Number((q1.currentWaitTimeSeconds / 60).toFixed(1)) : 1.5
+  const q1Arrival = Number((q1Len * 0.25 + 0.8).toFixed(1))
+  const q1Service = Number(Math.max(0.6, 1.8 - q1Len * 0.04).toFixed(1))
+  const q1F3 = Math.round(q1Len * 1.3)
+  const q1F5 = Math.round(q1Len * 1.6)
+  const q1Cong = Math.min(100, Math.max(0, q1Len * 12))
+  const q1Status = q1Len >= 5 ? 'CRITICAL' : 'HEALTHY'
+
+  const q2Len = q2 ? q2.currentQueueLength : (ipCameraUrls['C2'] ? 0 : 2)
+  const q2Wait = q2 ? Number((q2.currentWaitTimeSeconds / 60).toFixed(1)) : 0.8
+  const q2Arrival = Number((q2Len * 0.2 + 0.6).toFixed(1))
+  const q2Service = 1.8
+  const q2F3 = Math.round(q2Len * 1.1)
+  const q2F5 = Math.round(q2Len * 1.2)
+  const q2Cong = Math.min(100, q2Len * 10)
+  const q2Status = q2 ? (q2.status === 'CONGESTED' ? 'CRITICAL' : q2.status === 'CLOSED' ? 'CLOSED' : 'HEALTHY') : 'HEALTHY'
+
+  const q3Len = q3 ? q3.currentQueueLength : 0
+  const q3Wait = q3 ? Number((q3.currentWaitTimeSeconds / 60).toFixed(1)) : 0
+  const q3Status = q3?.status === 'ACTIVE' || q3?.status === 'CONGESTED' ? (q3Len >= 5 ? 'CRITICAL' : 'HEALTHY') : (ipCameraUrls['C3'] ? 'HEALTHY' : 'CLOSED')
+
+  const q4Len = q4 ? q4.currentQueueLength : (ipCameraUrls['C4'] ? 0 : 3)
+  const q4Wait = q4 ? Number((q4.currentWaitTimeSeconds / 60).toFixed(1)) : 0.9
+  const q4Status = q4 ? (q4.status === 'CONGESTED' ? 'CRITICAL' : q4.status === 'CLOSED' ? 'CLOSED' : 'HEALTHY') : 'HEALTHY'
+
   return [
-  // 1. COUNTER C1 (CRITICAL)
-  {
-    id: 'lane-1',
-    code: 'C1',
-    name: 'Counter C1 • Express Billing',
-    status: q1?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY',
-    queueLength: q1?.currentQueueLength || 0,
-    estimatedWaitMinutes: q1 ? Number((q1.currentWaitTimeSeconds / 60).toFixed(1)) : 0,
-    arrivalRate: q1 ? Number(((q1.currentQueueLength * 0.25) + (q1.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 2.8,
-    serviceRate: q1 ? Number(((q1.processingRateItemsPerMinute * 0.08) - (q1.currentQueueLength * 0.05)).toFixed(1)) : 1.5,
-    forecast3Min: q1 ? Math.round(q1.currentQueueLength + (q1.currentQueueLength * 0.3)) : 10,
-    forecast5Min: q1 ? Math.round(q1.currentQueueLength + (q1.currentQueueLength * 0.6)) : 13,
-    congestionProbability: q1 ? Math.min(100, Math.max(15, q1.currentQueueLength * 12)) : 15,
-    cashierName: q1?.assignedStaffName || 'Elena Rostova (EMP-401)',
-    aiRecommendation: 'Open Counter C3',
-    cameraCode: 'CAM-06',
-    whyData: {
-      title: 'Counter C1 Congestion Prediction & Rate Breakdown',
-      actionType: 'QUEUE',
-      targetEntity: 'Checkout Counter C1',
-      signals: [
-        { label: 'Current Queue Depth', value: '8 shoppers', highlight: true },
-        { label: 'Arrival Rate (λ)', value: '2.8 / min' },
-        { label: 'Service Rate (μ)', value: '1.5 / min' },
-        { label: 'Forecast +3 min', value: '10 shoppers' },
-        { label: 'Forecast +5 min', value: '13 shoppers', highlight: true },
-        { label: 'Congestion Probability', value: '92%' },
-      ],
-      mathFormula: 'Q(t + 5) = Q(t) + 5 × (λ - μ) = 8 + 5 × (2.8 - 1.5) = 14.5 ≈ 13 shoppers',
-      threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
-      confidence: '92% (QueueSense-TemporalEdge)',
-      conclusion: 'Open Standby Counter C3 and reallocate Marcus Vance (EMP-402)',
-      edgeModel: 'QueueSense-Temporal-v2.4 (Jetson TensorRT)',
+    // 1. COUNTER C1 (Express Billing)
+    {
+      id: 'lane-1',
+      code: 'C1',
+      name: 'Counter C1 • Express Billing',
+      status: q1Status,
+      queueLength: q1Len,
+      estimatedWaitMinutes: q1Wait,
+      arrivalRate: q1Arrival,
+      serviceRate: q1Service,
+      forecast3Min: q1F3,
+      forecast5Min: q1F5,
+      congestionProbability: q1Cong,
+      cashierName: q1?.assignedStaffName || 'Elena Rostova (EMP-401)',
+      aiRecommendation: q1Len >= 5 ? 'Open Counter C3' : undefined,
+      cameraCode: 'CAM-06',
+      whyData: {
+        title: 'Counter C1 Congestion Prediction & Rate Breakdown',
+        actionType: 'QUEUE',
+        targetEntity: 'Checkout Counter C1',
+        signals: [
+          { label: 'Current Queue Depth', value: `${q1Len} shoppers`, highlight: true },
+          { label: 'Arrival Rate (λ)', value: `${q1Arrival} / min` },
+          { label: 'Service Rate (μ)', value: `${q1Service} / min` },
+          { label: 'Forecast +3 min', value: `${q1F3} shoppers` },
+          { label: 'Forecast +5 min', value: `${q1F5} shoppers`, highlight: q1Len >= 5 },
+          { label: 'Congestion Probability', value: `${q1Cong}%` },
+        ],
+        mathFormula: `Q(t + 5) = Q(t) + 5 × (λ - μ) = ${q1Len} + 5 × (${q1Arrival} - ${q1Service}) ≈ ${q1F5} shoppers`,
+        threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
+        confidence: '94% (QueueSense-TemporalEdge)',
+        conclusion: q1Len >= 5
+          ? 'Open Standby Counter C3 and reallocate available associate'
+          : 'Queue is operating within optimal SLA limits',
+        edgeModel: 'QueueSense-Temporal-v2.4 (Jetson TensorRT)',
+      },
     },
-  },
-  // 2. COUNTER C2 (HEALTHY)
-  {
-    id: 'lane-2',
-    code: 'C2',
-    name: 'Counter C2 • Cash & Card',
-    status: ipCameraUrls['C2'] ? (q2?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY') : 'CLOSED',
-    queueLength: ipCameraUrls['C2'] ? (q2?.currentQueueLength || 0) : 0,
-    estimatedWaitMinutes: ipCameraUrls['C2'] ? (q2 ? Number((q2.currentWaitTimeSeconds / 60).toFixed(1)) : 0) : 0,
-    arrivalRate: q2 ? Number(((q2.currentQueueLength * 0.25) + (q2.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 1.2,
-    serviceRate: q2 ? Number(((q2.processingRateItemsPerMinute * 0.08) - (q2.currentQueueLength * 0.05)).toFixed(1)) : 1.8,
-    forecast3Min: q2 ? Math.round(q2.currentQueueLength + (q2.currentQueueLength * 0.3)) : 3,
-    forecast5Min: q2 ? Math.round(q2.currentQueueLength + (q2.currentQueueLength * 0.6)) : 3,
-    congestionProbability: q2 ? Math.min(100, Math.max(12, q2.currentQueueLength * 12)) : 12,
-    cashierName: q2?.assignedStaffName || 'Marcus Vance (EMP-402)',
-    cameraCode: 'CAM-06',
-  },
-  // 3. COUNTER C3 (CLOSED / STANDBY)
-  {
-    id: 'lane-3',
-    code: 'C3',
-    name: 'Counter C3 • Standby Lane',
-    status: ipCameraUrls['C3'] ? (q3?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY') : 'CLOSED',
-    queueLength: ipCameraUrls['C3'] ? (q3?.currentQueueLength || 0) : 0,
-    estimatedWaitMinutes: ipCameraUrls['C3'] ? (q3 ? Number((q3.currentWaitTimeSeconds / 60).toFixed(1)) : 0) : 0,
-    arrivalRate: q3 ? Number(((q3.currentQueueLength * 0.25) + (q3.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 0,
-    serviceRate: q3 ? Number(((q3.processingRateItemsPerMinute * 0.08) - (q3.currentQueueLength * 0.05)).toFixed(1)) : 2.2,
-    forecast3Min: q3 ? Math.round(q3.currentQueueLength + (q3.currentQueueLength * 0.3)) : 0,
-    forecast5Min: q3 ? Math.round(q3.currentQueueLength + (q3.currentQueueLength * 0.6)) : 0,
-    congestionProbability: q3 ? Math.min(100, Math.max(0, q3.currentQueueLength * 12)) : 0,
-    cashierName: q3?.assignedStaffName || 'Unassigned (Standby)',
-    aiRecommendation: 'Recommended to open within approximately 2 minutes.',
-    cameraCode: 'CAM-06',
-  },
-  // 4. COUNTER C4 (SELF-CHECKOUT 1-4)
-  {
-    id: 'lane-4',
-    code: 'C4',
-    name: 'Counter C4 • Self-Checkout Hub',
-    status: ipCameraUrls['C4'] ? (q4?.status === 'CONGESTED' ? 'CRITICAL' : 'HEALTHY') : 'CLOSED',
-    queueLength: ipCameraUrls['C4'] ? (q4?.currentQueueLength || 0) : 0,
-    estimatedWaitMinutes: ipCameraUrls['C4'] ? (q4 ? Number((q4.currentWaitTimeSeconds / 60).toFixed(1)) : 0) : 0,
-    arrivalRate: q4 ? Number(((q4.currentQueueLength * 0.25) + (q4.processingRateItemsPerMinute * 0.05)).toFixed(1)) : 1.8,
-    serviceRate: q4 ? Number(((q4.processingRateItemsPerMinute * 0.08) - (q4.currentQueueLength * 0.05)).toFixed(1)) : 2.5,
-    forecast3Min: q4 ? Math.round(q4.currentQueueLength + (q4.currentQueueLength * 0.3)) : 5,
-    forecast5Min: q4 ? Math.round(q4.currentQueueLength + (q4.currentQueueLength * 0.6)) : 6,
-    congestionProbability: q4 ? Math.min(100, Math.max(18, q4.currentQueueLength * 12)) : 18,
-    cashierName: q4?.assignedStaffName || 'Autonomous AI Supervisor',
-    cameraCode: 'CAM-06',
-  },
-]
+    // 2. COUNTER C2 (Cash & Card)
+    {
+      id: 'lane-2',
+      code: 'C2',
+      name: 'Counter C2 • Cash & Card',
+      status: q2Status,
+      queueLength: q2Len,
+      estimatedWaitMinutes: q2Wait,
+      arrivalRate: q2Arrival,
+      serviceRate: q2Service,
+      forecast3Min: q2F3,
+      forecast5Min: q2F5,
+      congestionProbability: q2Cong,
+      cashierName: q2?.assignedStaffName || 'Marcus Vance (EMP-402)',
+      cameraCode: 'CAM-06',
+    },
+    // 3. COUNTER C3 (Standby Lane)
+    {
+      id: 'lane-3',
+      code: 'C3',
+      name: 'Counter C3 • Standby Lane',
+      status: q3Status,
+      queueLength: q3Len,
+      estimatedWaitMinutes: q3Wait,
+      arrivalRate: q3 ? Number(((q3Len * 0.25) + 0.5).toFixed(1)) : 0,
+      serviceRate: 2.2,
+      forecast3Min: Math.round(q3Len * 1.1),
+      forecast5Min: Math.round(q3Len * 1.2),
+      congestionProbability: Math.min(100, q3Len * 10),
+      cashierName: q3?.assignedStaffName || 'Unassigned (Standby)',
+      aiRecommendation: q1Len >= 5 ? 'Recommended to open to relieve Counter C1.' : 'Standby counter ready on surge.',
+      cameraCode: 'CAM-06',
+    },
+    // 4. COUNTER C4 (Self-Checkout Hub)
+    {
+      id: 'lane-4',
+      code: 'C4',
+      name: 'Counter C4 • Self-Checkout Hub',
+      status: q4Status,
+      queueLength: q4Len,
+      estimatedWaitMinutes: q4Wait,
+      arrivalRate: Number((q4Len * 0.25 + 0.8).toFixed(1)),
+      serviceRate: 2.5,
+      forecast3Min: Math.round(q4Len * 1.2),
+      forecast5Min: Math.round(q4Len * 1.4),
+      congestionProbability: Math.min(100, q4Len * 10),
+      cashierName: q4?.assignedStaffName || 'Autonomous AI Supervisor',
+      cameraCode: 'CAM-06',
+    },
+  ]
 }
 
 export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = ({

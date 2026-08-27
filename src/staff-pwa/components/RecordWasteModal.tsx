@@ -1,18 +1,23 @@
-import React, { useState } from 'react'
-import { X, Trash2, CheckCircle2, AlertTriangle, Camera, Package } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { X, Trash2, CheckCircle2, Package } from 'lucide-react'
+import { PhotoEvidenceField } from './PhotoEvidenceField'
 import { useAppStore } from '@/store/useAppStore'
 import { WasteReason } from '@/types/expiry.types'
 import { cn } from '@/lib/utils'
+import { realStoreApi } from '@/services/api/realStoreApi'
 
 interface RecordWasteModalProps {
   isOpen: boolean
   onClose: () => void
   productName?: string
+  productId?: string
   productSku?: string
   batchId?: string
   batchNumber?: string
   shelfCode?: string
   defaultQuantity?: number
+  maxQuantity?: number
   unitCost?: number
 }
 
@@ -29,30 +34,56 @@ export const RecordWasteModal: React.FC<RecordWasteModalProps> = ({
   isOpen,
   onClose,
   productName = 'Fresh Whole Milk 1L',
+  productId,
   productSku = 'SKU-DAIRY-101',
   batchId,
   batchNumber,
   shelfCode = 'C2',
   defaultQuantity = 1,
+  maxQuantity,
   unitCost = 42,
 }) => {
-  const { recordWasteEvent, authenticatedStaff } = useAppStore()
+  const { recordWasteEvent, authenticatedStaff, fetchStoreData } = useAppStore()
 
   const [quantity, setQuantity] = useState<number>(defaultQuantity)
   const [reason, setReason] = useState<WasteReason>('EXPIRED')
   const [notes, setNotes] = useState('')
-  const [hasPhoto, setHasPhoto] = useState(false)
+  const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  if (!isOpen) return null
+  const availableQuantity = maxQuantity ?? defaultQuantity
+  const quantityCap = Math.max(availableQuantity, 0)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isOpen) return
+    setQuantity(quantityCap > 0 ? Math.min(defaultQuantity, quantityCap) : 0)
+    setReason('EXPIRED')
+    setNotes('')
+    setEvidencePhoto(null)
+    setSubmitted(false)
+    setSubmitError(null)
+  }, [isOpen, defaultQuantity, quantityCap, batchId])
+
+  if (!isOpen || typeof document === 'undefined') return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (quantity <= 0) return
+    if (quantityCap <= 0) {
+      setSubmitError('This batch has no remaining units to record as waste.')
+      return
+    }
+    if (quantity <= 0 || quantity > quantityCap) {
+      setSubmitError(`Quantity must be between 1 and ${quantityCap}.`)
+      return
+    }
+    setIsSubmitting(true)
+    setSubmitError(null)
 
-    recordWasteEvent({
+    const wasteInput = {
       storeId: authenticatedStaff?.storeId || 'STORE-01',
-      productId: productSku,
+      productId: productId || productSku,
       productSku,
       productName,
       batchId,
@@ -60,177 +91,233 @@ export const RecordWasteModal: React.FC<RecordWasteModalProps> = ({
       quantity,
       reason,
       recordedByStaffId: authenticatedStaff?.id || 'STAFF-03',
-      recordedByStaffName: authenticatedStaff?.name || 'Liam',
-      locationId: `loc-${shelfCode}`,
+      recordedByStaffName: authenticatedStaff?.name || 'Staff',
+      locationId: shelfCode,
       locationName: `Shelf ${shelfCode}`,
       unitCost,
       totalLossCost: unitCost * quantity,
       notes: notes.trim() || undefined,
-      evidencePhoto: hasPhoto ? 'data:image/evidence_waste.jpg' : undefined,
-    })
+      evidencePhoto: evidencePhoto || undefined,
+    }
 
-    setSubmitted(true)
-    setTimeout(() => {
-      setSubmitted(false)
-      onClose()
-    }, 1400)
+    try {
+      await realStoreApi.recordWaste({
+        store_id: wasteInput.storeId,
+        product_id: wasteInput.productId,
+        product_sku: wasteInput.productSku,
+        product_name: wasteInput.productName,
+        batch_id: wasteInput.batchId,
+        batch_number: wasteInput.batchNumber,
+        quantity: wasteInput.quantity,
+        reason: wasteInput.reason,
+        recorded_by_staff_id: wasteInput.recordedByStaffId,
+        recorded_by_staff_name: wasteInput.recordedByStaffName,
+        location_id: wasteInput.locationId,
+        location_name: wasteInput.locationName,
+        unit_cost: wasteInput.unitCost,
+        notes: wasteInput.notes,
+        evidence_photo: evidencePhoto || undefined,
+      })
+      recordWasteEvent(wasteInput)
+      await fetchStoreData()
+
+      setSubmitted(true)
+      setTimeout(() => {
+        setSubmitted(false)
+        onClose()
+      }, 1400)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Could not record waste')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  return (
-    <div className="fixed inset-0 z-[140] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+  return createPortal(
+    <>
+      <button
+        type="button"
+        aria-label="Close waste record dialog"
+        className="fixed inset-0 z-[200] cursor-default bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+        onClick={onClose}
+      />
+
+      <div
+        className="fixed inset-x-0 bottom-0 z-[201] mx-auto flex w-full max-w-md max-h-[min(92dvh,820px)] flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="record-waste-title"
+      >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-rose-50/70">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-rose-50/70 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
-              <Trash2 className="w-4 h-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-600 text-white shadow-xs">
+              <Trash2 className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-tight">Record Store Waste</h3>
-              <p className="text-[11px] text-rose-800 font-medium">Log Shrink & Adjust Inventory</p>
+              <h3 id="record-waste-title" className="text-sm font-bold leading-tight text-slate-900">
+                Record Store Waste
+              </h3>
+              <p className="text-[11px] font-medium text-rose-800">Log Shrink & Adjust Inventory</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-200/60 hover:text-slate-700"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 flex-1 overflow-y-auto space-y-4 text-xs">
-          {submitted ? (
-            <div className="py-12 text-center space-y-2">
-              <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto animate-bounce" />
-              <h4 className="text-base font-bold text-slate-900">Waste Logged Successfully</h4>
-              <p className="text-xs text-slate-500">
-                Inventory decremented by {quantity} units. Store database synchronized.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Product Card */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 text-xs">
+            {submitted ? (
+              <div className="space-y-2 py-12 text-center">
+                <CheckCircle2 className="mx-auto h-12 w-12 animate-bounce text-emerald-600" />
+                <h4 className="text-base font-bold text-slate-900">Waste Logged Successfully</h4>
+                <p className="text-xs text-slate-500">
+                  Inventory decremented by {quantity} units. Store database synchronized.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                  <div>
+                    <h4 className="font-bold text-slate-900">{productName}</h4>
+                    <div className="font-mono text-[11px] text-slate-500">
+                      {productSku} {batchNumber ? `· Batch ${batchNumber}` : ''} · Shelf {shelfCode}
+                    </div>
+                  </div>
+                  <Package className="h-5 w-5 text-slate-400" />
+                </div>
+
                 <div>
-                  <h4 className="font-bold text-slate-900">{productName}</h4>
-                  <div className="text-[11px] text-slate-500 font-mono">
-                    {productSku} {batchNumber ? `· Batch ${batchNumber}` : ''} · Shelf {shelfCode}
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Wasted Units Quantity
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-slate-100 text-base font-black text-slate-800 hover:bg-slate-200"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={quantityCap}
+                      value={quantity}
+                      onChange={(e) =>
+                        setQuantity(
+                          Math.min(quantityCap, Math.max(1, parseInt(e.target.value, 10) || 1))
+                        )
+                      }
+                      className="flex-1 rounded-xl border border-slate-200 py-2 text-center font-mono text-xl font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.min(quantityCap, quantity + 1))}
+                      disabled={quantity >= quantityCap}
+                      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-slate-100 text-base font-black text-slate-800 hover:bg-slate-200 disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="mt-1 block text-[10px] text-slate-400">
+                    Est. Inventory Cost Loss:{' '}
+                    <strong className="font-mono text-rose-600">₹{unitCost * quantity}</strong>
+                    {maxQuantity !== undefined && (
+                      <span className="ml-1 text-slate-500">· Max {quantityCap} in batch</span>
+                    )}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Primary Disposal Reason
+                  </label>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {WASTE_REASONS.map((r) => {
+                      const isSelected = reason === r.id
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => setReason(r.id)}
+                          className={cn(
+                            'flex cursor-pointer items-start justify-between rounded-xl border p-2.5 text-left transition-all',
+                            isSelected
+                              ? 'border-rose-500 bg-rose-50/80 text-rose-950 shadow-2xs ring-1 ring-rose-300'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          )}
+                        >
+                          <div>
+                            <div className="text-xs font-bold">{r.label}</div>
+                            <div
+                              className={cn(
+                                'mt-0.5 text-[10px]',
+                                isSelected ? 'text-rose-700' : 'text-slate-500'
+                              )}
+                            >
+                              {r.desc}
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-                <Package className="w-5 h-5 text-slate-400" />
-              </div>
 
-              {/* Quantity Counter */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Wasted Units Quantity
-                </label>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-base flex items-center justify-center cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="flex-1 py-2 text-center text-xl font-mono font-black text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Optional Disposal Notes
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g. Broken seal found during morning restock audit..."
+                    rows={2}
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-base flex items-center justify-center cursor-pointer"
-                  >
-                    +
-                  </button>
                 </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Est. Inventory Cost Loss: <strong className="text-rose-600 font-mono">₹{unitCost * quantity}</strong>
-                </span>
-              </div>
 
-              {/* Reason Selector */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Primary Disposal Reason
-                </label>
-                <div className="grid grid-cols-1 gap-1.5">
-                  {WASTE_REASONS.map((r) => {
-                    const isSelected = reason === r.id
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => setReason(r.id)}
-                        className={cn(
-                          'p-2.5 rounded-xl border text-left flex items-start justify-between transition-all cursor-pointer',
-                          isSelected
-                            ? 'border-rose-500 bg-rose-50/80 text-rose-950 ring-1 ring-rose-300 shadow-2xs'
-                            : 'border-slate-200 bg-white hover:bg-slate-50'
-                        )}
-                      >
-                        <div>
-                          <div className="font-bold text-xs">{r.label}</div>
-                          <div className={cn('text-[10px] mt-0.5', isSelected ? 'text-rose-700' : 'text-slate-500')}>
-                            {r.desc}
-                          </div>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Optional Disposal Notes
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Broken seal found during morning restock audit..."
-                  rows={2}
-                  className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                <PhotoEvidenceField
+                  value={evidencePhoto}
+                  onChange={setEvidencePhoto}
+                  attachedLabel="Waste evidence photo attached"
                 />
-              </div>
+              </>
+            )}
+          </div>
 
-              {/* Evidence Photo */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setHasPhoto(!hasPhoto)}
-                  className={cn(
-                    'w-full py-2.5 px-3 rounded-xl border border-dashed flex items-center justify-center gap-2 font-semibold transition-all cursor-pointer',
-                    hasPhoto
-                      ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
-                      : 'border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100'
-                  )}
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>{hasPhoto ? '✓ Photo Attached' : 'Attach Photo Evidence'}</span>
-                </button>
-              </div>
-
-              {/* Submit */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-rose-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Confirm & Record Waste ({quantity} units)</span>
-                </button>
-              </div>
-            </>
+          {!submitted && (
+            <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+              {submitError && (
+                <p className="rounded-lg bg-rose-50 p-2 text-[11px] font-semibold text-rose-700" role="alert">
+                  {submitError}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={isSubmitting || quantityCap <= 0}
+                className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-rose-600 py-3.5 text-xs font-bold text-white shadow-xs shadow-rose-500/20 transition-all hover:bg-rose-700 disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>
+                  {quantityCap <= 0
+                    ? 'Batch already depleted'
+                    : isSubmitting
+                      ? 'Saving to store database…'
+                      : `Confirm & Record Waste (${quantity} units)`}
+                </span>
+              </button>
+            </div>
           )}
         </form>
       </div>
-    </div>
+    </>,
+    document.body
   )
 }

@@ -1,13 +1,14 @@
-import React, { useState } from 'react'
-import { X, CheckCircle2, AlertTriangle, Layers, Tag, Eye } from 'lucide-react'
-import { useAppStore } from '@/store/useAppStore'
+import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { X, CheckCircle2, Eye } from 'lucide-react'
+import { PhotoEvidenceField } from './PhotoEvidenceField'
 
 interface QuickShelfCheckModalProps {
   shelfCode: string
   shelfName: string
   isOpen: boolean
   onClose: () => void
-  onSuccess?: (observation: string) => void
+  onSuccess?: (observation: string, status: string, photo?: string) => void | Promise<void>
 }
 
 const OBSERVATIONS = [
@@ -29,110 +30,150 @@ export const QuickShelfCheckModal: React.FC<QuickShelfCheckModalProps> = ({
   onSuccess,
 }) => {
   const [selectedObs, setSelectedObs] = useState('CORRECT')
+  const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (!isOpen) return
+    setSelectedObs('CORRECT')
+    setEvidencePhoto(null)
+    setSubmitted(false)
+    setSubmitError(null)
+  }, [isOpen, shelfCode])
 
-  const handleSubmit = () => {
+  if (!isOpen || typeof document === 'undefined') return null
+
+  const handleSubmit = async () => {
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setSubmitted(true)
+    setSubmitError(null)
+    const item = OBSERVATIONS.find((o) => o.id === selectedObs)
+
+    try {
       if (onSuccess) {
-        const item = OBSERVATIONS.find((o) => o.id === selectedObs)
-        onSuccess(item?.label || 'Shelf Observation')
+        await onSuccess(item?.label || 'Shelf Observation', item?.status || 'OPTIMAL', evidencePhoto || undefined)
       }
-      setTimeout(() => {
+      setSubmitted(true)
+      window.setTimeout(() => {
         setSubmitted(false)
         onClose()
       }, 1000)
-    }, 400)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Could not save shelf observation')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  return (
-    <div className="fixed inset-0 z-[130] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+  return createPortal(
+    <>
+      <button
+        type="button"
+        aria-label="Close shelf check dialog"
+        className="fixed inset-0 z-[200] cursor-default bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+        onClick={onClose}
+      />
+
+      <div
+        className="fixed inset-x-0 bottom-0 z-[201] mx-auto flex w-full max-w-md max-h-[min(92dvh,820px)] flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
-              <Eye className="w-4 h-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+              <Eye className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-tight">Quick Shelf Check</h3>
-              <p className="text-[11px] text-slate-500 font-medium">Record Observation for Shelf {shelfCode}</p>
+              <h3 className="text-sm font-bold leading-tight text-slate-900">Quick Shelf Check</h3>
+              <p className="text-[11px] font-medium text-slate-500">Record Observation for Shelf {shelfCode}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-200/60 hover:text-slate-700"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Shelf banner */}
-        <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-200 text-xs flex justify-between items-center">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-2.5 text-xs">
           <span className="font-bold text-slate-900">{shelfName || `Shelf ${shelfCode}`}</span>
-          <span className="bg-sky-100 text-sky-900 px-2 py-0.5 rounded font-mono font-bold">{shelfCode}</span>
+          <span className="rounded bg-sky-100 px-2 py-0.5 font-mono font-bold text-sky-900">{shelfCode}</span>
         </div>
 
-        {/* Content */}
-        <div className="p-5 flex-1 overflow-y-auto space-y-3">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-5">
           {submitted ? (
-            <div className="py-10 text-center space-y-2">
-              <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto animate-bounce" />
+            <div className="space-y-2 py-10 text-center">
+              <CheckCircle2 className="mx-auto h-12 w-12 animate-bounce text-emerald-600" />
               <h4 className="text-base font-bold text-slate-900">Observation Recorded</h4>
               <p className="text-xs text-slate-500">Updated Store Inventory Intelligence in real time.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {OBSERVATIONS.map((obs) => {
-                const isSelected = selectedObs === obs.id
-                return (
-                  <button
-                    key={obs.id}
-                    type="button"
-                    onClick={() => setSelectedObs(obs.id)}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-sky-500 bg-sky-50/70 shadow-xs ring-1 ring-sky-500/20'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className={`text-xs font-bold ${isSelected ? 'text-sky-950' : 'text-slate-900'}`}>
-                      {obs.label}
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">{obs.desc}</div>
-                  </button>
-                )
-              })}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {OBSERVATIONS.map((obs) => {
+                  const isSelected = selectedObs === obs.id
+                  return (
+                    <button
+                      key={obs.id}
+                      type="button"
+                      onClick={() => setSelectedObs(obs.id)}
+                      className={`rounded-2xl border p-3 text-left transition-all ${
+                        isSelected
+                          ? 'border-sky-500 bg-sky-50/70 shadow-xs ring-1 ring-sky-500/20'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className={`text-xs font-bold ${isSelected ? 'text-sky-950' : 'text-slate-900'}`}>
+                        {obs.label}
+                      </div>
+                      <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{obs.desc}</div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <PhotoEvidenceField
+                value={evidencePhoto}
+                onChange={setEvidencePhoto}
+                label="Attach Shelf Photo (Optional)"
+                attachedLabel="Shelf photo attached"
+              />
+            </>
           )}
         </div>
 
-        {/* Footer */}
         {!submitted && (
-          <div className="p-4 border-t border-slate-100 bg-white flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-bold text-xs rounded-xl shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
-            >
-              {isSubmitting ? 'Saving...' : 'Submit Observation'}
-            </button>
+          <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+            {submitError && (
+              <p className="rounded-lg bg-rose-50 p-2 text-[11px] font-semibold text-rose-700" role="alert">
+                {submitError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="min-h-12 flex-1 rounded-xl bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={isSubmitting}
+                className="min-h-12 flex-1 cursor-pointer rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm shadow-blue-500/20 transition-all hover:bg-blue-700 disabled:opacity-70"
+              >
+                {isSubmitting ? 'Saving...' : 'Submit Observation'}
+              </button>
+            </div>
           </div>
         )}
       </div>
-    </div>
+    </>,
+    document.body
   )
 }

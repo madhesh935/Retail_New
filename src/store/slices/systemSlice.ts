@@ -1,6 +1,41 @@
 import { StateCreator } from 'zustand'
 import { EdgeDeviceTelemetry, CloudSyncStatus, SystemHealthPayload } from '@/types'
-import { MOCK_SYSTEM_HEALTH } from '@/services/mock/mockData'
+
+const EMPTY_EDGE: EdgeDeviceTelemetry = {
+  deviceId: '',
+  deviceName: '',
+  model: '',
+  ipAddress: '',
+  firmwareVersion: '',
+  jetpackVersion: '',
+  deepstreamVersion: '',
+  tensorRtVersion: '',
+  cpuUsagePercent: 0,
+  gpuUsagePercent: 0,
+  npuDlaUsagePercent: 0,
+  ramUsageGb: 0,
+  ramTotalGb: 0,
+  temperatureCelsius: 0,
+  powerDrawWatts: 0,
+  fanSpeedPercent: 0,
+  nvmeStorageUsedGb: 0,
+  nvmeStorageTotalGb: 0,
+  fpsTotalInference: 0,
+  activeCameraStreamsCount: 0,
+  droppedFramesCount: 0,
+  uptimeSeconds: 0,
+  lastPingTimestamp: '',
+}
+
+const EMPTY_CLOUD: CloudSyncStatus = {
+  status: 'OFFLINE',
+  cloudRegion: '',
+  latencyMs: 0,
+  lastSyncTimestamp: '',
+  pendingTelemetryPackets: 0,
+  bandwidthUsageKbps: 0,
+  edgeToCloudSyncErrorCount: 0,
+}
 
 export interface SystemSlice {
   edgeDevice: EdgeDeviceTelemetry
@@ -16,10 +51,10 @@ export interface SystemSlice {
 }
 
 export const createSystemSlice: StateCreator<SystemSlice, [], [], SystemSlice> = (set) => ({
-  edgeDevice: MOCK_SYSTEM_HEALTH.edgeDevice,
-  cloudSync: MOCK_SYSTEM_HEALTH.cloudSync,
-  overallHealth: MOCK_SYSTEM_HEALTH.overallHealth,
-  activeAnomalies: MOCK_SYSTEM_HEALTH.activeAnomalies,
+  edgeDevice: EMPTY_EDGE,
+  cloudSync: EMPTY_CLOUD,
+  overallHealth: 'HEALTHY',
+  activeAnomalies: [],
   isLoadingSystem: false,
 
   setSystemHealth: (payload) =>

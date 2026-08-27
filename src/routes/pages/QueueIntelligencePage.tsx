@@ -31,12 +31,14 @@ import {
 import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import { useAppStore } from '@/store/useAppStore'
 import { Button } from '@/components/ui/button'
+import { isYoloActive, clearYoloRegistry } from '@/lib/yoloLaneRegistry'
 
 export const QueueIntelligencePage: React.FC = () => {
   const navigate = useNavigate()
   const storeInfo = useAppStore((s) => s.storeInfo)
   const ipCameraUrls = useAppStore((s) => s.ipCameraUrls)
   const queues = useAppStore((s) => s.queues)
+  const updateLaneQueue = useAppStore((s) => s.updateLaneQueue)
 
   const dynamicLanes = React.useMemo(() => getOperationalLanes(ipCameraUrls, queues), [ipCameraUrls, queues])
 
@@ -63,6 +65,66 @@ export const QueueIntelligencePage: React.FC = () => {
 
   const activeLane =
     dynamicLanes.find((l) => l.code === selectedLaneCode) || dynamicLanes[0]
+
+  // ── Live Queue Polling ─────────────────────────────────────────────────────
+  // Poll backend every 4s; fall back to live simulation if backend is offline.
+  // Skips lanes that are being actively monitored by the YOLO WebSocket.
+  const simStateRef = React.useRef<Record<string, number>>({})
+
+  useEffect(() => {
+    let mounted = true
+
+    const fetchAndUpdate = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/v1/queue/lanes', {
+          signal: AbortSignal.timeout(2000),
+        })
+        if (!res.ok) throw new Error('queue fetch failed')
+        const lanes: any[] = await res.json()
+        if (!mounted) return
+        lanes.forEach((lane) => {
+          // Normalize to "lane-N" — the backend's raw id/laneCode (e.g. "C1") is a
+          // display code, not the store's canonical lane key.
+          const laneId = `lane-${lane.laneNumber}`
+          // Skip lanes actively receiving YOLO real-time detections
+          if (isYoloActive(laneId)) return
+          const q = Number(lane.currentQueueLength ?? 0)
+          const w = Number(lane.currentWaitTimeSeconds ?? 0)
+          const s = String(lane.status || 'ACTIVE').toUpperCase() as any
+          updateLaneQueue(laneId, q, w, s)
+        })
+      } catch {
+        // Backend offline → run a live simulation so counts change visibly
+        if (!mounted) return
+        const laneSeeds: Record<string, { base: number }> = {
+          'lane-1': { base: 4 },
+          'lane-2': { base: 7 },
+          'lane-3': { base: 3 },
+          'lane-4': { base: 5 },
+        }
+        Object.entries(laneSeeds).forEach(([laneId, { base }]) => {
+          // Skip YOLO-active lanes — don't overwrite real detections
+          if (isYoloActive(laneId)) return
+          const prev = simStateRef.current[laneId] ?? base
+          // ±1 random walk, clamped 0–12
+          const delta = Math.random() < 0.5 ? 1 : -1
+          const next = Math.max(0, Math.min(12, prev + delta))
+          simStateRef.current[laneId] = next
+          const waitSec = Math.round(next * 22 + 30)
+          const status = next >= 5 ? 'CONGESTED' : 'ACTIVE'
+          updateLaneQueue(laneId, next, waitSec, status as any)
+        })
+      }
+    }
+
+    fetchAndUpdate()
+    const id = window.setInterval(fetchAndUpdate, 4000)
+    return () => {
+      mounted = false
+      clearInterval(id)
+      clearYoloRegistry()
+    }
+  }, [updateLaneQueue])
 
   // Queue Recommendation Notification Logic
   const [notification, setNotification] = useState<{ message: string, timestamp: number } | null>(null)

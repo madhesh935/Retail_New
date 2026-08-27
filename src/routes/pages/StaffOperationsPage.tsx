@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Users,
   Clock,
@@ -20,59 +20,78 @@ import { StaffDetailDrawer } from '@/components/staff-operations/StaffDetailDraw
 import { StaffRouteModal } from '@/components/staff-operations/StaffRouteModal'
 import { AssignConfirmModal } from '@/components/staff-operations/AssignConfirmModal'
 import {
-  CANONICAL_STAFF,
-  CANONICAL_TASKS,
   StaffMember,
   OperationalTask,
   StaffRecommendation,
 } from '@/components/staff-operations/staffData'
+import { useAppStore } from '@/store/useAppStore'
+import {
+  buildStaffRecommendations,
+  toOperationalStaff,
+  toOperationalTask,
+} from '@/services/api/livePageAdapters'
 
 export const StaffOperationsPage: React.FC = () => {
-  // Selected task for detail inspection
+  const staffMembers = useAppStore((s) => s.staffMembers)
+  const pendingTasks = useAppStore((s) => s.pendingTasks)
+  const acceptStaffTask = useAppStore((s) => s.acceptStaffTask)
+
+  const liveStaff = useMemo(
+    () => staffMembers.map((m, i) => toOperationalStaff(m, i)),
+    [staffMembers]
+  )
+
+  const liveTasks = useMemo(() => {
+    const seen = new Set<string>()
+    return pendingTasks
+      .filter((t) => {
+        const key = `${t.title}-${t.shelfCode || ''}-${t.status}`
+        if (t.status === 'IN_PROGRESS' && seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      .map(toOperationalTask)
+  }, [pendingTasks])
+
   const [selectedTask, setSelectedTask] = useState<OperationalTask | null>(null)
-
-  // Selected staff for profile inspection
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null)
-
-  // Selected allocation for route preview
   const [selectedRouteAllocation, setSelectedRouteAllocation] =
     useState<StaffRecommendation | null>(null)
-
-  // Recommendation pending assignment confirmation
   const [pendingAssignRec, setPendingAssignRec] =
     useState<StaffRecommendation | null>(null)
-
-  // Track assigned recommendations
   const [assignedRecIds, setAssignedRecIds] = useState<Record<string, boolean>>({})
+  const [localTaskOverrides, setLocalTaskOverrides] = useState<Record<string, Partial<OperationalTask>>>({})
 
-  // Track local task state to reflect assignments dynamically
-  const [tasks, setTasks] = useState<OperationalTask[]>(CANONICAL_TASKS)
+  const tasks = useMemo(
+    () =>
+      liveTasks.map((t) => ({
+        ...t,
+        ...(localTaskOverrides[t.id] || {}),
+      })),
+    [liveTasks, localTaskOverrides]
+  )
+
+  const recommendations = useMemo(
+    () => buildStaffRecommendations(tasks, liveStaff).filter((r) => !assignedRecIds[r.id]),
+    [tasks, liveStaff, assignedRecIds]
+  )
 
   const handleConfirmAssignment = (rec: StaffRecommendation) => {
-    // 1. Mark recommendation as assigned
     setAssignedRecIds((prev) => ({ ...prev, [rec.id]: true }))
-
-    // 2. Update tasks state
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === rec.taskId) {
-          return {
-            ...t,
-            status: 'ASSIGNED',
-            assignedStaffId: rec.recommendedStaffId,
-            assignedStaffName: rec.recommendedStaffName,
-          }
-        }
-        return t
-      })
-    )
-
-    // 3. Close modal
+    setLocalTaskOverrides((prev) => ({
+      ...prev,
+      [rec.taskId]: {
+        status: 'ASSIGNED',
+        assignedStaffId: rec.recommendedStaffId,
+        assignedStaffName: rec.recommendedStaffName,
+      },
+    }))
+    acceptStaffTask(rec.taskId, rec.recommendedStaffId, rec.recommendedStaffName)
     setPendingAssignRec(null)
   }
 
   const handleFloorStaffClick = (staffId: string) => {
-    const staff = CANONICAL_STAFF.find((s) => s.id === staffId)
+    const staff = liveStaff.find((s) => s.id === staffId)
     if (staff) setSelectedStaff(staff)
   }
 
@@ -83,9 +102,6 @@ export const StaffOperationsPage: React.FC = () => {
 
   return (
     <div className="space-y-4 select-none pb-6">
-      {/* ======================================================= */}
-      {/* 1. PAGE HEADER */}
-      {/* ======================================================= */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
@@ -93,72 +109,60 @@ export const StaffOperationsPage: React.FC = () => {
             <span>Staff Operations</span>
           </h1>
         </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+          <Clock className="h-3.5 w-3.5" />
+          Live roster · {liveStaff.length} staff · {tasks.length} tasks
+        </div>
       </div>
 
-      {/* 2. Top 6 Staff Operations KPI Cards */}
-      <StaffKpiRow />
+      <StaffKpiRow staff={liveStaff} tasks={tasks} />
 
-      {/* 3. Recommended Assignments (Left) & Floor Coverage (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-        <div className="lg:col-span-7 flex flex-col">
-          <AiRecommendedAllocations
-            onAssignRequest={(rec) => setPendingAssignRec(rec)}
-            onViewRoute={(rec) => setSelectedRouteAllocation(rec)}
-            assignedIds={assignedRecIds}
-          />
-        </div>
+      <AiRecommendedAllocations
+        recommendations={recommendations}
+        onViewRoute={(rec) => setSelectedRouteAllocation(rec)}
+        onAssignRequest={(rec) => setPendingAssignRec(rec)}
+        assignedIds={assignedRecIds}
+      />
 
-        <div className="lg:col-span-5 flex flex-col">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+        <div className="xl:col-span-5">
           <FloorCoverageMap
+            staff={liveStaff}
+            tasks={tasks}
             onSelectStaff={handleFloorStaffClick}
             onSelectTask={handleFloorTaskClick}
           />
         </div>
+        <div className="xl:col-span-7">
+          <KanbanTaskBoard tasks={tasks} onSelectTask={setSelectedTask} />
+        </div>
       </div>
 
-      {/* 4. Live Task Board (4 Columns) */}
-      <KanbanTaskBoard
-        tasks={tasks}
-        onSelectTask={(task) => setSelectedTask(task)}
-      />
-
-      {/* 5. Staff Availability (Left) & Workload by Function (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-        <div className="lg:col-span-8 flex flex-col">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+        <div className="xl:col-span-8">
           <StaffStatusTable
+            staff={liveStaff}
+            onSelectStaff={setSelectedStaff}
             selectedStaffId={selectedStaff?.id}
-            onSelectStaff={(staff) => setSelectedStaff(staff)}
           />
         </div>
-
-        <div className="lg:col-span-4 flex flex-col">
-          <WorkloadDistributionCard />
+        <div className="xl:col-span-4">
+          <WorkloadDistributionCard staff={liveStaff} />
         </div>
       </div>
 
-      {/* ======================================================= */}
-      {/* DRAWERS & MODALS */}
-      {/* ======================================================= */}
-
-      {/* Task Detail Drawer */}
       <TaskDetailDrawer
         task={selectedTask}
         onClose={() => setSelectedTask(null)}
       />
-
-      {/* Staff Detail Drawer */}
       <StaffDetailDrawer
         staff={selectedStaff}
         onClose={() => setSelectedStaff(null)}
       />
-
-      {/* Staff Transit Route Preview Modal */}
       <StaffRouteModal
         allocation={selectedRouteAllocation}
         onClose={() => setSelectedRouteAllocation(null)}
       />
-
-      {/* Assignment Confirmation Modal */}
       <AssignConfirmModal
         recommendation={pendingAssignRec}
         onClose={() => setPendingAssignRec(null)}

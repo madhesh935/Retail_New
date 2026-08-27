@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   Sparkles,
   UserCheck,
@@ -12,11 +12,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  CANONICAL_RECOMMENDATIONS,
   StaffRecommendation,
 } from './staffData'
 
 interface AiRecommendedAllocationsProps {
+  recommendations: StaffRecommendation[]
   onAssignRequest: (recommendation: StaffRecommendation) => void
   onViewRoute: (recommendation: StaffRecommendation) => void
   onOpenWhy?: (recommendation: StaffRecommendation) => void
@@ -24,13 +24,14 @@ interface AiRecommendedAllocationsProps {
 }
 
 export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> = ({
+  recommendations,
   onAssignRequest,
   onViewRoute,
   onOpenWhy,
   assignedIds = {},
 }) => {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[340px] font-sans">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
         <div className="flex items-center gap-2">
@@ -47,15 +48,21 @@ export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> =
           </div>
         </div>
 
-        <span className="text-[11px] text-slate-500">
-          2 Urgent Matches
+        <span className="text-[11px] text-slate-500 font-medium">
+          {recommendations.length} open matches
         </span>
       </div>
 
-      {/* Top 2 Recommended Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
-        {CANONICAL_RECOMMENDATIONS.map((item) => {
+      {/* Recommended Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {recommendations.length === 0 && (
+          <div className="md:col-span-2 text-xs text-slate-500 py-8 text-center">
+            No open tasks need assignment right now.
+          </div>
+        )}
+        {recommendations.map((item) => {
           const isAssigned = assignedIds[item.id]
+          const staffCode = (item.recommendedStaffId || '').replace(/^staff-/i, '').toUpperCase()
 
           return (
             <div
@@ -70,8 +77,8 @@ export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> =
               {/* Header: Priority & Destination */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold uppercase">
-                    CRITICAL TASK
+                  <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold uppercase tracking-wider">
+                    {item.priority === 'CRITICAL' ? 'CRITICAL TASK' : 'HIGH PRIORITY'}
                   </span>
                   <span className="text-[11px] text-slate-500 font-mono">
                     {item.distanceMeters}m · ~{item.estimatedWalkingSeconds}s walk
@@ -88,21 +95,21 @@ export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> =
 
               {/* Matched Staff Card */}
               <div className="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-7 w-7 rounded-md bg-sky-50 border border-sky-200 flex items-center justify-center font-bold text-xs text-sky-700 font-mono">
-                    {item.recommendedStaffId}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="px-2 py-1 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center font-bold text-xs text-sky-700 font-mono shrink-0 whitespace-nowrap">
+                    {staffCode || 'STAFF'}
                   </span>
-                  <div>
-                    <div className="font-bold text-slate-900 text-xs">
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 text-xs truncate">
                       {item.recommendedStaffName}
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-[10px] text-slate-500 truncate">
                       Currently in {item.currentStaffZone}
                     </div>
                   </div>
                 </div>
 
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold shrink-0">
                   Available Now
                 </span>
               </div>
@@ -116,7 +123,7 @@ export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> =
                   {item.reasons.map((reason, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200"
+                      className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-medium"
                     >
                       ✓ {reason}
                     </span>
@@ -135,14 +142,14 @@ export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> =
                     variant="outline"
                     size="xs"
                     onClick={() => onViewRoute(item)}
-                    className="h-7 px-2.5 text-[11px] gap-1 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs"
+                    className="h-7 px-2.5 text-[11px] gap-1 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs font-semibold cursor-pointer"
                   >
                     <Route className="h-3 w-3 text-sky-600" />
                     <span>View Route</span>
                   </Button>
 
                   {isAssigned ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-700 text-[11px] font-bold px-2 py-1 bg-emerald-50 rounded-md border border-emerald-200">
+                    <span className="inline-flex items-center gap-1 text-emerald-700 text-[11px] font-bold px-2.5 py-1 bg-emerald-50 rounded-md border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>Assigned</span>
                     </span>
@@ -151,7 +158,7 @@ export const AiRecommendedAllocations: React.FC<AiRecommendedAllocationsProps> =
                       variant="action"
                       size="xs"
                       onClick={() => onAssignRequest(item)}
-                      className="h-7 px-3 text-[11px] gap-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
+                      className="h-7 px-3 text-[11px] gap-1 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-2xs cursor-pointer"
                     >
                       <UserCheck className="h-3.5 w-3.5" />
                       <span>Assign</span>

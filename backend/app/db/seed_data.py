@@ -6,7 +6,7 @@ from typing import Any
 
 
 STORE_ID = "store-01"
-SEED_VERSION = "retail-platform-2026-08-v4-frontend-items"
+SEED_VERSION = "retail-platform-2026-08-v8-waste-barcodes"
 
 
 def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any]]]:
@@ -200,18 +200,20 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
     products.extend([
         product("prod-amul-taaza", "SKU-DAIRY-103", "Amul Taaza Homogenised Toned Milk 1L", "Amul", "Dairy", 72, "Aisle 2", "C4", 3, 18, 0, 0),
         product("prod-amul-100", "SKU-DAIRY-151", "Amul Butter 100g Mini Pack", "Amul", "Dairy", 58, "Aisle 2", "C1", 22, 24, 0, 0),
-        product("prod-tea", "SKU-BEV-TEA-501", "Tata Tea Gold Premium Black Tea 500g", "Tata Tea", "Beverages", 310, "Aisle 5", "A2", 16, 20, 0, 0),
+        # Shelf codes must match navigation nodes / zone map (A=produce, B=bev/snacks,
+        # C=dairy, D1–D2=bakery, D3–D4=snacks, E=staples, F/G=personal care).
+        product("prod-tea", "SKU-BEV-TEA-501", "Tata Tea Gold Premium Black Tea 500g", "Tata Tea", "Beverages", 310, "Aisle 4", "B5", 16, 20, 0, 0),
         product("prod-biscuits", "SKU-SNK-BIS-250", "Britannia NutriChoice Digestive Biscuits 250g", "Britannia", "Snacks & Pantry", 65, "Aisle 4", "B2", 2, 24, 0, 0),
-        product("prod-marie-gold", "SKU-SNK-MAR-300", "Britannia Marie Gold Biscuits 300g", "Britannia", "Snacks & Pantry", 55, "Aisle 4", "C3", 25, 18, 0, 0),
-        product("prod-parle-g", "SKU-SNK-PAR-250", "Parle-G Glucose Biscuits 250g", "Parle", "Snacks & Pantry", 40, "Aisle 4", "C4", 30, 30, 0, 0),
-        product("prod-lays", "SKU-SNK-LAY-050", "Lay's Classic Salted Potato Chips 50g", "Lay's", "Snacks & Pantry", 20, "Aisle 4", "A1", 40, 36, 0, 0),
-        product("prod-haldirams", "SKU-SNK-HAL-200", "Haldiram's Nagpur Aloo Bhujia 200g", "Haldiram's", "Snacks & Pantry", 95, "Aisle 4", "A3", 15, 22, 0, 0),
-        product("prod-juice", "SKU-BEV-REAL-1L", "Real Fruit Power Mixed Fruit Juice 1L", "Real", "Beverages", 110, "Aisle 5", "B1", 18, 24, 0, 0),
+        product("prod-marie-gold", "SKU-SNK-MAR-300", "Britannia Marie Gold Biscuits 300g", "Britannia", "Snacks & Pantry", 55, "Aisle 4", "D3", 25, 18, 0, 0),
+        product("prod-parle-g", "SKU-SNK-PAR-250", "Parle-G Glucose Biscuits 250g", "Parle", "Snacks & Pantry", 40, "Aisle 4", "D4", 30, 30, 0, 0),
+        product("prod-lays", "SKU-SNK-LAY-050", "Lay's Classic Salted Potato Chips 50g", "Lay's", "Snacks & Pantry", 20, "Aisle 4", "B6", 40, 36, 0, 0),
+        product("prod-haldirams", "SKU-SNK-HAL-200", "Haldiram's Nagpur Aloo Bhujia 200g", "Haldiram's", "Snacks & Pantry", 95, "Aisle 4", "B3", 15, 22, 0, 0),
+        product("prod-juice", "SKU-BEV-REAL-1L", "Real Fruit Power Mixed Fruit Juice 1L", "Real", "Beverages", 110, "Aisle 4", "B1", 18, 24, 0, 0),
         product("prod-dove", "SKU-PC-DOVE-340", "Dove Daily Moisture Shampoo 340ml", "Dove", "Personal Care & Hair", 245, "Aisle 6", "F2", 7, 16, 0, 0),
         product("prod-sunsilk", "SKU-PC-SUN-350", "Sunsilk Soft & Smooth Shampoo 350ml", "Sunsilk", "Personal Care & Hair", 215, "Aisle 6", "D5", 12, 10, 0, 0),
         product("prod-pantene", "SKU-PC-PAN-340", "Pantene Silky Smooth Care Shampoo 340ml", "Pantene", "Personal Care & Hair", 260, "Aisle 6", "D6", 9, 8, 0, 0),
-        product("prod-pasta", "SKU-STP-PAS-500", "Barilla Penne Rigate Durum Wheat Pasta 500g", "Barilla", "Grains & Staples", 195, "Aisle 1", "B2", 14, 20, 0, 0),
-        product("prod-pasta-sauce", "SKU-STP-SAU-500", "Del Monte Traditional Pasta Sauce 500g", "Del Monte", "Grains & Staples", 145, "Aisle 1", "B3", 11, 14, 0, 0),
+        product("prod-pasta", "SKU-STP-PAS-500", "Barilla Penne Rigate Durum Wheat Pasta 500g", "Barilla", "Grains & Staples", 195, "Aisle 5", "E1", 14, 20, 0, 0),
+        product("prod-pasta-sauce", "SKU-STP-SAU-500", "Del Monte Traditional Pasta Sauce 500g", "Del Monte", "Grains & Staples", 145, "Aisle 5", "E3", 11, 14, 0, 0),
         product("prod-cheese", "SKU-DAIRY-CHS-200", "Amul Processed Cheese Slices 200g", "Amul", "Dairy", 140, "Aisle 2", "C5", 16, 12, 0, 0),
         product("prod-britannia-bread", "SKU-BAK-BRI-400", "Britannia 100% Whole Wheat Bread 400g", "Britannia", "Bakery", 48, "Aisle 3", "D1", 14, 8, 0, 0),
         product("prod-valencia-oranges", "SKU-PROD-VAL-1K", "Valencia Seedless Oranges 1kg", "FreshFarm", "Fresh Produce", 165, "Aisle 1", "A2", 24, 26, 0, 0),
@@ -222,12 +224,12 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
         product("prod-green-tea", "SKU-BEV-GRN-500", "Zero Calorie Green Tea 500ml", "Leaf Zero", "Beverages", 60, "Aisle 4", "B3", 26, 29, 0, 0),
         product("prod-horizon-milk", "SKU-DAIRY-HOR-1G", "Horizon Organic Whole Milk 1Gal", "Horizon", "Dairy", 520, "Aisle 2", "C2", 0, 24, 0, 0),
         product("prod-vanilla-yogurt", "SKU-DAIRY-VAN-32", "Greek Yogurt Vanilla 32oz", "Epigamia", "Dairy", 195, "Aisle 2", "C1", 8, 17, 0, 0),
-        product("prod-brioche-rolls", "SKU-BAK-BRIO-006", "French Brioche Rolls 6pk", "OvenCraft", "Bakery", 120, "Aisle 3", "C4", 18, 6, 0, 0),
-        product("prod-tortilla-chips", "SKU-SNK-TOR-200", "Organic Tortilla Sea Salt Chips 200g", "Nature's Basket", "Snacks", 135, "Aisle 4", "D1", 28, 32, 0, 0),
+        product("prod-brioche-rolls", "SKU-BAK-BRIO-006", "French Brioche Rolls 6pk", "OvenCraft", "Bakery", 120, "Aisle 3", "D2", 18, 6, 0, 0),
+        product("prod-tortilla-chips", "SKU-SNK-TOR-200", "Organic Tortilla Sea Salt Chips 200g", "Nature's Basket", "Snacks", 135, "Aisle 4", "D4", 28, 32, 0, 0),
         product("prod-granola", "SKU-BRK-GRA-500", "Crunchy Honey Oat Granola 500g", "Morning Harvest", "Breakfast", 285, "Aisle 4", "D3", 20, 20, 0, 0),
         product("prod-kettle-chips", "SKU-SNK-KET-150", "Kettle Cooked Potato Chips 150g", "Kettle Craft", "Snacks", 85, "Aisle 4", "D4", 8, 14, 0, 0),
-        product("prod-organic-orange-juice", "SKU-BEV-OJ-1L", "Organic Orange Juice 1L", "Fresh Press", "Beverages", 145, "Aisle 4", "B3", 0, 0, 0, 0),
-        product("prod-whole-almonds", "SKU-SNK-WAL-200", "Whole Roasted Almonds 200g", "NutriChoice", "Snacks", 210, "Aisle 4", "D2", 5, 18, 0, 0),
+        product("prod-organic-orange-juice", "SKU-BEV-OJ-1L", "Organic Orange Juice 1L", "Fresh Press", "Beverages", 145, "Aisle 4", "B5", 0, 0, 0, 0),
+        product("prod-whole-almonds", "SKU-SNK-WAL-200", "Whole Roasted Almonds 200g", "NutriChoice", "Snacks", 210, "Aisle 4", "D3", 5, 18, 0, 0),
         product("prod-lactose-free-milk", "SKU-DAIRY-LFM-1L", "Lactose-Free Organic Milk 1L", "Organic Valley", "Dairy", 110, "Aisle 2", "C2", 9, 12, 0, 0),
     ])
 
@@ -502,7 +504,7 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
     staff_specs = [
         ("staff-s01", "EMP-401", "Elena Rostova", "Billing Specialist", "Billing", ["POS Billing", "Cash Handling", "Customer Support"], "zone-7", "Checkout Counter C1", "BUSY", "Serving register queue", 94, 4, "Radio Ch 1"),
         ("staff-s02", "EMP-402", "Marcus Vance", "Billing & Customer Care", "Billing", ["POS Billing", "Product Assistance", "Customer Support"], "zone-4", "Aisle 3 Snacks", "AVAILABLE", "Standby in zone", 89, 3, "Radio Ch 1"),
-        ("staff-s03", "EMP-403", "Liam O'Connor", "Inventory Replenishment", "Replenishment", ["Rapid Restock", "Stockroom Operations", "Safety"], "zone-4", "Beverage Gondola B4", "BUSY", "Restocking Shelf B4", 91, 5, "Radio Ch 2"),
+        ("staff-s03", "EMP-403", "Madhesh", "Inventory Replenishment", "Replenishment", ["Rapid Restock", "Stockroom Operations", "Safety"], "zone-4", "Beverage Gondola B4", "BUSY", "Restocking Shelf B4", 91, 5, "Radio Ch 2"),
         ("staff-s04", "EMP-404", "Sarah Jenkins", "Store Operations Specialist", "Operations", ["Planogram Compliance", "Spill Safety", "Produce Handling"], "zone-2", "Produce Perimeter", "BUSY", "Spill hazard cleanup", 92, 4, "Radio Ch 3"),
         ("staff-s05", "EMP-405", "David Kim", "Customer Guidance & Returns", "Support", ["Customer Assistance", "Returns", "Floor Guide"], "zone-1", "Entrance Lobby", "BUSY", "Customer product navigation", 93, 2, "Radio Ch 3"),
         ("staff-s06", "EMP-406", "Priya Sharma", "Floor Supervisor", "Operations", ["Cashier Override", "Escalation Resolution", "Team Dispatch"], "zone-1", "Store Center Floor", "AVAILABLE", "Supervisory floor walk", 98, 3, "Direct Line"),
@@ -578,7 +580,7 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
         task("task-101", "Spill Hazard Cleanup", "SPILL_CLEANUP", "HIGH", "IN_PROGRESS", "Produce Perimeter — Aisle 1", "Minor moisture spill detected near produce chiller; secure and dry the area.", 5, "staff-s04", "Sarah Jenkins", {"source": "CAM-02", "eta_minutes": 2, "source_incident_id": "inc-04"}),
         task("task-102", "Open Counter C3 for Queue Relief", "QUEUE_SUPPORT", "CRITICAL", "ASSIGNED", "Checkout Register C3", "Open express C3 to reduce C1 and C2 evening queues.", 4, "staff-s02", "Marcus Vance", {"source": "Queue Intelligence", "eta_minutes": 1, "source_incident_id": "inc-01"}),
         task("task-103", "Restock Roasted Almonds on B2", "RESTOCK", "MEDIUM", "IN_PROGRESS", "Snacks Gondola B2", "Shelf is at 24% capacity; 18 backroom units are ready.", 12, "staff-s10", "Aisha Khan", {"sku": "SKU-SNK-402", "backroom_units": 18, "eta_minutes": 3}),
-        task("task-104", "Refill Beverage B4 — Cola Zero", "RESTOCK", "CRITICAL", "IN_PROGRESS", "Beverage Gondola B4", "Only 3 visible units remain; move 24 units from Backroom Bay 3B.", 7, "staff-s03", "Liam O'Connor", {"sku": "SKU-BEV-1029", "availability": 16.7, "stockout_minutes": 9, "camera": "CAM-04", "source_incident_id": "inc-03"}),
+        task("task-104", "Refill Beverage B4 — Cola Zero", "RESTOCK", "CRITICAL", "IN_PROGRESS", "Beverage Gondola B4", "Only 3 visible units remain; move 24 units from Backroom Bay 3B.", 7, "staff-s03", "Madhesh", {"sku": "SKU-BEV-1029", "availability": 16.7, "stockout_minutes": 9, "camera": "CAM-04", "source_incident_id": "inc-03"}),
         task("task-105", "Dairy Chiller C2 Restock", "RESTOCK", "HIGH", "COMPLETED", "Dairy Cooler Wall C2", "Whole milk replenished from cold storage and camera verified.", 35, "staff-s08", "Vikram Rao", {"sku": "SKU-DAIRY-101", "before_availability": 0, "after_availability": 75, "verification": "CAMERA_CONFIRMED"}),
         task("task-106", "A1 Apple Planogram Fix", "PLANOGRAM_AUDIT", "LOW", "COMPLETED", "Produce Tier A1", "Apple facing aligned with the current planogram.", 55, "staff-s04", "Sarah Jenkins", {"sku": "SKU-PROD-101", "verification": "STAFF_CONFIRMED"}),
         task("task-107", "Rotate Milk Batch MILK-0827", "STOCK_ROTATION", "HIGH", "ASSIGNED", "Dairy Cooler Wall C2", "Move earlier-expiring milk batch to front facings under FEFO.", 10, "staff-s08", "Vikram Rao", {"batch_id": "batch-milk-0827", "batch_number": "MILK-0827", "expiry_hours": 20}),
@@ -626,12 +628,12 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
     incidents = [
         incident("inc-01", "Checkout C1 Congestion", "Eight shoppers are waiting and service capacity is below the arrival rate.", "CRITICAL", "QUEUE_CONGESTION", "Checkout C1", "zone-7", "ACTIVE", "CAM-06", 3, "Open standby Counter C3", "OPEN_LANE_C3", None, None, {"queue_length": 8, "wait_seconds": 324, "forecast_queue_5_min": 13, "confidence": 0.92}),
         incident("inc-02", "Checkout C2 Express Delay", "Seven shoppers are waiting at C2 during the evening surge.", "CRITICAL", "QUEUE_CONGESTION", "Checkout C2", "zone-7", "ACTIVE", "CAM-06", 6, "Deploy contactless checkout support", "ASSIGN_CHECKOUT_SUPPORT", "staff-s09", "Chen Wei", {"queue_length": 7, "wait_seconds": 294}),
-        incident("inc-03", "Shelf B4 Cola Zero Depletion", "Cola Zero has three visible units and will stock out in approximately nine minutes.", "HIGH", "STOCK_DEPLETION", "Beverage Gondola B4", "zone-4", "ACTIVE", "CAM-04", 7, "Replenish 24 units from Bay 3B", "RESTOCK_SHELF_B4", "staff-s03", "Liam O'Connor", {"availability": 16.7, "visible_units": 3, "backroom_units": 24, "stockout_minutes": 9}),
+        incident("inc-03", "Shelf B4 Cola Zero Depletion", "Cola Zero has three visible units and will stock out in approximately nine minutes.", "HIGH", "STOCK_DEPLETION", "Beverage Gondola B4", "zone-4", "ACTIVE", "CAM-04", 7, "Replenish 24 units from Bay 3B", "RESTOCK_SHELF_B4", "staff-s03", "Madhesh", {"availability": 16.7, "visible_units": 3, "backroom_units": 24, "stockout_minutes": 9}),
         incident("inc-04", "Liquid Spill Hazard", "A 1.2 metre moisture patch was detected near the produce chiller.", "HIGH", "SPILL_HAZARD", "Produce Perimeter", "zone-2", "ACTIVE", "CAM-02", 5, "Secure area and dry mop immediately", "CLEAN_SPILL", "staff-s04", "Sarah Jenkins"),
         incident("inc-05", "Dairy Chiller Temperature Drift", "Cooler temperature reached 6.4°C against the 4.0°C target.", "HIGH", "COLD_CHAIN", "Dairy Cooler Wall", "zone-3", "ACTIVE", "CAM-03", 15, "Inspect door seal and temperature gauge", "INSPECT_CHILLER", "staff-s08", "Vikram Rao", {"temperature_c": 6.4, "target_c": 4.0}),
         incident("inc-06", "Aisle Cart Obstruction", "An unattended replenishment cart is obstructing the shopper path.", "HIGH", "AISLE_OBSTRUCTION", "Aisle 3 Snacks", "zone-4", "ACTIVE", "CAM-04", 9, "Return cart to stockroom bay", "CLEAR_AISLE"),
         incident("inc-07", "CAM-04 Image Quality Degraded", "Optical blur may reduce Shelf B4 recognition confidence.", "MEDIUM", "CAMERA_DEGRADED", "Beverage Gondola B4", "zone-4", "ACTIVE", "CAM-04", 20, "Inspect and clean camera lens", "SERVICE_CAMERA"),
-        incident("inc-08", "B4 Shelf Replenishment Completed", "Twenty-four units were transferred from Bay 3B and verified by camera.", "HIGH", "STOCK_DEPLETION", "Beverage Gondola B4", "zone-4", "RESOLVED", "CAM-04", 90, "Replenish 24 units", "RESTOCK_SHELF_B4", "staff-s03", "Liam O'Connor", {"before_availability": 17, "after_availability": 79, "duration_seconds": 222}),
+        incident("inc-08", "B4 Shelf Replenishment Completed", "Twenty-four units were transferred from Bay 3B and verified by camera.", "HIGH", "STOCK_DEPLETION", "Beverage Gondola B4", "zone-4", "RESOLVED", "CAM-04", 90, "Replenish 24 units", "RESTOCK_SHELF_B4", "staff-s03", "Madhesh", {"before_availability": 17, "after_availability": 79, "duration_seconds": 222}),
         incident("inc-09", "C3 Queue Support Completed", "The express lane was opened and average wait fell to 2.1 minutes.", "CRITICAL", "QUEUE_CONGESTION", "Checkout C3", "zone-7", "RESOLVED", "CAM-06", 120, "Open express C3", "OPEN_LANE_C3", "staff-s02", "Marcus Vance", {"before_wait_seconds": 324, "after_wait_seconds": 126}),
         incident("inc-10", "A1 Planogram Realigned", "Apple facings were returned to their approved shelf positions.", "LOW", "PLANOGRAM_VIOLATION", "Produce Tier A1", "zone-2", "RESOLVED", "CAM-02", 150, "Realign apple facings", "FIX_PLANOGRAM", "staff-s04", "Sarah Jenkins"),
     ]
@@ -720,17 +722,20 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
         batch("batch-paneer-305", "prod-paneer", "SKU-DAIRY-305", "Organic Malai Paneer 200g", "Dairy", "PAN-0828", 15, 10, 5, "C3", 65, 95, 50, "ACTIVE", "ERP"),
         batch("batch-salad-401", "prod-salad", "SKU-RTE-401", "Chicken Caesar Salad 320g", "Ready-to-Eat", "RTE-0827", 8, 8, 0, "D2", 88, 155, 5, "EXPIRING_SOON", "GS1_SCAN"),
         batch("batch-eggs-0825", "prod-eggs", "SKU-DAIRY-401", "Farm Fresh Organic Eggs 6-Pack", "Dairy", "EGG-0825", 2, 2, 0, "C1", 40, 65, -2, "EXPIRED", "ERP"),
+        batch("batch-bread-228", "prod-bread", "SKU-BAK-301", "Whole Wheat Farm Bread 400g", "Bakery", "BR-228", 3, 3, 0, "D1", 24, 45, -8, "EXPIRED", "ERP"),
+        batch("batch-berry-0824", "prod-strawberries", "SKU-PROD-502", "Hydroponic Strawberries 250g", "Fresh Produce", "BERRY-0824", 2, 2, 0, "A2", 65, 120, -4, "EXPIRED", "GOODS_RECEIVING"),
+        batch("batch-milk-0824", "prod-milk", "SKU-DAIRY-101", "Fresh Whole Milk 1L", "Dairy", "MILK-0824", 2, 2, 0, "C2", 42, 64, -1, "EXPIRED", "ERP"),
         batch("batch-ham-0829", "prod-ham", "SKU-MEAT-601", "Smoked Honey Ham Slices 200g", "Meat & Chilled", "HAM-0829", 14, 8, 6, "C5", 110, 175, 72, "ACTIVE", "ERP"),
     ]
 
     markdown_candidates = [
-        {"id": "markdown-bread-230", "batch_id": "batch-bread-230", "product_id": "prod-bread", "product_sku": "SKU-BAK-301", "product_name": "Whole Wheat Farm Bread 400g", "category": "Bakery", "shelf_code": "D1", "current_price": 45, "suggested_discount_percent": 20, "suggested_new_price": 36, "remaining_quantity": 6, "at_risk_quantity": 4, "expires_at": now + timedelta(hours=8), "reason": "Six units expire within eight hours and expected demand will not clear the batch.", "status": "RECOMMENDED", "approved_by": None, "approved_at": None, "applied_at": None},
-        {"id": "markdown-berries-502", "batch_id": "batch-strawberries-502", "product_id": "prod-strawberries", "product_sku": "SKU-PROD-502", "product_name": "Hydroponic Strawberries 250g", "category": "Fresh Produce", "shelf_code": "A2", "current_price": 120, "suggested_discount_percent": 35, "suggested_new_price": 78, "remaining_quantity": 5, "at_risk_quantity": 3, "expires_at": now + timedelta(hours=6), "reason": "Fresh produce batch has six hours remaining and three units are at risk.", "status": "RECOMMENDED", "approved_by": None, "approved_at": None, "applied_at": None},
+        {"id": "markdown-bread-230", "batch_id": "batch-bread-230", "product_id": "prod-bread", "product_sku": "SKU-BAK-301", "product_name": "Whole Wheat Farm Bread 400g", "category": "Bakery", "shelf_code": "D1", "current_price": 45, "suggested_discount_percent": 20, "suggested_new_price": 36, "remaining_quantity": 6, "at_risk_quantity": 4, "expires_at": now + timedelta(hours=8), "reason": "Six units expire within eight hours and expected demand will not clear the batch.", "status": "APPROVED", "approved_by": "Store Manager", "approved_at": now - timedelta(hours=1), "applied_at": None},
+        {"id": "markdown-berries-502", "batch_id": "batch-strawberries-502", "product_id": "prod-strawberries", "product_sku": "SKU-PROD-502", "product_name": "Hydroponic Strawberries 250g", "category": "Fresh Produce", "shelf_code": "A2", "current_price": 120, "suggested_discount_percent": 35, "suggested_new_price": 78, "remaining_quantity": 5, "at_risk_quantity": 3, "expires_at": now + timedelta(hours=6), "reason": "Fresh produce batch has six hours remaining and three units are at risk.", "status": "APPROVED", "approved_by": "Store Manager", "approved_at": now - timedelta(minutes=40), "applied_at": None},
         {"id": "markdown-salad-401", "batch_id": "batch-salad-401", "product_id": "prod-salad", "product_sku": "SKU-RTE-401", "product_name": "Chicken Caesar Salad 320g", "category": "Ready-to-Eat", "shelf_code": "D2", "current_price": 155, "suggested_discount_percent": 25, "suggested_new_price": 116.25, "remaining_quantity": 8, "at_risk_quantity": 6, "expires_at": now + timedelta(hours=5), "reason": "Ready-to-eat batch expires during the current shift.", "status": "RECOMMENDED", "approved_by": None, "approved_at": None, "applied_at": None},
     ]
 
     waste_records = [
-        {"id": "waste-rec-1", "store_id": STORE_ID, "product_id": "prod-bread", "product_sku": "SKU-BAK-301", "product_name": "Whole Wheat Farm Bread 400g", "batch_id": "batch-bread-228", "batch_number": "BR-228", "quantity": 3, "reason": "EXPIRED", "recorded_by_staff_id": "staff-s03", "recorded_by_staff_name": "Liam O'Connor", "location_id": "shelf-d1", "location_name": "Bakery D1", "recorded_at": now - timedelta(hours=7), "unit_cost": 24, "total_loss_cost": 72, "notes": "Past sell-by date at morning audit."},
+        {"id": "waste-rec-1", "store_id": STORE_ID, "product_id": "prod-bread", "product_sku": "SKU-BAK-301", "product_name": "Whole Wheat Farm Bread 400g", "batch_id": "batch-bread-228", "batch_number": "BR-228", "quantity": 3, "reason": "EXPIRED", "recorded_by_staff_id": "staff-s03", "recorded_by_staff_name": "Madhesh", "location_id": "shelf-d1", "location_name": "Bakery D1", "recorded_at": now - timedelta(hours=7), "unit_cost": 24, "total_loss_cost": 72, "notes": "Past sell-by date at morning audit."},
         {"id": "waste-rec-2", "store_id": STORE_ID, "product_id": "prod-strawberries", "product_sku": "SKU-PROD-502", "product_name": "Hydroponic Strawberries 250g", "batch_id": "batch-berry-0824", "batch_number": "BERRY-0824", "quantity": 2, "reason": "SPOILED", "recorded_by_staff_id": "staff-s04", "recorded_by_staff_name": "Sarah Jenkins", "location_id": "shelf-a2", "location_name": "Produce A2", "recorded_at": now - timedelta(hours=5), "unit_cost": 65, "total_loss_cost": 130, "notes": "Soft berries found during shelf facing."},
         {"id": "waste-rec-3", "store_id": STORE_ID, "product_id": "prod-milk", "product_sku": "SKU-DAIRY-101", "product_name": "Fresh Whole Milk 1L", "batch_id": "batch-milk-0824", "batch_number": "MILK-0824", "quantity": 2, "reason": "DAMAGED", "recorded_by_staff_id": "staff-s08", "recorded_by_staff_name": "Vikram Rao", "location_id": "shelf-c2", "location_name": "Dairy C2", "recorded_at": now - timedelta(hours=3), "unit_cost": 42, "total_loss_cost": 84, "notes": "Cartons damaged during pallet unpacking."},
     ]

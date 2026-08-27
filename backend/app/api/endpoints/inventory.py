@@ -11,6 +11,8 @@ from app.db.models import (
 )
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
+import uuid
 
 router = APIRouter()
 
@@ -18,6 +20,30 @@ class ShelfUpdate(BaseModel):
     availability: Optional[float] = None
     visible_units: Optional[int] = None
     status: Optional[str] = None
+
+
+class BatchExpiryUpdate(BaseModel):
+    expires_at: datetime
+    reason: str
+    staff_id: str
+
+
+class WasteCreate(BaseModel):
+    store_id: str
+    product_id: str
+    product_sku: str
+    product_name: str
+    batch_id: Optional[str] = None
+    batch_number: Optional[str] = None
+    quantity: int
+    reason: str
+    recorded_by_staff_id: str
+    recorded_by_staff_name: str
+    location_id: str
+    location_name: str
+    unit_cost: Optional[float] = None
+    notes: Optional[str] = None
+    evidence_photo: Optional[str] = None
 
 @router.get("/shelves")
 def get_all_shelves(db: Session = Depends(get_db)):
@@ -166,6 +192,110 @@ def get_markdown_candidates(db: Session = Depends(get_db)):
         }
         for candidate in candidates
     ]
+
+
+@router.patch("/batches/{batch_id}/expiry")
+def update_batch_expiry(
+    batch_id: str,
+    payload: BatchExpiryUpdate,
+    db: Session = Depends(get_db),
+):
+    batch = db.query(InventoryBatchModel).filter(InventoryBatchModel.id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Inventory batch not found")
+    batch.expires_at = payload.expires_at
+    batch.source = "MANUAL_ENTRY"
+    db.commit()
+    db.refresh(batch)
+    return {
+        "status": "success",
+        "batch_id": batch.id,
+        "expires_at": batch.expires_at.isoformat() if batch.expires_at else None,
+        "reason": payload.reason,
+        "staff_id": payload.staff_id,
+    }
+
+
+@router.post("/waste")
+def create_waste_record(payload: WasteCreate, db: Session = Depends(get_db)):
+    if payload.quantity <= 0:
+        raise HTTPException(status_code=422, detail="Waste quantity must be greater than zero")
+
+    batch = None
+    if payload.batch_id:
+        batch = db.query(InventoryBatchModel).filter(InventoryBatchModel.id == payload.batch_id).first()
+    if batch is None:
+        batch = (
+            db.query(InventoryBatchModel)
+            .filter(InventoryBatchModel.product_sku == payload.product_sku)
+            .order_by(InventoryBatchModel.expires_at)
+            .first()
+        )
+    if not batch:
+        raise HTTPException(status_code=404, detail="Inventory batch not found")
+    if payload.quantity > batch.quantity:
+        raise HTTPException(status_code=409, detail="Waste quantity exceeds batch quantity")
+
+    batch.quantity = max(0, batch.quantity - payload.quantity)
+    shelf_deduction = min(batch.shelf_quantity, payload.quantity)
+    batch.shelf_quantity = max(0, batch.shelf_quantity - shelf_deduction)
+    if batch.quantity == 0:
+        batch.status = "WASTE_RECORDED"
+
+    shelf = db.query(ShelfModel).filter(ShelfModel.code == (batch.shelf_code or payload.location_id)).first()
+    if shelf:
+        shelf.current_skus_count = max(0, (shelf.current_skus_count or 0) - shelf_deduction)
+        shelf.visible_units = max(0, (shelf.visible_units or 0) - shelf_deduction)
+        capacity = max(1, shelf.capacity_count or 1)
+        shelf.availability = round((shelf.visible_units / capacity) * 100, 1)
+        shelf.status = (
+            "OUT_OF_STOCK"
+            if shelf.visible_units == 0
+            else "LOW"
+            if shelf.availability < 35
+            else "OPTIMAL"
+        )
+
+    product = (
+        db.query(ProductModel)
+        .filter((ProductModel.id == payload.product_id) | (ProductModel.sku == payload.product_sku))
+        .first()
+    )
+    if product:
+        product.stock_count = max(0, (product.stock_count or 0) - shelf_deduction)
+        product.is_available = product.stock_count > 0
+        product.is_low_stock = 0 < product.stock_count <= 5
+
+    unit_cost = payload.unit_cost or batch.unit_cost or 0
+    record = WasteRecordModel(
+        id=f"waste-{uuid.uuid4().hex[:10]}",
+        store_id=payload.store_id,
+        product_id=batch.product_id or payload.product_id,
+        product_sku=payload.product_sku,
+        product_name=payload.product_name,
+        batch_id=batch.id,
+        batch_number=batch.batch_number or payload.batch_number,
+        quantity=payload.quantity,
+        reason=payload.reason,
+        recorded_by_staff_id=payload.recorded_by_staff_id,
+        recorded_by_staff_name=payload.recorded_by_staff_name,
+        location_id=payload.location_id,
+        location_name=payload.location_name,
+        unit_cost=unit_cost,
+        total_loss_cost=unit_cost * payload.quantity,
+        notes=payload.notes,
+        evidence_photo=payload.evidence_photo,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return {
+        "status": "success",
+        "waste_id": record.id,
+        "batch_id": batch.id,
+        "remaining_quantity": batch.quantity,
+        "remaining_shelf_quantity": batch.shelf_quantity,
+    }
 
 
 @router.get("/waste")

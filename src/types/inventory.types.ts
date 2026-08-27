@@ -22,6 +22,7 @@ export interface ShelfItem {
   expectedRestockTime?: string
   confidenceScore: number // Edge model confidence
   cameraSourceId: string
+  backroomUnits?: number
 }
 
 export interface ShelfSection {

@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "description": "Demo retail barcodes for staff scanner — EAN-13 product codes and Code128 batch codes.",
+  "products": [
+    {
+      "barcode": "8901001101012",
+      "sku": "SKU-DAIRY-101",
+      "productId": "prod-milk",
+      "name": "Fresh Whole Milk 1L",
+      "brand": "Heritage",
+      "category": "Dairy",
+      "shelfCode": "C2",
+      "aisle": "Aisle 2",
+      "filename": "fresh-whole-milk-1l.png"
+    },
+    {
+      "barcode": "8901002303010",
+      "sku": "SKU-BAK-301",
+      "productId": "prod-bread",
+      "name": "Whole Wheat Farm Bread 400g",
+      "brand": "Modern",
+      "category": "Bakery",
+      "shelfCode": "D1",
+      "aisle": "Aisle 3",
+      "filename": "whole-wheat-farm-bread-400g.png"
+    },
+    {
+      "barcode": "8901003502508",
+      "sku": "SKU-PROD-502",
+      "productId": "prod-strawberries",
+      "name": "Hydroponic Strawberries 250g",
+      "brand": "FreshFarm",
+      "category": "Fresh Produce",
+      "shelfCode": "A2",
+      "aisle": "Aisle 1",
+      "filename": "hydroponic-strawberries-250g.png"
+    },
+    {
+      "barcode": "8901004401554",
+      "sku": "SKU-RTE-401",
+      "productId": "prod-salad",
+      "name": "Chicken Caesar Salad 320g",
+      "brand": "FreshBowl",
+      "category": "Ready-to-Eat",
+      "shelfCode": "D2",
+      "aisle": "Aisle 3",
+      "filename": "chicken-caesar-salad-320g.png"
+    },
+    {
+      "barcode": "8901005102916",
+      "sku": "SKU-BEV-1029",
+      "productId": "prod-coke",
+      "name": "Sparkling Cola Zero 12-Pack",
+      "brand": "Wave Beverage",
+      "category": "Beverages",
+      "shelfCode": "B4",
+      "aisle": "Aisle 4",
+      "filename": "sparkling-cola-zero-12-pack.png"
+    },
+    {
+      "barcode": "8901006402103",
+      "sku": "SKU-SNK-402",
+      "productId": "prod-almonds",
+      "name": "Roasted Almonds 200g",
+      "brand": "NutriChoice",
+      "category": "Snacks",
+      "shelfCode": "B2",
+      "aisle": "Aisle 4",
+      "filename": "roasted-almonds-200g.png"
+    },
+    {
+      "barcode": "8901007207127",
+      "sku": "SKU-BEV-207",
+      "productId": "prod-orange-juice",
+      "name": "Orange Juice 1L",
+      "brand": "Real",
+      "category": "Beverages",
+      "shelfCode": "B5",
+      "aisle": "Aisle 4",
+      "filename": "orange-juice-1l.png"
+    },
+    {
+      "barcode": "8901008250650",
+      "sku": "SKU-SNK-BIS-250",
+      "productId": "prod-biscuits",
+      "name": "Britannia NutriChoice Digestive Biscuits 250g",
+      "brand": "Britannia",
+      "category": "Snacks & Pantry",
+      "shelfCode": "B2",
+      "aisle": "Aisle 4",
+      "filename": "britannia-digestive-biscuits-250g.png"
+    },
+    {
+      "barcode": "8901009340345",
+      "sku": "SKU-PC-DOVE-340",
+      "productId": "prod-dove",
+      "name": "Dove Daily Moisture Shampoo 340ml",
+      "brand": "Dove",
+      "category": "Personal Care & Hair",
+      "shelfCode": "F2",
+      "aisle": "Aisle 6",
+      "filename": "dove-daily-moisture-shampoo-340ml.png"
+    },
+    {
+      "barcode": "8901010401656",
+      "sku": "SKU-DAIRY-401",
+      "productId": "prod-eggs",
+      "name": "Farm Fresh Organic Eggs 6-Pack",
+      "brand": "Eggoz",
+      "category": "Dairy",
+      "shelfCode": "C1",
+      "aisle": "Aisle 2",
+      "filename": "farm-fresh-organic-eggs-6-pack.png"
+    }
+  ],
+  "batches": [
+    {
+      "barcode": "MILK-0827",
+      "batchNumber": "MILK-0827",
+      "batchId": "batch-milk-0827",
+      "sku": "SKU-DAIRY-101",
+      "productId": "prod-milk",
+      "name": "Fresh Whole Milk 1L",
+      "shelfCode": "C2",
+      "filename": "batch-milk-0827.png"
+    },
+    {
+      "barcode": "BR-230",
+      "batchNumber": "BR-230",
+      "batchId": "batch-bread-230",
+      "sku": "SKU-BAK-301",
+      "productId": "prod-bread",
+      "name": "Whole Wheat Farm Bread 400g",
+      "shelfCode": "D1",
+      "filename": "batch-bread-230.png"
+    },
+    {
+      "barcode": "BERRY-0826",
+      "batchNumber": "BERRY-0826",
+      "batchId": "batch-strawberries-502",
+      "sku": "SKU-PROD-502",
+      "productId": "prod-strawberries",
+      "name": "Hydroponic Strawberries 250g",
+      "shelfCode": "A2",
+      "filename": "batch-berries-0826.png"
+    },
+    {
+      "barcode": "EGG-0825",
+      "batchNumber": "EGG-0825",
+      "batchId": "batch-eggs-0825",
+      "sku": "SKU-DAIRY-401",
+      "productId": "prod-eggs",
+      "name": "Farm Fresh Organic Eggs 6-Pack",
+      "shelfCode": "C1",
+      "filename": "batch-eggs-0825-waste.png",
+      "wasteDemo": true,
+      "wasteReason": "EXPIRED"
+    },
+    {
+      "barcode": "BR-228",
+      "batchNumber": "BR-228",
+      "batchId": "batch-bread-228",
+      "sku": "SKU-BAK-301",
+      "productId": "prod-bread",
+      "name": "Whole Wheat Farm Bread 400g",
+      "shelfCode": "D1",
+      "filename": "batch-bread-228-waste.png",
+      "wasteDemo": true,
+      "wasteReason": "EXPIRED"
+    },
+    {
+      "barcode": "BERRY-0824",
+      "batchNumber": "BERRY-0824",
+      "batchId": "batch-berry-0824",
+      "sku": "SKU-PROD-502",
+      "productId": "prod-strawberries",
+      "name": "Hydroponic Strawberries 250g",
+      "shelfCode": "A2",
+      "filename": "batch-berries-0824-waste.png",
+      "wasteDemo": true,
+      "wasteReason": "SPOILED"
+    },
+    {
+      "barcode": "MILK-0824",
+      "batchNumber": "MILK-0824",
+      "batchId": "batch-milk-0824",
+      "sku": "SKU-DAIRY-101",
+      "productId": "prod-milk",
+      "name": "Fresh Whole Milk 1L",
+      "shelfCode": "C2",
+      "filename": "batch-milk-0824-waste.png",
+      "wasteDemo": true,
+      "wasteReason": "DAMAGED"
+    }
+  ],
+  "shelves": [
+    {
+      "barcode": "SHELF-B4",
+      "shelfCode": "B4",
+      "zoneName": "Beverages & Snacks Aisle",
+      "sku": "SKU-BEV-1029",
+      "name": "Sparkling Cola Zero 12-Pack",
+      "filename": "shelf-b4-qr.png"
+    }
+  ]
+}

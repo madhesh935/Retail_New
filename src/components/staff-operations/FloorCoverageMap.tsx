@@ -4,18 +4,23 @@ import { cn } from '@/lib/utils'
 import { StaffMember, OperationalTask } from './staffData'
 
 interface FloorCoverageMapProps {
+  staff?: StaffMember[]
+  tasks?: OperationalTask[]
   onSelectStaff?: (staffId: string) => void
   onSelectTask?: (taskId: string) => void
   onSelectZone?: (zoneName: string) => void
 }
 
 export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
+  staff = [],
+  tasks = [],
   onSelectStaff,
   onSelectTask,
   onSelectZone,
 }) => {
+  const urgentCount = tasks.filter((t) => t.priority === 'CRITICAL' && t.status !== 'COMPLETED').length
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[340px] font-sans">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-[440px] font-sans">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
@@ -32,20 +37,21 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
         <div className="flex items-center gap-3 text-[11px] text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
-            <span>Staff (12)</span>
+            <span>Staff ({staff.length})</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-            <span>Urgent Task (2)</span>
+            <span>Urgent Task ({urgentCount})</span>
           </span>
         </div>
       </div>
 
       {/* Spatial Store Floor Map Canvas */}
-      <div className="relative w-full h-[240px] my-2 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden p-3 flex flex-col justify-between shadow-inner">
+      <div className="relative w-full flex-1 my-2 min-h-0 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden p-3 flex flex-col justify-between shadow-inner">
         {/* Top Entrance Banner */}
-        <div className="flex justify-center">
+        <div className="flex justify-center shrink-0 mb-1">
           <button
+            type="button"
             onClick={() => onSelectZone && onSelectZone('Entrance')}
             className="px-3 py-1 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-700 hover:text-slate-900 shadow-2xs transition-colors cursor-pointer flex items-center gap-2"
           >
@@ -63,11 +69,11 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
         </div>
 
         {/* Middle Main Floor Grid */}
-        <div className="grid grid-cols-3 gap-2 my-auto">
+        <div className="grid grid-cols-3 gap-2 flex-1 my-1">
           {/* Produce */}
           <div
             onClick={() => onSelectZone && onSelectZone('Produce')}
-            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between h-16 cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
+            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
           >
             <div className="flex items-center justify-between text-slate-700">
               <span className="font-semibold">Fresh Produce</span>
@@ -98,11 +104,11 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
           {/* Dairy */}
           <div
             onClick={() => onSelectZone && onSelectZone('Dairy')}
-            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between h-16 cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
+            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
           >
             <div className="flex items-center justify-between text-slate-700">
-              <span className="font-semibold">Dairy & Chilled</span>
-              <span className="text-[9px] text-slate-400">Aisle C</span>
+              <span className="font-semibold">Dairy &amp; Chilled</span>
+              <span className="text-[9px] text-slate-400 font-mono">Aisle C</span>
             </div>
             <div className="flex items-center gap-1">
               <span
@@ -120,10 +126,10 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
           {/* Beverages */}
           <div
             onClick={() => onSelectZone && onSelectZone('Beverages')}
-            className="p-2 rounded-lg bg-white border border-rose-200 text-[10px] flex flex-col justify-between h-16 cursor-pointer hover:border-rose-400 transition-colors shadow-2xs"
+            className="p-2 rounded-lg bg-white border border-rose-200 text-[10px] flex flex-col justify-between cursor-pointer hover:border-rose-400 transition-colors shadow-2xs"
           >
             <div className="flex items-center justify-between text-slate-700">
-              <span className="font-semibold">Cold Beverages</span>
+              <span className="font-semibold">Beverages</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation()
@@ -132,22 +138,22 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
                 className="px-1 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[8px] font-bold animate-pulse"
                 title="Critical Restock B4"
               >
-                ! Task B4
+                ! B4
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[9px] text-slate-400">Aisle B</span>
+              <span className="text-[9px] text-slate-400 font-mono">Aisle B</span>
             </div>
           </div>
 
           {/* Household & Snacks */}
           <div
             onClick={() => onSelectZone && onSelectZone('Household')}
-            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between h-16 cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
+            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
           >
             <div className="flex items-center justify-between text-slate-700">
-              <span className="font-semibold">Aisle 3 & Snacks</span>
-              <span className="text-[9px] text-slate-400">Aisle D</span>
+              <span className="font-semibold">Aisle 3 &amp; Snacks</span>
+              <span className="text-[9px] text-slate-400 font-mono">Aisle D</span>
             </div>
             <div className="flex items-center gap-1">
               <span
@@ -175,11 +181,11 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
           {/* Electronics */}
           <div
             onClick={() => onSelectZone && onSelectZone('Electronics')}
-            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between h-16 cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
+            className="p-2 rounded-lg bg-white border border-slate-200 text-[10px] flex flex-col justify-between cursor-pointer hover:border-slate-400 transition-colors shadow-2xs"
           >
             <div className="flex items-center justify-between text-slate-700">
               <span className="font-semibold">Electronics</span>
-              <span className="text-[9px] text-slate-400">Aisle E</span>
+              <span className="text-[9px] text-slate-400 font-mono">Aisle E</span>
             </div>
             <div className="flex items-center gap-1">
               <span
@@ -197,7 +203,7 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
           {/* Checkout Plaza */}
           <div
             onClick={() => onSelectZone && onSelectZone('Checkout')}
-            className="p-2 rounded-lg bg-white border border-rose-200 text-[10px] flex flex-col justify-between h-16 cursor-pointer hover:border-rose-400 transition-colors shadow-2xs"
+            className="p-2 rounded-lg bg-white border border-rose-200 text-[10px] flex flex-col justify-between cursor-pointer hover:border-rose-400 transition-colors shadow-2xs"
           >
             <div className="flex items-center justify-between text-slate-700">
               <span className="font-semibold">Checkout Plaza</span>
@@ -209,7 +215,7 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
                 className="px-1 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[8px] font-bold"
                 title="Critical Open C3 Task"
               >
-                ! Open C3
+                ! C3
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -236,7 +242,7 @@ export const FloorCoverageMap: React.FC<FloorCoverageMapProps> = ({
         </div>
 
         {/* Bottom Stockroom & Center Floor */}
-        <div className="flex items-center justify-between text-[10px] text-slate-500 px-1 font-sans">
+        <div className="flex items-center justify-between text-[10px] text-slate-500 px-1 font-sans shrink-0 mt-1">
           <div className="flex items-center gap-1.5">
             <span>Stockroom:</span>
             <span

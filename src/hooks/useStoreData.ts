@@ -1,16 +1,23 @@
 import { useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 
-export function useStoreData() {
+/** Load store data from the live API and optionally keep polling for staff/customer PWAs. */
+export function useStoreData(options?: { pollMs?: number }) {
   const activeStoreId = useAppStore((s) => s.activeStoreId)
   const isDemoMode = useAppStore((s) => s.isDemoMode)
   const fetchStoreData = useAppStore((s) => s.fetchStoreData)
   const isLoadingStore = useAppStore((s) => s.isLoadingStore)
   const storeError = useAppStore((s) => s.storeError)
+  const pollMs = options?.pollMs
 
   useEffect(() => {
     fetchStoreData(activeStoreId)
-  }, [activeStoreId, isDemoMode, fetchStoreData])
+    if (!pollMs || pollMs < 3000) return
+    const timer = window.setInterval(() => {
+      fetchStoreData(activeStoreId)
+    }, pollMs)
+    return () => window.clearInterval(timer)
+  }, [activeStoreId, isDemoMode, fetchStoreData, pollMs])
 
   return {
     activeStoreId,

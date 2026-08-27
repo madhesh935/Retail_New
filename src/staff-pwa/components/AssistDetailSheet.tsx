@@ -4,39 +4,41 @@ import {
   MapPin,
   MessageSquare,
   CheckCircle2,
-  Package,
   Send,
   Navigation,
   Inbox,
-  AlertCircle,
   Check,
 } from 'lucide-react'
 import { CustomerHelpRequest } from '@/store/slices/customerRequestSlice'
 import { useAppStore } from '@/store/useAppStore'
+import { realStoreApi } from '@/services/api/realStoreApi'
 
 interface AssistDetailSheetProps {
   request: CustomerHelpRequest | null
   isOpen: boolean
   onClose: () => void
-  onOpenMap: (zoneName: string, shelfCode?: string) => void
+  onOpenMap: (request: CustomerHelpRequest) => void
 }
 
 export const AssistDetailSheet: React.FC<AssistDetailSheetProps> = ({
-  request,
+  request: requestProp,
   isOpen,
   onClose,
   onOpenMap,
 }) => {
   const {
-    acceptCustomerRequest,
-    startAssistingCustomer,
+    syncTaskStatus,
     markBackroomStockFound,
     sendStaffCustomerMessage,
-    completeCustomerRequest,
     authenticatedStaff,
+    customerRequests,
   } = useAppStore()
 
   const [messageInput, setMessageInput] = useState('')
+
+  const request = requestProp
+    ? customerRequests.find((item) => item.id === requestProp.id) || requestProp
+    : null
 
   if (!isOpen || !request) return null
 
@@ -44,31 +46,42 @@ export const AssistDetailSheet: React.FC<AssistDetailSheetProps> = ({
   const isAccepted = request.status === 'ACCEPTED' || request.status === 'ASSIGNED'
   const isAssisting = request.status === 'ASSISTING'
   const isCompleted = request.status === 'COMPLETED'
-  const staffName = authenticatedStaff?.name || 'Liam'
-  const staffId = authenticatedStaff?.id || 'STAFF-03'
+  const staffId = authenticatedStaff?.id || ''
 
   const handleAccept = () => {
-    acceptCustomerRequest(request.id, staffId, staffName)
+    void syncTaskStatus(request.id, 'IN_PROGRESS', staffId || undefined)
   }
 
   const handleStartAssisting = () => {
-    startAssistingCustomer(request.id)
+    void syncTaskStatus(request.id, 'ASSISTING')
   }
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
     if (!messageInput.trim()) return
     sendStaffCustomerMessage(request.id, messageInput.trim())
+    void realStoreApi
+      .sendCustomerAssistMessage(request.id, 'ASSOCIATE', messageInput.trim())
+      .catch((error) => console.warn('Could not sync associate message', error))
     setMessageInput('')
   }
 
   const handleItemFound = (found: boolean) => {
     markBackroomStockFound(request.id, found)
+    const updateText = found
+      ? 'Item found in the backroom. I am bringing it to you now.'
+      : 'The requested item is unavailable in the backroom.'
+    void Promise.all([
+      realStoreApi.updateCustomerAssistDetails(request.id, { backroom_item_found: found }),
+      realStoreApi.sendCustomerAssistMessage(request.id, 'ASSOCIATE', updateText),
+      found
+        ? realStoreApi.updateTaskStatus(request.id, 'ASSISTING')
+        : realStoreApi.updateTaskStatus(request.id, 'BLOCKED'),
+    ]).catch((error) => console.warn('Could not sync backroom result', error))
   }
 
   const handleComplete = () => {
-    completeCustomerRequest(request.id, 'Assistance resolved at shelf')
-    onClose()
+    void syncTaskStatus(request.id, 'COMPLETED').finally(() => onClose())
   }
 
   return (
@@ -226,7 +239,7 @@ export const AssistDetailSheet: React.FC<AssistDetailSheetProps> = ({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => onOpenMap(request.zoneName, request.shelfCode)}
+              onClick={() => onOpenMap(request)}
               className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
             >
               <Navigation className="w-3.5 h-3.5 text-blue-600" />

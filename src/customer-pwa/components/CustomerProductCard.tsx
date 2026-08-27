@@ -25,7 +25,7 @@ export const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
   onNavigate,
   onViewAlternatives,
 }) => {
-  const { shoppingList, addToShoppingList, setActiveTab } = useCustomerShopping()
+  const { shoppingList, addToShoppingList, navigateToProduct } = useCustomerShopping()
   const { openHelpSheet } = useCustomerAssist()
   const [showAlternativesList, setShowAlternativesList] = useState(false)
   const isInList = shoppingList.some((item) => item.id === product.id)
@@ -34,7 +34,7 @@ export const CustomerProductCard: React.FC<CustomerProductCardProps> = ({
     if (onNavigate) {
       onNavigate(product)
     } else {
-      setActiveTab('ROUTE')
+      navigateToProduct(product)
     }
   }
 

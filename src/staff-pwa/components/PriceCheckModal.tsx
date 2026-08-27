@@ -8,6 +8,7 @@ interface PriceCheckModalProps {
   sku: string
   systemPrice: number
   shelfTagPrice?: number
+  onReportMismatch?: (shelfPrice: number) => void | Promise<void>
 }
 
 export const PriceCheckModal: React.FC<PriceCheckModalProps> = ({
@@ -17,21 +18,29 @@ export const PriceCheckModal: React.FC<PriceCheckModalProps> = ({
   sku,
   systemPrice,
   shelfTagPrice = 64,
+  onReportMismatch,
 }) => {
   const [shelfInput, setShelfInput] = useState(shelfTagPrice.toString())
   const [isReported, setIsReported] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
   const inputPrice = parseFloat(shelfInput) || systemPrice
   const hasMismatch = inputPrice !== systemPrice
 
-  const handleReport = () => {
-    setIsReported(true)
-    setTimeout(() => {
-      setIsReported(false)
-      onClose()
-    }, 1500)
+  const handleReport = async () => {
+    setIsSubmitting(true)
+    try {
+      await onReportMismatch?.(inputPrice)
+      setIsReported(true)
+      setTimeout(() => {
+        setIsReported(false)
+        onClose()
+      }, 1500)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -124,9 +133,10 @@ export const PriceCheckModal: React.FC<PriceCheckModalProps> = ({
             <button
               type="button"
               onClick={handleReport}
+              disabled={isSubmitting}
               className="flex-1 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
             >
-              <span>Report Mismatch</span>
+              <span>{isSubmitting ? 'Dispatching…' : 'Report Mismatch'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}

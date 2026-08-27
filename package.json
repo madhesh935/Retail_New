@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "generate:barcodes": "python scripts/generate_barcodes.py"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.2.6",
@@ -23,12 +23,16 @@
     "@react-three/fiber": "^9.7.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/three": "^0.185.4",
+    "@zxing/browser": "^0.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "echarts": "^6.1.0",
     "echarts-for-react": "^3.0.6",
+    "exceljs": "^4.4.0",
     "firebase": "^12.18.0",
     "framer-motion": "^13.1.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.34.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

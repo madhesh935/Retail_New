@@ -8,9 +8,6 @@ import {
   Building2,
   ShieldCheck,
   ArrowRight,
-  Sparkles,
-  Calendar,
-  Layers,
   Coffee,
   Check,
 } from 'lucide-react'
@@ -43,7 +40,17 @@ export const StaffAttendancePage: React.FC = () => {
     return () => clearInterval(interval)
   }, [])
 
-  if (!authenticatedStaff) return null
+  useEffect(() => {
+    if (!authenticatedStaff) navigate('/staff/login', { replace: true })
+  }, [authenticatedStaff, navigate])
+
+  if (!authenticatedStaff) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-sm font-semibold text-slate-500">
+        Returning to staff sign inâ€¦
+      </div>
+    )
+  }
 
   const handleCheckIn = () => {
     setIsCheckingIn(true)

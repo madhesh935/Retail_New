@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/useAppStore'
 import { CameraRoi } from '@/store/slices/settingsSlice'
 import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
+import { markYoloActive } from '@/lib/yoloLaneRegistry'
 
 interface LiveQueueVisionCardProps {
   laneCode?: string
@@ -39,10 +40,33 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
   const currentIpCameraUrl = ipCameraUrls[laneCode]
   const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
 
-  const [liveQueueCount, setLiveQueueCount] = useState(initialQueueCount)
-  const [liveWaitTime, setLiveWaitTime] = useState(initialWaitTime)
+  // Subscribe directly to the queue store — this updates every 4s from the polling loop
+  const queues = useAppStore((s) => s.queues)
+  const laneNum = parseInt(laneCode.replace('C', '')) || 1
+  const liveStoreQ = queues.find((q) => q.laneNumber === laneNum)
+  
+  // Local WebSocket state (updated when YOLO camera is connected)
+  const [wsQueueCount, setWsQueueCount] = React.useState<number | null>(null)
+  const [wsWaitTime, setWsWaitTime] = React.useState<string | null>(null)
+
+  // Display: prefer YOLO WebSocket if connected, fall back to live store value, then prop
+  const liveQueueCount = wsQueueCount !== null
+    ? wsQueueCount
+    : (liveStoreQ?.currentQueueLength ?? initialQueueCount)
+  const liveWaitTime = wsWaitTime !== null
+    ? wsWaitTime
+    : liveStoreQ
+      ? `${(liveStoreQ.currentWaitTimeSeconds / 60).toFixed(1)} min`
+      : initialWaitTime
+
   const [, setIsStreaming] = useState(false)
   const [, setDetectedShoppers] = useState<{trackId: string, conf: string, position: string}[]>([])
+
+  // Sync wsQueueCount with new lane selection (reset WS state so store value shows)
+  useEffect(() => {
+    setWsQueueCount(null)
+    setWsWaitTime(null)
+  }, [laneCode])
 
   // ROI State
   const currentRoi = useAppStore((s) => s.cameraRois[laneCode] || { x: 0, y: 0, width: 1, height: 1 })
@@ -136,15 +160,18 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
 
         wsRef.current.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          setLiveQueueCount(data.people_count);
-          setLiveWaitTime(`${(data.average_wait_time_seconds / 60).toFixed(1)} min`);
+          setWsQueueCount(data.people_count);
+          setWsWaitTime(`${(data.average_wait_time_seconds / 60).toFixed(1)} min`);
           if (data.detections) {
             setDetectedShoppers(data.detections);
           }
 
-          // Update the global store for the current lane so Operational Counter Cards reflect live data
+          // Mark this lane as YOLO-active so the polling loop won't overwrite the count
           const laneNum = parseInt(laneCode.replace('C', '')) || 1;
           const laneId = `lane-${laneNum}`;
+          markYoloActive(laneId);
+
+          // Push YOLO count directly into the store so Counter Cards also update
           useAppStore.getState().updateLaneQueue(laneId, data.people_count, data.average_wait_time_seconds);
         };
       } catch (err) {

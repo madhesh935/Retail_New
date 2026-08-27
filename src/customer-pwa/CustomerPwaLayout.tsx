@@ -18,6 +18,7 @@ import {
   CustomerAssistProvider,
   useCustomerAssist,
 } from './context/CustomerAssistContext'
+import { useStoreData } from '@/hooks/useStoreData'
 import { CustomerHomePage } from './pages/CustomerHomePage'
 import { CustomerSearchPage } from './pages/CustomerSearchPage'
 import { CustomerCopilotPage } from './pages/CustomerCopilotPage'
@@ -29,6 +30,7 @@ import { CustomerCopilotQuickDrawer } from './components/CustomerCopilotQuickDra
 import { HelpRequestSheet } from './components/assist/HelpRequestSheet'
 
 const CustomerPwaContent: React.FC = () => {
+  useStoreData({ pollMs: 15000 })
   const { activeTab, setActiveTab, shoppingList, storeName } = useCustomerShopping()
   const { activeRequest, viewActiveRequest } = useCustomerAssist()
   const totalUnits = shoppingList.reduce((sum, item) => sum + item.quantity, 0)
@@ -36,9 +38,9 @@ const CustomerPwaContent: React.FC = () => {
     activeRequest && activeRequest.status !== 'COMPLETED' && activeRequest.status !== 'CANCELLED'
 
   return (
-    <div className="min-h-screen bg-[#F4F6F8] text-slate-800 flex justify-center font-sans antialiased select-none">
+    <div className="min-h-dvh bg-[#F4F6F8] text-slate-800 flex justify-center font-sans antialiased select-none">
       {/* Mobile Shell Container */}
-      <div className="w-full max-w-md bg-white min-h-screen flex flex-col relative shadow-xl border-x border-slate-200">
+      <div className="w-full max-w-md bg-white min-h-dvh max-h-dvh flex flex-col relative shadow-xl border-x border-slate-200 overflow-hidden">
         {/* Compact Mobile Header (~52px tall, No Manager Link) */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 h-13 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2.5">
@@ -73,7 +75,13 @@ const CustomerPwaContent: React.FC = () => {
         </header>
 
         {/* Dynamic Mobile Viewport Content */}
-        <main className="flex-1 p-4 overflow-y-auto bg-[#F4F6F8]/60">
+        <main
+          className={`min-h-0 flex-1 overscroll-contain bg-[#F4F6F8]/60 ${
+            activeTab === 'COPILOT' || activeTab === 'ASSISTANT'
+              ? 'flex flex-col overflow-hidden p-0'
+              : 'overflow-y-auto p-4 pb-2'
+          }`}
+        >
           {activeTab === 'HOME' && <CustomerHomePage />}
           {activeTab === 'SEARCH' && <CustomerSearchPage />}
           {(activeTab === 'COPILOT' || activeTab === 'ASSISTANT') && <CustomerCopilotPage />}
@@ -89,8 +97,8 @@ const CustomerPwaContent: React.FC = () => {
         {/* Global Contextual Help Request Bottom Sheet */}
         <HelpRequestSheet />
 
-        {/* Bottom Mobile Tab Bar (5-item bar with min 48px touch targets) */}
-        <nav className="sticky bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1.5 flex items-center justify-between shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+        {/* Bottom Mobile Tab Bar */}
+        <nav className="shrink-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1.5 flex items-center justify-between shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]">
           {/* 1. Home */}
           <button
             onClick={() => setActiveTab('HOME')}

@@ -16,7 +16,7 @@ export const StaffBottomNav: React.FC<StaffBottomNavProps> = ({ activeTab, onSel
   const activeWorkCount = pendingTasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS').length
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 pb-safe pt-1 z-40 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
+    <nav className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 z-40 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between h-14">
         {/* 1. TODAY */}
         <button

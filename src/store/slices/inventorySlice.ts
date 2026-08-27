@@ -1,6 +1,16 @@
 import { StateCreator } from 'zustand'
 import { ShelfItem, ShelfSection, InventoryAnalytics } from '@/types'
-import { MOCK_SHELF_ITEMS, MOCK_INVENTORY_ANALYTICS } from '@/services/mock/mockData'
+
+const EMPTY_INVENTORY_ANALYTICS: InventoryAnalytics = {
+  totalSkusMonitored: 0,
+  totalShelfSections: 0,
+  overallPlanogramCompliance: 0,
+  activeStockoutsCount: 0,
+  criticalLowStockCount: 0,
+  misplacedItemsCount: 0,
+  estimatedStockoutRevenueLoss: 0,
+  topVulnerableSkus: [],
+}
 
 export interface InventorySlice {
   shelfItems: ShelfItem[]
@@ -20,9 +30,9 @@ export interface InventorySlice {
 }
 
 export const createInventorySlice: StateCreator<InventorySlice, [], [], InventorySlice> = (set) => ({
-  shelfItems: MOCK_SHELF_ITEMS,
+  shelfItems: [],
   shelfSections: [],
-  inventoryAnalytics: MOCK_INVENTORY_ANALYTICS,
+  inventoryAnalytics: EMPTY_INVENTORY_ANALYTICS,
   selectedCategoryFilter: 'ALL',
   selectedStatusFilter: 'ALL',
   isLoadingInventory: false,

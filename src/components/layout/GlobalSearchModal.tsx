@@ -18,7 +18,6 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useAppStore } from '@/store/useAppStore'
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut'
-import { MOCK_SHELVES_LIST, MOCK_CHECKOUTS_LIST } from '@/services/mock/mockData'
 import { NAV_MAIN_ITEMS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
@@ -30,6 +29,40 @@ export const GlobalSearchModal: React.FC = () => {
   const shelfItems = useAppStore((s) => s.shelfItems)
   const staffMembers = useAppStore((s) => s.staffMembers)
   const incidents = useAppStore((s) => s.incidents)
+  const queues = useAppStore((s) => s.queues)
+
+  const shelves = React.useMemo(
+    () =>
+      shelfItems.map((item) => ({
+        id: item.id,
+        code: item.shelfId,
+        name: item.shelfName,
+        zoneId: item.zoneId,
+        zoneName: item.zoneName,
+        aisle: item.category,
+        currentSkusCount: item.currentCount,
+        capacityCount: item.capacityCount,
+        complianceScore: item.planogramComplianceScore,
+        status: item.status,
+      })),
+    [shelfItems]
+  )
+
+  const checkouts = React.useMemo(
+    () =>
+      queues.map((lane) => ({
+        id: lane.id,
+        code: lane.id.toUpperCase().includes('C') ? lane.id : `C${lane.laneNumber}`,
+        name: `Checkout Lane ${lane.laneNumber}`,
+        type: lane.laneType,
+        laneNumber: lane.laneNumber,
+        status: lane.status,
+        zoneName: 'Checkout',
+        queueLength: lane.currentQueueLength,
+        waitTimeSeconds: lane.currentWaitTimeSeconds,
+      })),
+    [queues]
+  )
 
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
@@ -47,8 +80,8 @@ export const GlobalSearchModal: React.FC = () => {
 
     if (!q) {
       return {
-        shelves: MOCK_SHELVES_LIST.slice(0, 3),
-        checkouts: MOCK_CHECKOUTS_LIST.slice(0, 2),
+        shelves: shelves.slice(0, 3),
+        checkouts: checkouts.slice(0, 2),
         products: shelfItems.slice(0, 2),
         cameras: cameras.slice(0, 2),
         incidents: incidents.slice(0, 2),
@@ -56,7 +89,7 @@ export const GlobalSearchModal: React.FC = () => {
     }
 
     // 1. Shelves (Searching "B4" specifically finds Shelf B4 — Beverage Zone)
-    const matchedShelves = MOCK_SHELVES_LIST.filter(
+    const matchedShelves = shelves.filter(
       (s) =>
         s.code.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
@@ -75,7 +108,7 @@ export const GlobalSearchModal: React.FC = () => {
     )
 
     // 3. Checkouts / Lanes (e.g. C1, C2, Express)
-    const matchedCheckouts = MOCK_CHECKOUTS_LIST.filter(
+    const matchedCheckouts = checkouts.filter(
       (c) =>
         c.code.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q) ||
@@ -133,7 +166,7 @@ export const GlobalSearchModal: React.FC = () => {
       incidents: matchedIncidents,
       pages: matchedPages,
     }
-  }, [searchQuery, cameras, zones, shelfItems, staffMembers, incidents])
+  }, [searchQuery, cameras, zones, shelfItems, staffMembers, incidents, shelves, checkouts])
 
   const handleSelect = (path: string) => {
     setGlobalSearchOpen(false)

@@ -20,19 +20,14 @@ export interface ShopperSlice {
 }
 
 export const createShopperSlice: StateCreator<ShopperSlice, [], [], ShopperSlice> = (set) => ({
-  currentOccupancy: 142,
-  todaysTotalFootfall: 1840,
-  peakOccupancyToday: 288,
-  occupancyRate: 40.5,
-  averageDwellTimeMinutes: 24.5,
+  currentOccupancy: 0,
+  todaysTotalFootfall: 0,
+  peakOccupancyToday: 0,
+  occupancyRate: 0,
+  averageDwellTimeMinutes: 0,
   activeShoppers: [],
   zoneMetrics: [],
-  dwellTimeDistribution: [
-    { bracket: '0-5 mins', percentage: 14, count: 257 },
-    { bracket: '5-15 mins', percentage: 32, count: 588 },
-    { bracket: '15-30 mins', percentage: 38, count: 699 },
-    { bracket: '30+ mins', percentage: 16, count: 296 },
-  ],
+  dwellTimeDistribution: [],
   isLoadingShoppers: false,
 
   updateOccupancy: (occupancy, rate, entryDelta = 0) =>

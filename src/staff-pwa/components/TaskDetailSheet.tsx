@@ -2,20 +2,17 @@ import React, { useState } from 'react'
 import {
   X,
   MapPin,
-  Clock,
   CheckCircle2,
   AlertTriangle,
   Navigation,
   ShieldAlert,
   Users,
-  CheckSquare,
   Square,
-  Package,
-  Layers,
   ArrowRight,
 } from 'lucide-react'
 import { StaffTask } from '@/types'
 import { useAppStore } from '@/store/useAppStore'
+import { realStoreApi } from '@/services/api/realStoreApi'
 
 interface TaskDetailSheetProps {
   task: StaffTask | null
@@ -26,15 +23,17 @@ interface TaskDetailSheetProps {
 }
 
 export const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({
-  task,
+  task: taskProp,
   isOpen,
   onClose,
   onOpenMap,
   onOpenBlocker,
 }) => {
-  const { startStaffTask, toggleTaskSopStep, completeStaffTask, requestTaskAssistance } = useAppStore()
+  const { syncTaskStatus, toggleTaskSopStep, requestTaskAssistance, pendingTasks } = useAppStore()
   const [assistanceSent, setAssistanceSent] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
+
+  const task = taskProp ? pendingTasks.find((item) => item.id === taskProp.id) || taskProp : null
 
   if (!isOpen || !task) return null
 
@@ -46,22 +45,37 @@ export const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({
   const allSopDone = !task.sopSteps || task.sopSteps.every((s) => s.completed)
 
   const handleStart = () => {
-    startStaffTask(task.id)
+    void syncTaskStatus(task.id, 'IN_PROGRESS')
   }
 
   const handleComplete = () => {
     setIsCompleting(true)
-    setTimeout(() => {
-      completeStaffTask(task.id, 'STAFF_CONFIRMED')
+    void syncTaskStatus(task.id, 'COMPLETED').finally(() => {
       setIsCompleting(false)
       onClose()
-    }, 600)
+    })
   }
 
   const handleRequestHelp = () => {
     requestTaskAssistance(task.id, 'Heavy pallet move assistance requested')
+    void realStoreApi
+      .updateTaskDetails(task.id, {
+        assistance_requested: true,
+        assistance_reason: 'Heavy pallet move assistance requested',
+      })
+      .catch((error) => console.warn('Could not sync assistance request', error))
     setAssistanceSent(true)
     setTimeout(() => setAssistanceSent(false), 3000)
+  }
+
+  const handleToggleSopStep = (stepId: string) => {
+    const nextSteps = (task.sopSteps || []).map((step) =>
+      step.id === stepId ? { ...step, completed: !step.completed } : step
+    )
+    toggleTaskSopStep(task.id, stepId)
+    void realStoreApi
+      .updateTaskDetails(task.id, { sop_steps: nextSteps })
+      .catch((error) => console.warn('Could not sync SOP checklist', error))
   }
 
   return (
@@ -204,7 +218,7 @@ export const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({
                   <button
                     key={step.id}
                     type="button"
-                    onClick={() => toggleTaskSopStep(task.id, step.id)}
+                    onClick={() => handleToggleSopStep(step.id)}
                     className={`w-full text-left p-2.5 rounded-xl border text-xs flex items-start gap-2.5 transition-all ${
                       step.completed
                         ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950 line-through opacity-80'
@@ -280,11 +294,17 @@ export const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({
             <button
               type="button"
               onClick={handleComplete}
-              disabled={isCompleting}
+              disabled={isCompleting || !allSopDone}
               className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 text-white font-bold text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isCompleting ? 'Verifying with Store Edge...' : 'Mark Complete & Verify'}</span>
+              <span>
+                {isCompleting
+                  ? 'Verifying with Store Edge...'
+                  : allSopDone
+                    ? 'Mark Complete & Verify'
+                    : 'Complete SOP checklist first'}
+              </span>
             </button>
           )}
 

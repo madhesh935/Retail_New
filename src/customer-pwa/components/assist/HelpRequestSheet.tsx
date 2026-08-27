@@ -17,10 +17,10 @@ import {
 } from 'lucide-react'
 import {
   CustomerAssistRequestType,
-  CANONICAL_STORE_ZONES,
   ASSIST_TYPE_CONFIGS,
 } from '../../types/customerAssist.types'
 import { useCustomerAssist } from '../../context/CustomerAssistContext'
+import { useAppStore } from '@/store/useAppStore'
 
 const ACCESSIBILITY_OPTIONS = [
   'Help reaching a product on high shelf',
@@ -39,10 +39,14 @@ export const HelpRequestSheet: React.FC = () => {
     activeRequest,
     viewActiveRequest,
   } = useCustomerAssist()
+  const storeZones = useAppStore((s) => s.zones)
+  const assistZones = storeZones.length
+    ? storeZones.map((z) => ({ id: z.id, name: z.name, code: z.code, aisle: z.category }))
+    : [{ id: 'zone-1', name: 'Store Floor', code: 'Z-FLOOR', aisle: 'General' }]
 
   const [step, setStep] = useState<'SELECT_TYPE' | 'DETAILS'>('SELECT_TYPE')
   const [selectedType, setSelectedType] = useState<CustomerAssistRequestType>('PRODUCT_ASSISTANCE')
-  const [selectedZoneId, setSelectedZoneId] = useState('zone-dairy')
+  const [selectedZoneId, setSelectedZoneId] = useState(assistZones[0]?.id || 'zone-1')
   const [showZonePicker, setShowZonePicker] = useState(false)
   const [customMessage, setCustomMessage] = useState('')
   const [accessibilityNeed, setAccessibilityNeed] = useState(ACCESSIBILITY_OPTIONS[0])
@@ -59,12 +63,19 @@ export const HelpRequestSheet: React.FC = () => {
         setSelectedZoneId(activePrefill.zoneId)
       } else if (activePrefill.product) {
         const cat = activePrefill.product.category.toLowerCase()
-        if (cat.includes('dairy')) setSelectedZoneId('zone-dairy')
-        else if (cat.includes('bev')) setSelectedZoneId('zone-beverages')
-        else if (cat.includes('produce') || cat.includes('fruit')) setSelectedZoneId('zone-produce')
-        else if (cat.includes('bakery') || cat.includes('bread')) setSelectedZoneId('zone-bakery')
-        else if (cat.includes('snack')) setSelectedZoneId('zone-snacks')
-        else if (cat.includes('care')) setSelectedZoneId('zone-care')
+        const zoneMatch = assistZones.find((z) => {
+          const hay = `${z.name} ${z.aisle || ''} ${z.code || ''}`.toLowerCase()
+          if (cat.includes('dairy') || cat.includes('bakery') || cat.includes('chilled')) {
+            return hay.includes('dairy') || hay.includes('bakery') || hay.includes('chilled')
+          }
+          if (cat.includes('produce') || cat.includes('fruit')) return hay.includes('produce') || hay.includes('fruit')
+          if (cat.includes('bev') || cat.includes('snack')) return hay.includes('beverage') || hay.includes('snack')
+          if (cat.includes('care') || cat.includes('household') || cat.includes('personal')) {
+            return hay.includes('household') || hay.includes('personal') || hay.includes('care')
+          }
+          return false
+        })
+        if (zoneMatch) setSelectedZoneId(zoneMatch.id)
       }
       if (activePrefill.message) {
         setCustomMessage(activePrefill.message)
@@ -78,7 +89,7 @@ export const HelpRequestSheet: React.FC = () => {
   if (!isHelpSheetOpen) return null
 
   const selectedZone =
-    CANONICAL_STORE_ZONES.find((z) => z.id === selectedZoneId) || CANONICAL_STORE_ZONES[1]
+    assistZones.find((z) => z.id === selectedZoneId) || assistZones[0]
   const product = activePrefill?.product
   const shelf = activePrefill?.shelfCode || product?.shelf
 
@@ -358,7 +369,7 @@ export const HelpRequestSheet: React.FC = () => {
                 {/* Zone Picker Grid */}
                 {showZonePicker && (
                   <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200">
-                    {CANONICAL_STORE_ZONES.map((zone) => (
+                    {assistZones.map((zone) => (
                       <button
                         key={zone.id}
                         type="button"

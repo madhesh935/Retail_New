@@ -10,49 +10,59 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import type { StaffMember } from './staffData'
 
 interface WorkloadDistributionCardProps {
+  staff?: StaffMember[]
   onFocusRecommendation?: () => void
 }
 
 export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> = ({
+  staff = [],
   onFocusRecommendation,
 }) => {
+  const deptCounts = {
+    Billing: staff.filter((s) => s.department === 'Billing').length,
+    Replenishment: staff.filter((s) => s.department === 'Replenishment').length,
+    Support: staff.filter((s) => s.department === 'Support').length,
+    Operations: staff.filter((s) => s.department === 'Operations').length,
+  }
+  const total = Math.max(staff.length, 1)
   const categories = [
     {
       name: 'Checkout & Billing',
-      percentage: 35,
-      staffCount: 4,
-      status: 'Adequate',
-      statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
+      percentage: Math.round((deptCounts.Billing / total) * 100),
+      staffCount: deptCounts.Billing,
+      status: deptCounts.Billing >= 3 ? 'Adequate' : 'Needs Cover',
+      statusColor: deptCounts.Billing >= 3 ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200',
       barColor: '#0F766E',
       icon: Zap,
     },
     {
       name: 'Inventory Replenishment',
-      percentage: 30,
-      staffCount: 3,
-      status: 'High Demand',
-      statusColor: 'bg-rose-50 text-rose-700 border-rose-200',
+      percentage: Math.round((deptCounts.Replenishment / total) * 100),
+      staffCount: deptCounts.Replenishment,
+      status: deptCounts.Replenishment >= 2 ? 'Adequate' : 'High Demand',
+      statusColor: deptCounts.Replenishment >= 2 ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200',
       barColor: '#E11D48',
       icon: PackageCheck,
     },
     {
       name: 'Customer Support',
-      percentage: 20,
-      staffCount: 2,
-      status: 'Available',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      barColor: '#7C3AED',
+      percentage: Math.round((deptCounts.Support / total) * 100),
+      staffCount: deptCounts.Support,
+      status: 'Live',
+      statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
+      barColor: '#0369A1',
       icon: Headphones,
     },
     {
-      name: 'Store Operations',
-      percentage: 15,
-      staffCount: 2,
-      status: 'Limited',
-      statusColor: 'bg-slate-100 text-slate-600 border-slate-200',
-      barColor: '#059669',
+      name: 'Operations',
+      percentage: Math.round((deptCounts.Operations / total) * 100),
+      staffCount: deptCounts.Operations,
+      status: 'Live',
+      statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
+      barColor: '#7C3AED',
       icon: ShieldCheck,
     },
   ]

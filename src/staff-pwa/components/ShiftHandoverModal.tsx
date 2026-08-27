@@ -29,7 +29,7 @@ export const ShiftHandoverModal: React.FC<ShiftHandoverModalProps> = ({ isOpen, 
       title: noteTitle.trim(),
       description: noteDesc.trim() || 'No additional notes provided.',
       category,
-      authorName: `${authenticatedStaff?.name || 'Liam'} (${authenticatedStaff?.shift || 'Shift B'})`,
+      authorName: `${authenticatedStaff?.name || 'Madhesh'} (${authenticatedStaff?.shift || 'Shift B'})`,
     })
 
     setNoteTitle('')
