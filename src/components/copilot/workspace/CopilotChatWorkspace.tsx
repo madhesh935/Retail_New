@@ -107,38 +107,69 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
     setIsThinking(true)
 
     // Evaluate grounded query and special rich UI response blocks
-    setTimeout(() => {
-      const q = text.toLowerCase()
-      let specialType: WorkspaceChatMessage['specialType'] = undefined
+    const q = text.toLowerCase()
+    let specialType: WorkspaceChatMessage['specialType'] = undefined
 
-      if (q.includes('camera') || q.includes('c1 is congested') || q.includes('evidence')) {
-        specialType = 'CAMERA_EVIDENCE'
-      } else if (q.includes('refill first') || q.includes('run out first') || q.includes('which shelves')) {
-        specialType = 'INVENTORY_RANKED'
-      } else if (q.includes('why should counter c3') || q.includes('why should c3')) {
-        specialType = 'EXPLAIN_WHY'
-      } else if (q.includes('beverage') || q.includes('sales opportunities') || q.includes('cross-module') || q.includes('opportunity')) {
-        specialType = 'CROSS_MODULE'
-      } else if (q.includes('next 30 minutes') || q.includes('30 min') || q.includes('forecast')) {
-        specialType = 'FORECAST_30MIN'
-      }
+    if (q.includes('camera') || q.includes('c1 is congested') || q.includes('evidence')) {
+      specialType = 'CAMERA_EVIDENCE'
+    } else if (q.includes('refill first') || q.includes('run out first') || q.includes('which shelves')) {
+      specialType = 'INVENTORY_RANKED'
+    } else if (q.includes('why should counter c3') || q.includes('why should c3')) {
+      specialType = 'EXPLAIN_WHY'
+    } else if (q.includes('beverage') || q.includes('sales opportunities') || q.includes('cross-module') || q.includes('opportunity')) {
+      specialType = 'CROSS_MODULE'
+    } else if (q.includes('next 30 minutes') || q.includes('30 min') || q.includes('forecast')) {
+      specialType = 'FORECAST_30MIN'
+    }
 
+    const apiMessages = [...messages, userMsg].map((m) => ({
+      role: m.sender === 'USER' ? 'user' : 'assistant',
+      content: m.text || (m.structured && m.structured.observation ? m.structured.observation : '')
+    }))
+
+    fetch('http://127.0.0.1:8000/api/v1/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: apiMessages,
+        system_prompt: 'You are an intelligent retail assistant chatbot. Your responses should be strictly related to shop content, retail operations, store management, inventory, and customer service. Be helpful and concise.'
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
       const structRes = executeCopilotQuery(text, {
         page: 'copilot',
         activeStore: 'Store 01 — Chennai Central',
       })
-
+      
+      const replyText = data.reply || (data.detail ? `Error: ${data.detail}` : "Error: Received empty response");
+      
       const botMsg: WorkspaceChatMessage = {
         id: `copilot-${Date.now()}`,
         sender: 'COPILOT',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: replyText,
         structured: structRes,
         specialType,
       }
 
       setMessages((prev) => [...prev, botMsg])
+    })
+    .catch(err => {
+      console.error(err);
+      const errorMsg: WorkspaceChatMessage = {
+        id: `copilot-${Date.now()}`,
+        sender: 'COPILOT',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: "Sorry, I encountered an error connecting to the intelligence server."
+      }
+      setMessages((prev) => [...prev, errorMsg])
+    })
+    .finally(() => {
       setIsThinking(false)
-    }, 350)
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

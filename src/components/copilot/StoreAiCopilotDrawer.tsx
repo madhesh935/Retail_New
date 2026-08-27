@@ -153,20 +153,45 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
     setInputValue('')
     setIsThinking(true)
 
-    // Simulate rapid local edge LLM / tool call latency (300ms)
-    setTimeout(() => {
-      const response = executeCopilotQuery(text, copilotContext)
+    const apiMessages = [...messages, userMsg].map((m) => ({
+      role: m.sender === 'USER' ? 'user' : 'assistant',
+      content: m.text || (m.structured ? m.structured.observation : '')
+    }))
 
+    fetch('http://127.0.0.1:8000/api/v1/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: apiMessages,
+        system_prompt: `You are an intelligent retail assistant chatbot. Your responses should be strictly related to shop content, retail operations, store management, inventory, and customer service. You are aware of the current context: ${JSON.stringify(copilotContext)}. Be helpful and concise.`
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const replyText = data.reply || (data.detail ? `Error: ${data.detail}` : "Error: Received empty response");
       const copilotMsg: ChatMessage = {
         id: `copilot-${Date.now()}`,
         sender: 'COPILOT',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        structured: response,
+        text: replyText
       }
-
       setMessages((prev) => [...prev, copilotMsg])
+    })
+    .catch(err => {
+      console.error(err);
+      const errorMsg: ChatMessage = {
+        id: `copilot-${Date.now()}`,
+        sender: 'COPILOT',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: "Sorry, I encountered an error connecting to the intelligence server."
+      }
+      setMessages((prev) => [...prev, errorMsg])
+    })
+    .finally(() => {
       setIsThinking(false)
-    }, 350)
+    })
   }
 
   const handleTriggerAction = (action: CopilotAction) => {

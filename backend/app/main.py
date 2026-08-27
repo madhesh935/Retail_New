@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.db.database import engine, Base, get_db
 from app.db.init_db import seed_database
 from app.services.firebase_sync import init_firebase
-from app.api.endpoints import queue, entrance, store, inventory, staff, incidents, customer, system
+from app.api.endpoints import queue, entrance, store, inventory, staff, incidents, customer, system, chat
 
 # Create SQLite tables and seed baseline production data
 seed_database()
@@ -36,7 +36,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(store.router, prefix="/api/v1/store", tags=["Store Operations"])
 app.include_router(queue.router, prefix="/api/v1/queue", tags=["Queue Intelligence"])
 app.include_router(entrance.router, prefix="/api/v1/entrance", tags=["Entrance Intelligence"])
@@ -45,6 +44,7 @@ app.include_router(staff.router, prefix="/api/v1/staff", tags=["Staff Operations
 app.include_router(incidents.router, prefix="/api/v1/incidents", tags=["Incidents & Actions"])
 app.include_router(customer.router, prefix="/api/v1/customer", tags=["Customer PWA"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["System Health"])
+app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat & Copilot"])
 
 @app.get("/")
 def read_root():

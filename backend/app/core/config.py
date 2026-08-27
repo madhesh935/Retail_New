@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Firebase settings
     FIREBASE_CREDENTIALS_PATH: str = "./firebase-service-account.json"
     
+    # OpenRouter API Key
+    OPENROUTER_API_KEY: str = ""
+    
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()
