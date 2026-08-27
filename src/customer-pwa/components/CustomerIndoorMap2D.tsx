@@ -28,13 +28,14 @@ interface WaypointPoint {
   title: string
   location: string
   shelf: string
-  productIndex?: number
+  productId?: string
   aisle: string
 }
 
 export const CustomerIndoorMap2D: React.FC = () => {
   const {
     optimizedRoute,
+    navigationPlan,
     activeStepIndex,
     setActiveStepIndex,
     isAisle4Congested,
@@ -54,30 +55,30 @@ export const CustomerIndoorMap2D: React.FC = () => {
 
   // Define 6 primary sequence waypoints on store coordinate grid (600 × 420)
   const WAYPOINTS: WaypointPoint[] = useMemo(
-    () => [
-      { index: 0, x: 75, y: 345, title: 'Entrance', location: 'Automatic Entry', shelf: 'Start', aisle: 'Entry' },
-      { index: 1, x: 165, y: 235, title: 'Heritage Whole Milk', location: 'Aisle 2', shelf: 'Shelf C2', aisle: 'Aisle 2', productIndex: 0 },
-      { index: 2, x: 275, y: 105, title: 'Whole Wheat Bread', location: 'Aisle 3', shelf: 'Shelf B2', aisle: 'Aisle 3', productIndex: 1 },
-      { index: 3, x: 275, y: 235, title: 'Digestive Biscuits', location: 'Aisle 4', shelf: 'Shelf D2', aisle: 'Aisle 4', productIndex: 2 },
-      { index: 4, x: 385, y: 235, title: 'Dove Shampoo', location: 'Aisle 6', shelf: 'Shelf F2', aisle: 'Aisle 6', productIndex: 3 },
-      { index: 5, x: 485, y: 255, title: `Checkout ${targetCheckoutCounter}`, location: 'Checkout Area', shelf: 'Express Lane', aisle: 'Checkout' },
-    ],
-    [targetCheckoutCounter]
+    () => optimizedRoute.map((step, index) => ({
+      index,
+      x: step.mapCoord.x,
+      y: step.mapCoord.y,
+      title: step.title,
+      location: step.location,
+      shelf: step.item?.shelf || (index === 0 ? 'Start' : `Lane ${targetCheckoutCounter}`),
+      aisle: step.item?.aisle || (index === 0 ? 'Entry' : 'Checkout'),
+      productId: step.item?.id,
+    })),
+    [optimizedRoute, targetCheckoutCounter]
   )
 
   // Current active waypoint target
   const currentWaypointIndex = Math.min(WAYPOINTS.length - 1, Math.max(0, activeStepIndex))
   const currentTarget = WAYPOINTS[currentWaypointIndex] || WAYPOINTS[1]
+  const finalWaypointIndex = Math.max(0, WAYPOINTS.length - 1)
+  const activeAisle = currentTarget?.aisle
 
   // Customer marker position follows active step coordinates
   const customerCoord = useMemo(() => {
-    if (activeStepIndex <= 0) return { x: 75, y: 345 }
-    if (activeStepIndex === 1) return { x: 165, y: 235 }
-    if (activeStepIndex === 2) return { x: 275, y: 105 }
-    if (activeStepIndex === 3) return { x: 275, y: 235 }
-    if (activeStepIndex === 4) return { x: 385, y: 235 }
-    return { x: 485, y: 255 }
-  }, [activeStepIndex])
+    const waypoint = WAYPOINTS[currentWaypointIndex]
+    return waypoint ? { x: waypoint.x, y: waypoint.y } : { x: 75, y: 345 }
+  }, [WAYPOINTS, currentWaypointIndex])
 
   // Dynamic Camera Auto-Center with spring-like smooth movement
   useEffect(() => {
@@ -153,24 +154,27 @@ export const CustomerIndoorMap2D: React.FC = () => {
     setZoomLevel(1.22)
   }
 
-  // Individual Route Legs connecting sequential waypoints
-  const routeLegs = [
-    { id: 'leg-0-1', legIndex: 1, d: 'M 75 345 L 75 295 L 165 295 L 165 235', from: 'Entrance', to: 'Milk' },
-    { id: 'leg-1-2', legIndex: 2, d: 'M 165 235 L 165 160 L 275 160 L 275 105', from: 'Milk', to: 'Bread' },
-    {
-      id: 'leg-2-3',
-      legIndex: 3,
-      d: useCrowdAlternativeRoute
-        ? 'M 275 105 L 275 40 L 385 40 L 385 235'
-        : 'M 275 105 L 275 160 L 275 235',
-      from: 'Bread',
-      to: 'Biscuits',
-    },
-    { id: 'leg-3-4', legIndex: 4, d: 'M 275 235 L 275 295 L 385 295 L 385 235', from: 'Biscuits', to: 'Shampoo' },
-    { id: 'leg-4-5', legIndex: 5, d: 'M 385 235 L 385 295 L 485 295 L 485 255', from: 'Shampoo', to: 'Checkout' },
-  ]
-
-  const activeLeg = routeLegs.find((leg) => leg.legIndex === activeStepIndex) || routeLegs[0]
+  const routeLegs = useMemo(() => {
+    if (navigationPlan?.legs.length) {
+      return navigationPlan.legs.map((leg) => ({
+        id: leg.id,
+        legIndex: leg.legIndex,
+        d: leg.svgPath,
+        from: leg.nodes[0]?.label || 'Previous stop',
+        to: leg.destinationLabel,
+      }))
+    }
+    return WAYPOINTS.slice(1).map((waypoint, index) => {
+      const previous = WAYPOINTS[index]
+      return {
+        id: `fallback-leg-${index + 1}`,
+        legIndex: index + 1,
+        d: `M ${previous.x} ${previous.y} L ${previous.x} ${waypoint.y} L ${waypoint.x} ${waypoint.y}`,
+        from: previous.title,
+        to: waypoint.title,
+      }
+    })
+  }, [navigationPlan, WAYPOINTS])
 
   return (
     <div className="relative w-full h-full flex flex-col justify-between select-none overflow-hidden rounded-3xl bg-[#F8FAFC]">
@@ -181,13 +185,13 @@ export const CustomerIndoorMap2D: React.FC = () => {
             <div className="relative flex items-center justify-center">
               <span className="absolute -inset-1 rounded-xl bg-cyan-400 opacity-40 animate-ping" />
               <div className="relative h-8 w-8 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                {currentWaypointIndex >= 5 ? '✓' : currentWaypointIndex}
+                {currentWaypointIndex >= finalWaypointIndex ? '✓' : currentWaypointIndex}
               </div>
             </div>
 
             <div className="min-w-0">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-700 flex items-center gap-1.5 leading-none">
-                <span>{currentWaypointIndex >= 5 ? 'ARRIVED AT BILLING' : `NAVIGATING TO STOP ${currentWaypointIndex} OF 5`}</span>
+                <span>{currentWaypointIndex >= finalWaypointIndex ? 'ARRIVED AT BILLING' : `NAVIGATING TO STOP ${currentWaypointIndex} OF ${Math.max(0, finalWaypointIndex - 1)}`}</span>
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-600" />
@@ -391,8 +395,8 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="88"
               rx="8"
               fill="#FFFFFF"
-              stroke={activeStepIndex === 1 ? '#0F766E' : '#2DD4BF'}
-              strokeWidth={activeStepIndex === 1 ? '2.5' : '1.5'}
+              stroke={activeAisle === 'Aisle 2' ? '#0F766E' : '#2DD4BF'}
+              strokeWidth={activeAisle === 'Aisle 2' ? '2.5' : '1.5'}
               filter="url(#gondolaShadow)"
             />
             <rect x="0" y="0" width="90" height="22" rx="8" fill="#E0F2FE" />
@@ -405,9 +409,9 @@ export const CustomerIndoorMap2D: React.FC = () => {
               width="22"
               height="22"
               rx="4"
-              fill={activeStepIndex === 1 ? '#BAE6FD' : '#E0F2FE'}
-              stroke={activeStepIndex === 1 ? '#0F766E' : '#99F6E4'}
-              strokeWidth={activeStepIndex === 1 ? '2' : '1'}
+              fill={activeAisle === 'Aisle 2' ? '#BAE6FD' : '#E0F2FE'}
+              stroke={activeAisle === 'Aisle 2' ? '#0F766E' : '#99F6E4'}
+              strokeWidth={activeAisle === 'Aisle 2' ? '2' : '1'}
             />
             <text x="45" y="42" fill="#0F766E" fontSize="7" fontWeight="800" textAnchor="middle">C2★</text>
             <rect x="60" y="28" width="22" height="22" rx="4" fill="#E0F2FE" stroke="#99F6E4" strokeWidth="1" />
@@ -425,26 +429,26 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="80"
               rx="8"
               fill="#FFFFFF"
-              stroke={activeStepIndex === 2 ? '#D97706' : '#CBD5E1'}
-              strokeWidth={activeStepIndex === 2 ? '2.5' : '1.5'}
+              stroke={activeAisle === 'Aisle 3' ? '#D97706' : '#CBD5E1'}
+              strokeWidth={activeAisle === 'Aisle 3' ? '2.5' : '1.5'}
               filter="url(#gondolaShadow)"
             />
             <rect x="0" y="0" width="90" height="22" rx="8" fill="#FEF3C7" />
             <text x="45" y="15" fill="#92400E" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 3 • Bakery</text>
             <rect x="8" y="28" width="34" height="20" rx="4" fill="#FFFBEB" stroke="#FDE68A" strokeWidth="1" />
-            <text x="25" y="41" fill="#B45309" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf B1</text>
+            <text x="25" y="41" fill="#B45309" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf D1</text>
             <rect
               x="48"
               y="28"
               width="34"
               height="20"
               rx="4"
-              fill={activeStepIndex === 2 ? '#FEF3C7' : '#FFFBEB'}
-              stroke={activeStepIndex === 2 ? '#D97706' : '#FDE68A'}
-              strokeWidth={activeStepIndex === 2 ? '2' : '1'}
+              fill={activeAisle === 'Aisle 3' ? '#FEF3C7' : '#FFFBEB'}
+              stroke={activeAisle === 'Aisle 3' ? '#D97706' : '#FDE68A'}
+              strokeWidth={activeAisle === 'Aisle 3' ? '2' : '1'}
             />
-            <text x="65" y="41" fill="#92400E" fontSize="7.5" fontWeight="800" textAnchor="middle">B2★</text>
-            <text x="45" y="65" fill="#B45309" fontSize="7" fontWeight="600" textAnchor="middle">Fresh Bread &amp; Buns</text>
+            <text x="65" y="41" fill="#92400E" fontSize="7.5" fontWeight="800" textAnchor="middle">D2</text>
+            <text x="45" y="65" fill="#B45309" fontSize="7" fontWeight="600" textAnchor="middle">Bakery &amp; Ready Meals</text>
           </g>
 
           {/* AISLE 4: SNACKS & BISCUITS */}
@@ -459,26 +463,26 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="88"
               rx="8"
               fill="#FFFFFF"
-              stroke={activeStepIndex === 3 ? '#F59E0B' : isAisle4Congested ? '#F59E0B' : '#CBD5E1'}
-              strokeWidth={activeStepIndex === 3 ? '2.5' : isAisle4Congested ? '2' : '1.5'}
+              stroke={activeAisle === 'Aisle 4' ? '#F59E0B' : isAisle4Congested ? '#F59E0B' : '#CBD5E1'}
+              strokeWidth={activeAisle === 'Aisle 4' ? '2.5' : isAisle4Congested ? '2' : '1.5'}
               filter="url(#gondolaShadow)"
             />
             <rect x="0" y="0" width="90" height="22" rx="8" fill={isAisle4Congested ? '#FEF3C7' : '#F8FAFC'} />
             <text x="45" y="15" fill={isAisle4Congested ? '#B45309' : '#334155'} fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 4 • Snacks</text>
             <rect x="8" y="28" width="34" height="20" rx="4" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="1" />
-            <text x="25" y="41" fill="#475569" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf D1</text>
+            <text x="25" y="41" fill="#475569" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf B2</text>
             <rect
               x="48"
               y="28"
               width="34"
               height="20"
               rx="4"
-              fill={activeStepIndex === 3 ? '#FEF3C7' : '#F8FAFC'}
-              stroke={activeStepIndex === 3 ? '#F59E0B' : '#CBD5E1'}
-              strokeWidth={activeStepIndex === 3 ? '2' : '1'}
+              fill={activeAisle === 'Aisle 4' ? '#FEF3C7' : '#F8FAFC'}
+              stroke={activeAisle === 'Aisle 4' ? '#F59E0B' : '#CBD5E1'}
+              strokeWidth={activeAisle === 'Aisle 4' ? '2' : '1'}
             />
-            <text x="65" y="41" fill="#92400E" fontSize="7.5" fontWeight="800" textAnchor="middle">D2★</text>
-            <text x="45" y="62" fill="#64748B" fontSize="6.5" textAnchor="middle">Biscuits, Chips &amp; Cookies</text>
+            <text x="65" y="41" fill="#92400E" fontSize="7.5" fontWeight="800" textAnchor="middle">B4</text>
+            <text x="45" y="62" fill="#64748B" fontSize="6.5" textAnchor="middle">Snacks, Juice &amp; Soft Drinks</text>
             {isAisle4Congested && (
               <text x="45" y="76" fill="#D97706" fontSize="6.5" fontWeight="800" textAnchor="middle">BUSY AISLE</text>
             )}
@@ -488,12 +492,12 @@ export const CustomerIndoorMap2D: React.FC = () => {
           <g transform="translate(335, 60)">
             <rect x="0" y="0" width="90" height="80" rx="8" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" filter="url(#gondolaShadow)" />
             <rect x="0" y="0" width="90" height="22" rx="8" fill="#F0FDF4" />
-            <text x="45" y="15" fill="#166534" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 5 • Drinks</text>
+            <text x="45" y="15" fill="#166534" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 5 • Staples</text>
             <rect x="8" y="28" width="34" height="20" rx="4" fill="#F0FDF4" stroke="#BBF7D0" strokeWidth="1" />
             <text x="25" y="41" fill="#15803D" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf E1</text>
             <rect x="48" y="28" width="34" height="20" rx="4" fill="#F0FDF4" stroke="#BBF7D0" strokeWidth="1" />
-            <text x="65" y="41" fill="#15803D" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf E2</text>
-            <text x="45" y="65" fill="#166534" fontSize="7" fontWeight="600" textAnchor="middle">Juices &amp; Soft Drinks</text>
+            <text x="65" y="41" fill="#15803D" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf E3</text>
+            <text x="45" y="65" fill="#166534" fontSize="7" fontWeight="600" textAnchor="middle">Staples &amp; Personal Care</text>
           </g>
 
           {/* AISLE 6: PERSONAL CARE */}
@@ -505,26 +509,26 @@ export const CustomerIndoorMap2D: React.FC = () => {
               height="88"
               rx="8"
               fill="#FFFFFF"
-              stroke={activeStepIndex === 4 ? '#0F766E' : '#CBD5E1'}
-              strokeWidth={activeStepIndex === 4 ? '2.5' : '1.5'}
+              stroke={activeAisle === 'Aisle 6' ? '#0F766E' : '#CBD5E1'}
+              strokeWidth={activeAisle === 'Aisle 6' ? '2.5' : '1.5'}
               filter="url(#gondolaShadow)"
             />
             <rect x="0" y="0" width="90" height="22" rx="8" fill="#F3E8FF" />
-            <text x="45" y="15" fill="#7E22CE" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 6 • Care</text>
+            <text x="45" y="15" fill="#7E22CE" fontSize="8.5" fontWeight="800" textAnchor="middle">AISLE 6 • Home &amp; Tech</text>
             <rect x="8" y="28" width="34" height="20" rx="4" fill="#FAF5FF" stroke="#E9D5FF" strokeWidth="1" />
-            <text x="25" y="41" fill="#7E22CE" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf F1</text>
+            <text x="25" y="41" fill="#7E22CE" fontSize="7.5" fontWeight="bold" textAnchor="middle">Shelf F2</text>
             <rect
               x="48"
               y="28"
               width="34"
               height="20"
               rx="4"
-              fill={activeStepIndex === 4 ? '#F3E8FF' : '#FAF5FF'}
-              stroke={activeStepIndex === 4 ? '#7E22CE' : '#E9D5FF'}
-              strokeWidth={activeStepIndex === 4 ? '2' : '1'}
+              fill={activeAisle === 'Aisle 6' ? '#F3E8FF' : '#FAF5FF'}
+              stroke={activeAisle === 'Aisle 6' ? '#7E22CE' : '#E9D5FF'}
+              strokeWidth={activeAisle === 'Aisle 6' ? '2' : '1'}
             />
-            <text x="65" y="41" fill="#7E22CE" fontSize="7.5" fontWeight="800" textAnchor="middle">F2★</text>
-            <text x="45" y="62" fill="#64748B" fontSize="6.5" textAnchor="middle">Shampoo, Soap &amp; Dental</text>
+            <text x="65" y="41" fill="#7E22CE" fontSize="7.5" fontWeight="800" textAnchor="middle">G1</text>
+            <text x="45" y="62" fill="#64748B" fontSize="6.5" textAnchor="middle">Household &amp; Electronics</text>
           </g>
 
           {/* CHECKOUT COUNTERS FLANK */}
@@ -657,7 +661,7 @@ export const CustomerIndoorMap2D: React.FC = () => {
             const isVisited = wp.index < activeStepIndex
             const isCurrent = wp.index === activeStepIndex
             const isNext = wp.index > activeStepIndex
-            const product = wp.productIndex !== undefined ? shoppingList[wp.productIndex] : null
+            const product = wp.productId ? shoppingList.find((item) => item.id === wp.productId) || null : null
 
             return (
               <g

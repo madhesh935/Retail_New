@@ -1,3 +1,6 @@
+import type { NavigationPlan, StoreLayout } from '@/customer-pwa/types/navigation';
+import type { DatabaseDump } from '@/types/database';
+
 // 100% Real Live Store API Client connecting to FastAPI backend
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 
@@ -35,6 +38,10 @@ export const realStoreApi = {
   // Shelves & Inventory
   async getShelves() {
     return fetchJson<any[]>('/api/v1/inventory/shelves');
+  },
+
+  async getCameras() {
+    return fetchJson<any[]>('/api/v1/cameras/');
   },
 
   async updateShelf(shelfCode: string, updates: { availability?: number; visible_units?: number; status?: string }) {
@@ -93,6 +100,10 @@ export const realStoreApi = {
     return fetchJson<any>('/api/v1/system/health');
   },
 
+  async getAllDatabaseData() {
+    return fetchJson<DatabaseDump>('/api/v1/database/all');
+  },
+
   // Queues & Entrance
   async getQueueStatus() {
     return fetchJson<any>('/api/v1/queue/status');
@@ -105,6 +116,47 @@ export const realStoreApi = {
   // Customer Catalog & Assist
   async getCustomerCatalog() {
     return fetchJson<any[]>('/api/v1/customer/catalog');
+  },
+
+  async getStoreLayout(storeId = 'store-01') {
+    return fetchJson<StoreLayout>(`/api/v1/navigation/layout?store_id=${encodeURIComponent(storeId)}`);
+  },
+
+  async getNavigationRoute(params: {
+    productId?: string;
+    shelfCode?: string;
+    storeId?: string;
+    startNodeId?: string;
+    includeCheckout?: boolean;
+    checkoutLaneCode?: string;
+    avoidCongestion?: boolean;
+    accessibleOnly?: boolean;
+  }) {
+    const query = new URLSearchParams();
+    if (params.productId) query.set('product_id', params.productId);
+    if (params.shelfCode) query.set('shelf_code', params.shelfCode);
+    if (params.storeId) query.set('store_id', params.storeId);
+    if (params.startNodeId) query.set('start_node_id', params.startNodeId);
+    if (params.checkoutLaneCode) query.set('checkout_lane_code', params.checkoutLaneCode);
+    query.set('include_checkout', String(params.includeCheckout ?? false));
+    query.set('avoid_congestion', String(params.avoidCongestion ?? true));
+    query.set('accessible_only', String(params.accessibleOnly ?? false));
+    return fetchJson<NavigationPlan>(`/api/v1/navigation/route?${query.toString()}`);
+  },
+
+  async optimizeNavigationRoute(payload: {
+    store_id?: string;
+    start_node_id?: string;
+    destinations: Array<{ product_id?: string; shelf_code?: string; label?: string }>;
+    include_checkout?: boolean;
+    checkout_lane_code?: string;
+    avoid_congestion?: boolean;
+    accessible_only?: boolean;
+  }) {
+    return fetchJson<NavigationPlan>('/api/v1/navigation/route/optimize', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   async submitCustomerAssist(payload: {

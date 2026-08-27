@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useMemo } from 'react'
 import { realStoreApi } from '@/services/api/realStoreApi'
+import type { NavigationPlan } from '../types/navigation'
 
 export interface CustomerProduct {
   id: string
@@ -86,7 +87,7 @@ export const STORE_CATALOG: CustomerProduct[] = [
     stockCount: 18,
     isAvailable: true,
     backroomStock: 24,
-    mapCoord: { x: 142, y: 220 },
+    mapCoord: { x: 165, y: 235 },
     alternatives: [
       { id: 'prod-aavin-milk', name: 'Aavin Full Cream Milk (500ml)', shelf: 'Shelf C3', price: '₹34', isAvailable: true },
       { id: 'prod-amul-taaza', name: 'Amul Taaza Homogenised Toned Milk (1L)', shelf: 'Shelf C4', price: '₹72', isAvailable: true },
@@ -127,10 +128,10 @@ export const STORE_CATALOG: CustomerProduct[] = [
     price: '₹45',
     priceNum: 45,
     aisle: 'Aisle 3',
-    shelf: 'Shelf A2',
+    shelf: 'Shelf D1',
     stockCount: 12,
     isAvailable: true,
-    mapCoord: { x: 252, y: 90 },
+    mapCoord: { x: 250, y: 105 },
     alternatives: [
       { id: 'prod-britannia-bread', name: 'Britannia 100% Whole Wheat Bread (400g)', shelf: 'Shelf A3', price: '₹48', isAvailable: true },
     ],
@@ -189,7 +190,7 @@ export const STORE_CATALOG: CustomerProduct[] = [
     stockCount: 2,
     isAvailable: true,
     isLowStock: true,
-    mapCoord: { x: 252, y: 220 },
+    mapCoord: { x: 250, y: 235 },
     alternatives: [
       { id: 'prod-marie-gold', name: 'Britannia Marie Gold Biscuits (300g)', shelf: 'Shelf C3', price: '₹55', isAvailable: true },
       { id: 'prod-parle-g', name: 'Parle-G Glucose Biscuits (250g)', shelf: 'Shelf C4', price: '₹40', isAvailable: true },
@@ -268,10 +269,10 @@ export const STORE_CATALOG: CustomerProduct[] = [
     price: '₹245',
     priceNum: 245,
     aisle: 'Aisle 6',
-    shelf: 'Shelf D4',
+    shelf: 'Shelf F2',
     stockCount: 7,
     isAvailable: true,
-    mapCoord: { x: 362, y: 220 },
+    mapCoord: { x: 385, y: 235 },
     alternatives: [
       { id: 'prod-sunsilk', name: 'Sunsilk Soft & Smooth Shampoo (350ml)', shelf: 'Shelf D5', price: '₹215', isAvailable: true },
       { id: 'prod-pantene', name: 'Pantene Silky Smooth Shampoo (340ml)', shelf: 'Shelf D6', price: '₹260', isAvailable: true },
@@ -368,6 +369,8 @@ interface CustomerShoppingContextType {
   replaceProductInList: (oldId: string, newProduct: CustomerProduct) => void
   // Active Waypoints
   optimizedRoute: WaypointRouteStep[]
+  navigationPlan: NavigationPlan | null
+  isNavigationPlanLoading: boolean
   activeStepIndex: number
   setActiveStepIndex: (idx: number) => void
   isNavigating: boolean
@@ -417,6 +420,8 @@ export const CustomerShoppingProvider: React.FC<{
   const [activeStepIndex, setActiveStepIndex] = useState(1)
 
   const [catalog, setCatalog] = useState<CustomerProduct[]>(STORE_CATALOG)
+  const [navigationPlan, setNavigationPlan] = useState<NavigationPlan | null>(null)
+  const [isNavigationPlanLoading, setIsNavigationPlanLoading] = useState(false)
 
   React.useEffect(() => {
     realStoreApi.getCustomerCatalog().then((prods) => {
@@ -425,6 +430,34 @@ export const CustomerShoppingProvider: React.FC<{
       }
     }).catch(console.warn)
   }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+    setIsNavigationPlanLoading(true)
+    realStoreApi.optimizeNavigationRoute({
+      store_id: storeId || 'store-01',
+      destinations: shoppingList.map((item) => ({
+        product_id: item.id,
+        shelf_code: item.shelf,
+        label: item.name,
+      })),
+      include_checkout: true,
+      checkout_lane_code: targetCheckoutCounter,
+      avoid_congestion: useCrowdAlternativeRoute,
+      accessible_only: false,
+    }).then((plan) => {
+      if (!cancelled) setNavigationPlan(plan)
+    }).catch((error) => {
+      console.warn('Store navigation API unavailable; using local route fallback.', error)
+      if (!cancelled) setNavigationPlan(null)
+    }).finally(() => {
+      if (!cancelled) setIsNavigationPlanLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [shoppingList, storeId, targetCheckoutCounter, useCrowdAlternativeRoute])
 
   // Copilot Conversation Messages
   const initialCopilotMessages: CopilotMessage[] = [
@@ -750,9 +783,9 @@ export const CustomerShoppingProvider: React.FC<{
   }
 
   const searchCatalog = (query: string): CustomerProduct[] => {
-    if (!query.trim()) return STORE_CATALOG
+    if (!query.trim()) return catalog
     const q = query.toLowerCase()
-    return STORE_CATALOG.filter(
+    return catalog.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
@@ -761,15 +794,36 @@ export const CustomerShoppingProvider: React.FC<{
     )
   }
 
-  // Sequence: Entrance -> Milk (Aisle 2) -> Bread (Aisle 3) -> Biscuits (Aisle 4) -> Shampoo (Aisle 6) -> Checkout
   const optimizedRoute = useMemo<WaypointRouteStep[]>(() => {
+    if (navigationPlan?.stops.length) {
+      return navigationPlan.stops.map((stop, index) => {
+        const item = stop.kind === 'PRODUCT'
+          ? shoppingList.find((candidate) => candidate.id === stop.productId)
+          : undefined
+        const location = item
+          ? `${item.aisle} • ${stop.shelfCode ? `Shelf ${stop.shelfCode}` : item.shelf}`
+          : stop.kind === 'ENTRANCE'
+            ? 'Starting Point'
+            : `Checkout Lane • ${stop.laneCode || targetCheckoutCounter}`
+        return {
+          stepIndex: index + 1,
+          title: stop.label,
+          location,
+          item,
+          isCompleted: stop.kind === 'ENTRANCE' || Boolean(item?.isCollected),
+          isSkipped: item?.isSkipped,
+          mapCoord: { x: stop.node.x, y: stop.node.y },
+        }
+      })
+    }
+
     const steps: WaypointRouteStep[] = [
       {
         stepIndex: 1,
         title: 'Entrance',
         location: 'Starting Point',
         isCompleted: true,
-        mapCoord: { x: 55, y: 310 },
+        mapCoord: { x: 75, y: 345 },
       },
     ]
 
@@ -799,7 +853,7 @@ export const CustomerShoppingProvider: React.FC<{
     })
 
     return steps
-  }, [shoppingList, targetCheckoutCounter])
+  }, [navigationPlan, shoppingList, targetCheckoutCounter])
 
   return (
     <CustomerShoppingContext.Provider
@@ -823,6 +877,8 @@ export const CustomerShoppingProvider: React.FC<{
         setOutOfStockProduct,
         replaceProductInList,
         optimizedRoute,
+        navigationPlan,
+        isNavigationPlanLoading,
         activeStepIndex,
         setActiveStepIndex,
         isNavigating,

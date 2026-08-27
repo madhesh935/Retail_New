@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { CopilotAction, CopilotStructuredResponse } from './CopilotToolEngine'
 import { cn } from '@/lib/utils'
+import { CopilotRichText } from './CopilotRichText'
 
 export interface ChatMessage {
   id: string
@@ -146,7 +147,12 @@ export const CopilotMessageBubble: React.FC<CopilotMessageBubbleProps> = ({
             )}
           </div>
         ) : (
-          <p className="text-slate-700 font-sans text-xs">{message.text}</p>
+          message.text && (
+            <CopilotRichText
+              text={message.text}
+              className="font-sans text-[13px] leading-5"
+            />
+          )
         )}
       </div>
     </div>

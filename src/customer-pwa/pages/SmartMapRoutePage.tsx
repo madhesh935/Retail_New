@@ -27,6 +27,7 @@ export const SmartMapRoutePage: React.FC = () => {
   const {
     shoppingList,
     optimizedRoute,
+    navigationPlan,
     activeStepIndex,
     setActiveStepIndex,
     toggleItemCollected,
@@ -55,6 +56,12 @@ export const SmartMapRoutePage: React.FC = () => {
   const totalItemsCount = itemsOnly.length
   const allItemsResolved = totalItemsCount > 0 && completedCount + skippedCount === totalItemsCount
   const progressPercent = totalItemsCount > 0 ? Math.round((completedCount / totalItemsCount) * 100) : 0
+  const routeDistanceLabel = navigationPlan
+    ? `${Math.round(navigationPlan.totalDistanceMeters)} m`
+    : useCrowdAlternativeRoute ? '146 m' : '182 m'
+  const routeTimeLabel = navigationPlan
+    ? `${navigationPlan.estimatedMinutes} min`
+    : useCrowdAlternativeRoute ? '8 min' : '11 min'
 
   // Current active step (find first uncompleted, unskipped item)
   const currentStep =
@@ -92,7 +99,7 @@ export const SmartMapRoutePage: React.FC = () => {
 
   const handleAvoidCrowd = () => {
     setUseCrowdAlternativeRoute(true)
-    showToast('Smart Route Updated • New Distance: 146 m • New Est. Time: 8 min')
+    showToast('Updating the route to avoid congested corridors')
   }
 
   const handleStandardRoute = () => {
@@ -146,17 +153,17 @@ export const SmartMapRoutePage: React.FC = () => {
                 <span>Walking Distance</span>
               </span>
               <span className="text-base font-extrabold text-slate-900 mt-0.5 block">
-                {useCrowdAlternativeRoute ? '146 m' : '182 m'}
+                {routeDistanceLabel}
               </span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
               <span className="text-[10px] text-slate-500 uppercase font-semibold flex items-center justify-center gap-1">
                 <Clock className="h-3 w-3 text-cyan-600" />
-                <span>Est. Shopping Time</span>
+                <span>Est. Walking Time</span>
               </span>
               <span className="text-base font-extrabold text-slate-900 mt-0.5 block">
-                {useCrowdAlternativeRoute ? '8 min' : '11 min'}
+                {routeTimeLabel}
               </span>
             </div>
           </div>

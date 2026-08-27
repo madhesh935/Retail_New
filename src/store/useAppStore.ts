@@ -151,7 +151,7 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
     get().setLoadingStore(true)
 
     try {
-      const [statusData, shelvesData, staffMembers, staffTasks, incidentsData, systemData] =
+      const [statusData, shelvesData, staffMembers, staffTasks, incidentsData, systemData, camerasData] =
         await Promise.allSettled([
           realStoreApi.getStoreStatus(),
           realStoreApi.getShelves(),
@@ -159,16 +159,17 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
           realStoreApi.getStaffTasks(),
           realStoreApi.getIncidents(),
           realStoreApi.getSystemHealth(),
+          realStoreApi.getCameras(),
         ])
 
       // 1. Store Status & Occupancy
       if (statusData.status === 'fulfilled' && statusData.value) {
         const s = statusData.value
         get().setStoreInfo({
-          storeId: s.store_id || 'store-blr-01',
+          storeId: s.store_id || 'store-01',
           name: s.name || 'FreshMart Flagship — Koramangala, BLR',
-          code: 'STORE-01-BLR',
-          isOpen: true,
+          code: s.code || 'STORE-01-CHN',
+          isOpen: s.is_open ?? true,
           currentOccupancy: s.current_occupancy || 142,
           currentActiveShoppers: s.current_occupancy || 142,
           maxCapacity: s.max_capacity || 350,
@@ -176,16 +177,31 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
           peakOccupancyToday: s.peak_occupancy_today || 288,
           occupancyRate: s.occupancy_rate || 40.6,
           averageDwellTimeMinutes: s.average_dwell_time_minutes || 24,
-          edgeAiStatus: 'ACTIVE',
-          activeIncidentsCount: 2,
-          onlineCamerasCount: 4,
-          totalCamerasCount: 4,
-          activeStaffCount: 5,
-          totalStaffCount: 5,
-          avgCheckoutWaitTimeSeconds: 84,
+          edgeAiStatus: s.edge_ai_status || 'ACTIVE',
+          activeIncidentsCount: s.active_incidents_count ?? 0,
+          onlineCamerasCount: s.online_cameras_count ?? 0,
+          totalCamerasCount: s.total_cameras_count ?? 0,
+          activeStaffCount: s.active_staff_count ?? 0,
+          totalStaffCount: s.total_staff_count ?? 0,
+          avgCheckoutWaitTimeSeconds: s.avg_checkout_wait_time_seconds ?? 0,
           lastUpdated: new Date().toISOString(),
         })
         get().updateOccupancy(s.current_occupancy || 142, s.occupancy_rate || 40.6)
+        if (Array.isArray(s.zones)) {
+          get().setZones(
+            s.zones.map((zone: any) => ({
+              id: zone.id,
+              name: zone.name,
+              category: zone.category || 'Retail',
+              code: zone.code,
+              currentOccupancy: zone.current_occupancy || 0,
+              capacity: zone.max_capacity || 0,
+              avgDwellTimeSeconds: zone.avg_dwell_time_seconds || 0,
+              alertCount: zone.alert_count || 0,
+              coordinates: zone.coordinates || { x: 0, y: 0, width: 0, height: 0 },
+            }))
+          )
+        }
       }
 
       // 2. Shelves & Inventory
@@ -268,6 +284,11 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
           activeAnomalies: sys.active_anomalies || sys.activeAnomalies || [],
         })
       }
+
+      // 6. Camera inventory and edge stream health
+      if (camerasData.status === 'fulfilled' && camerasData.value) {
+        get().setCameras(camerasData.value)
+      }
     } catch (err) {
       console.warn('Backend data sync notice:', err)
     } finally {
@@ -275,4 +296,3 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
     }
   },
 }))
-

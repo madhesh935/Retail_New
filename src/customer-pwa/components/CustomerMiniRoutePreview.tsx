@@ -5,12 +5,19 @@ import { useCustomerShopping } from '../context/CustomerShoppingContext'
 export const CustomerMiniRoutePreview: React.FC = () => {
   const {
     optimizedRoute,
+    navigationPlan,
     setIsNavigating,
     setActiveTab,
     useCrowdAlternativeRoute,
   } = useCustomerShopping()
 
   const itemsOnly = optimizedRoute.filter((s) => s.item)
+  const distanceLabel = navigationPlan
+    ? `${Math.round(navigationPlan.totalDistanceMeters)} m`
+    : useCrowdAlternativeRoute ? '146 m' : '182 m'
+  const timeLabel = navigationPlan
+    ? `${navigationPlan.estimatedMinutes} min`
+    : useCrowdAlternativeRoute ? '8 min' : '11 min'
 
   return (
     <div className="rounded-2xl border border-cyan-200 bg-cyan-50/40 p-3.5 space-y-3 shadow-sm">
@@ -32,13 +39,13 @@ export const CustomerMiniRoutePreview: React.FC = () => {
           <span className="text-[10px] text-slate-400 font-bold block flex items-center justify-center gap-1">
             <Footprints className="h-3 w-3 text-cyan-600" /> Walking
           </span>
-          <span className="font-extrabold text-slate-900">{useCrowdAlternativeRoute ? '146 m' : '182 m'}</span>
+          <span className="font-extrabold text-slate-900">{distanceLabel}</span>
         </div>
         <div className="p-2 rounded-xl bg-white border border-slate-200">
           <span className="text-[10px] text-slate-400 font-bold block flex items-center justify-center gap-1">
             <Clock className="h-3 w-3 text-cyan-600" /> Est. Time
           </span>
-          <span className="font-extrabold text-slate-900">{useCrowdAlternativeRoute ? '8 min' : '11 min'}</span>
+          <span className="font-extrabold text-slate-900">{timeLabel}</span>
         </div>
       </div>
 
@@ -46,15 +53,14 @@ export const CustomerMiniRoutePreview: React.FC = () => {
       <div className="p-2 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-600 font-medium space-y-1">
         <div className="flex items-center gap-1.5 truncate">
           <span className="h-1.5 w-1.5 rounded-full bg-cyan-600 shrink-0" />
-          <span className="font-bold text-slate-800">Entrance</span>
-          <span>→</span>
-          <span className="truncate">Milk (Aisle 2)</span>
-          <span>→</span>
-          <span className="truncate">Bread (Aisle 3)</span>
-          <span>→</span>
-          <span className="truncate">Biscuits</span>
-          <span>→</span>
-          <span className="font-bold text-emerald-700">Checkout C2</span>
+          {optimizedRoute.map((step, index) => (
+            <React.Fragment key={`${step.title}-${index}`}>
+              {index > 0 && <span>→</span>}
+              <span className={index === 0 ? 'font-bold text-slate-800' : index === optimizedRoute.length - 1 ? 'font-bold text-emerald-700' : 'truncate'}>
+                {step.item ? `${step.item.name.split(' (')[0]} (${step.item.aisle})` : step.title}
+              </span>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 

@@ -26,14 +26,21 @@ def get_staff_members(db: Session = Depends(get_db)):
     return [
         {
             "id": m.id,
+            "employeeId": m.employee_id,
             "name": m.name,
             "role": m.role,
+            "department": m.department,
+            "skills": m.skills or [],
+            "currentZoneId": m.current_zone_id,
             "zone": m.zone,
             "status": m.status,
             "activeTaskId": m.active_task_id,
+            "currentTaskDescription": m.current_task_description,
             "performanceScore": m.performance_score,
             "tasksCompletedToday": m.tasks_completed_today,
-            "shift": f"{m.shift_start} - {m.shift_end}"
+            "shift": f"{m.shift_start} - {m.shift_end}",
+            "shiftStatus": m.shift_status,
+            "contactChannel": m.contact_channel,
         }
         for m in members
     ]
@@ -53,6 +60,7 @@ def get_staff_tasks(db: Session = Depends(get_db)):
             "targetLocation": t.target_location,
             "description": t.description,
             "customerRequestData": t.customer_request_data,
+            "details": t.details or {},
             "createdAt": t.created_at.isoformat() if t.created_at else None,
             "completedAt": t.completed_at.isoformat() if t.completed_at else None
         }

@@ -14,16 +14,23 @@ def get_all_incidents(db: Session = Depends(get_db)):
         {
             "id": inc.id,
             "title": inc.title,
+            "description": inc.description,
             "severity": inc.severity,
             "type": inc.type,
             "zone": inc.zone,
+            "zoneId": inc.zone_id,
             "status": inc.status,
+            "cameraCode": inc.camera_code,
+            "assignedStaffId": inc.assigned_staff_id,
+            "assignedStaffName": inc.assigned_staff_name,
+            "details": inc.details or {},
             "aiRecommendation": {
                 "title": inc.recommendation_title,
                 "action": inc.recommendation_action,
                 "state": inc.recommendation_state
             } if inc.recommendation_title else None,
-            "createdAt": inc.created_at.isoformat() if inc.created_at else None
+            "createdAt": inc.created_at.isoformat() if inc.created_at else None,
+            "resolvedAt": inc.resolved_at.isoformat() if inc.resolved_at else None,
         }
         for inc in incidents
     ]

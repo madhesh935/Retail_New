@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.db.database import engine, Base, get_db
 from app.db.init_db import seed_database
 from app.services.firebase_sync import init_firebase
-from app.api.endpoints import queue, entrance, store, inventory, staff, incidents, customer, system, chat
+from app.api.endpoints import cameras, queue, entrance, store, inventory, staff, incidents, customer, system, chat, rag, navigation, database
 
 # Create SQLite tables and seed baseline production data
 seed_database()
@@ -40,11 +40,15 @@ app.include_router(store.router, prefix="/api/v1/store", tags=["Store Operations
 app.include_router(queue.router, prefix="/api/v1/queue", tags=["Queue Intelligence"])
 app.include_router(entrance.router, prefix="/api/v1/entrance", tags=["Entrance Intelligence"])
 app.include_router(inventory.router, prefix="/api/v1/inventory", tags=["Inventory Intelligence"])
+app.include_router(cameras.router, prefix="/api/v1/cameras", tags=["Camera Intelligence"])
 app.include_router(staff.router, prefix="/api/v1/staff", tags=["Staff Operations"])
 app.include_router(incidents.router, prefix="/api/v1/incidents", tags=["Incidents & Actions"])
 app.include_router(customer.router, prefix="/api/v1/customer", tags=["Customer PWA"])
+app.include_router(navigation.router, prefix="/api/v1/navigation", tags=["Store Navigation"])
+app.include_router(database.router, prefix="/api/v1/database", tags=["Database Inspector"])
 app.include_router(system.router, prefix="/api/v1/system", tags=["System Health"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat & Copilot"])
+app.include_router(rag.router, prefix="/api/v1/rag", tags=["Retail RAG"])
 
 @app.get("/")
 def read_root():
@@ -53,4 +57,3 @@ def read_root():
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     return {"status": "healthy", "database": "connected", "mode": "LIVE_BACKEND"}
-

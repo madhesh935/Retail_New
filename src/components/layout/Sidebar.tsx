@@ -14,6 +14,7 @@ import {
   Radio,
   Sparkles,
   Settings,
+  Database,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { NAV_MAIN_ITEMS } from '@/lib/constants'
@@ -32,6 +33,7 @@ const iconMap = {
   Sparkles,
   BarChart3,
   Settings,
+  Database,
 }
 
 export const Sidebar: React.FC = () => {

@@ -112,6 +112,14 @@ export const NAV_MAIN_ITEMS = [
     shortcut: '9',
   },
   {
+    id: 'database',
+    label: 'Database Explorer',
+    path: '/database',
+    iconName: 'Database',
+    badgeKey: null,
+    shortcut: 'd',
+  },
+  {
     id: 'settings',
     label: 'Settings',
     path: '/settings',
@@ -133,7 +141,7 @@ export const NAV_SYSTEM_ITEMS: {
 export const API_ENDPOINTS = {
   STORE_STATUS: '/api/v1/store/status',
   STORE_OCCUPANCY: '/api/v1/store/occupancy',
-  CAMERAS: '/api/v1/queue/status',
+  CAMERAS: '/api/v1/cameras/',
   INVENTORY: '/api/v1/inventory/shelves',
   SHELVES: '/api/v1/inventory/shelves',
   SHOPPER_ANALYTICS: '/api/v1/store/status',
@@ -148,6 +156,7 @@ export const API_ENDPOINTS = {
   PREDICTIONS: '/api/v1/queue/status',
   CUSTOMER_CATALOG: '/api/v1/customer/catalog',
   CUSTOMER_ASSIST: '/api/v1/customer/assist',
+  DATABASE_ALL: '/api/v1/database/all',
   WS_ENTRANCE: 'ws://127.0.0.1:8000/api/v1/entrance/stream',
   WS_QUEUE: 'ws://127.0.0.1:8000/api/v1/queue/stream',
 }

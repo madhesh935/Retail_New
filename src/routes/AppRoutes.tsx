@@ -45,6 +45,9 @@ const ReportsInsightsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
+const DatabaseExplorerPage = lazy(() =>
+  import('./pages/DatabaseExplorerPage').then((m) => ({ default: m.DatabaseExplorerPage }))
+)
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -92,6 +95,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/reports-insights" element={<ReportsInsightsPage />} />
           <Route path="/reports" element={<ReportsInsightsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/database" element={<DatabaseExplorerPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

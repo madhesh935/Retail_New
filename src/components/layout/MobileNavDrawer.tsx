@@ -12,6 +12,8 @@ import {
   Cpu,
   X,
   Sparkles,
+  Database,
+  Settings,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { NAV_MAIN_ITEMS } from '@/lib/constants'
@@ -29,6 +31,8 @@ const iconMap = {
   Sparkles,
   BarChart3,
   Cpu,
+  Database,
+  Settings,
 }
 
 export const MobileNavDrawer: React.FC = () => {

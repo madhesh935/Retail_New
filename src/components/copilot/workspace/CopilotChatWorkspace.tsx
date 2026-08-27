@@ -29,6 +29,7 @@ import { WhyRecommendationDialog, WhyDialogData } from '@/components/command-cen
 import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { CopilotRichText } from '../CopilotRichText'
 
 export interface WorkspaceChatMessage {
   id: string
@@ -231,9 +232,13 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                 >
                   {/* User/Bot Text Content */}
                   {msg.text && (
-                    <p className="text-xs leading-relaxed font-medium">
-                      {msg.text}
-                    </p>
+                    isUser ? (
+                      <p className="whitespace-pre-wrap break-words text-xs leading-relaxed font-medium">
+                        {msg.text}
+                      </p>
+                    ) : (
+                      <CopilotRichText text={msg.text} className="text-[13px] leading-5" />
+                    )
                   )}
 
                   {/* Structured Bot Response Content */}

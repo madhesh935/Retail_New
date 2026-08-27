@@ -32,7 +32,9 @@ __pycache__/
 venv/
 env/
 *.sqlite3
-backend.db
+# backend.db
 .env
 backend.env
 firebase-service-account.json
+backend/data/rag_index.json
+backend/data/rag_index.json.tmp

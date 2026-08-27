@@ -1,11 +1,38 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
+from app.db.models import QueueModel
 from app.services.queue_intelligence import queue_monitor, get_monitor
 import logging
 import httpx
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get("/lanes")
+def get_seeded_lanes(db: Session = Depends(get_db)):
+    lanes = db.query(QueueModel).order_by(QueueModel.lane_number).all()
+    return [
+        {
+            "id": lane.lane_code,
+            "laneNumber": lane.lane_number,
+            "name": lane.name,
+            "laneType": lane.type,
+            "status": lane.status,
+            "assignedStaffId": lane.assigned_staff_id,
+            "assignedStaffName": lane.cashier_name,
+            "currentQueueLength": lane.queue_length,
+            "currentWaitTimeSeconds": lane.wait_time_seconds,
+            "processingRateItemsPerMinute": lane.processing_rate_items_per_minute,
+            "predictedQueueIn10Min": lane.predicted_queue_in_10_min,
+            "predictedWaitTimeIn10MinSeconds": lane.predicted_wait_in_10_min_seconds,
+            "cameraCode": lane.camera_code,
+        }
+        for lane in lanes
+    ]
 
 @router.get("/proxy")
 async def proxy_camera_stream(url: str):
