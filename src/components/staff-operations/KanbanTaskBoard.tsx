@@ -27,30 +27,30 @@ export const KanbanTaskBoard: React.FC<KanbanTaskBoardProps> = ({
   onSelectTask,
 }) => {
   const columns: { id: TaskStatusColumn; title: string; countBadgeColor: string }[] = [
-    { id: 'TO_DO', title: 'To Do', countBadgeColor: 'bg-amber-950/80 text-amber-300 border-amber-500/30' },
-    { id: 'ASSIGNED', title: 'Assigned', countBadgeColor: 'bg-cyan-950/80 text-cyan-300 border-cyan-500/30' },
-    { id: 'IN_PROGRESS', title: 'In Progress', countBadgeColor: 'bg-blue-950/80 text-blue-300 border-blue-500/30' },
-    { id: 'COMPLETED', title: 'Completed', countBadgeColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/30' },
+    { id: 'TO_DO', title: 'To Do', countBadgeColor: 'bg-amber-50 text-amber-800 border-amber-200' },
+    { id: 'ASSIGNED', title: 'Assigned', countBadgeColor: 'bg-sky-50 text-sky-700 border-sky-200' },
+    { id: 'IN_PROGRESS', title: 'In Progress', countBadgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+    { id: 'COMPLETED', title: 'Completed', countBadgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   ]
 
   const activeCount = tasks.filter((t) => t.status !== 'COMPLETED').length
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-slate-300">
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
             <ListOrdered className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Live Task Board
             </h3>
           </div>
         </div>
 
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-slate-500">
           {activeCount} active tasks
         </span>
       </div>
@@ -63,17 +63,17 @@ export const KanbanTaskBoard: React.FC<KanbanTaskBoardProps> = ({
           return (
             <div
               key={col.id}
-              className="rounded-lg bg-[#090D14] border border-[#1E293B] p-2.5 flex flex-col justify-between min-h-[220px]"
+              className="rounded-xl bg-slate-50 border border-slate-200 p-2.5 flex flex-col justify-between min-h-[220px] shadow-2xs"
             >
               {/* Column Title & Counter */}
               <div>
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#1E293B]">
-                  <span className="text-xs font-semibold text-slate-300">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200">
+                  <span className="text-xs font-bold text-slate-900">
                     {col.title}
                   </span>
                   <span
                     className={cn(
-                      'text-[10px] font-bold px-1.5 py-0.5 rounded border',
+                      'text-[10px] font-bold px-1.5 py-0.5 rounded-md border',
                       col.countBadgeColor
                     )}
                   >
@@ -92,46 +92,46 @@ export const KanbanTaskBoard: React.FC<KanbanTaskBoardProps> = ({
                         key={task.id}
                         onClick={() => onSelectTask(task)}
                         className={cn(
-                          'p-2.5 rounded-lg border text-left transition-all cursor-pointer space-y-2 group',
+                          'p-2.5 rounded-xl border text-left transition-all cursor-pointer space-y-2 group shadow-2xs bg-white',
                           isCritical
-                            ? 'bg-[#0F172A] border-rose-500/40 hover:border-rose-400'
-                            : 'bg-[#0F172A] border-[#1E293B] hover:border-slate-500'
+                            ? 'border-rose-200 hover:border-rose-400'
+                            : 'border-slate-200 hover:border-slate-300'
                         )}
                       >
                         {/* Priority Badge & ID */}
                         <div className="flex items-center justify-between">
                           <span
                             className={cn(
-                              'text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase border',
+                              'text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase border',
                               isCritical
-                                ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
                                 : isHigh
-                                ? 'bg-amber-950/80 text-amber-300 border-amber-500/30'
-                                : 'bg-[#1E293B] text-slate-400 border-slate-700'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
                             )}
                           >
                             {task.priority}
                           </span>
 
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="text-[10px] text-slate-400 font-mono">
                             {task.createdTime}
                           </span>
                         </div>
 
                         {/* Title & Zone */}
                         <div>
-                          <div className="font-semibold text-white text-xs leading-snug group-hover:text-cyan-300 transition-colors">
+                          <div className="font-bold text-slate-900 text-xs leading-snug group-hover:text-sky-700 transition-colors">
                             {task.title}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                          <div className="text-[10px] text-slate-500 mt-0.5 truncate">
                             {task.zone}
                           </div>
                         </div>
 
                         {/* Footer: Assigned Staff / Verification */}
-                        <div className="pt-1.5 border-t border-[#1E293B] flex items-center justify-between text-[10px]">
+                        <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
                           {col.id === 'COMPLETED' ? (
-                            <div className="flex items-center gap-1 text-emerald-400 font-medium">
+                            <div className="flex items-center gap-1 text-emerald-700 font-bold">
                               {task.verificationType === 'CAMERA_VERIFIED' ? (
                                 <>
                                   <ShieldCheck className="h-3 w-3" />
@@ -145,17 +145,17 @@ export const KanbanTaskBoard: React.FC<KanbanTaskBoardProps> = ({
                               )}
                             </div>
                           ) : task.assignedStaffName ? (
-                            <div className="flex items-center gap-1 text-slate-300 font-medium">
-                              <span className="text-cyan-400 font-mono text-[9px] font-bold">
+                            <div className="flex items-center gap-1 text-slate-700 font-medium">
+                              <span className="text-sky-700 font-mono text-[9px] font-bold">
                                 {task.assignedStaffId}
                               </span>
                               <span>{task.assignedStaffName}</span>
                             </div>
                           ) : (
-                            <span className="text-amber-400 font-medium">Unassigned</span>
+                            <span className="text-amber-800 font-semibold">Unassigned</span>
                           )}
 
-                          <span className="text-slate-500">{task.eta}</span>
+                          <span className="text-slate-400">{task.eta}</span>
                         </div>
                       </div>
                     )
@@ -164,7 +164,7 @@ export const KanbanTaskBoard: React.FC<KanbanTaskBoardProps> = ({
               </div>
 
               {colTasks.length === 0 && (
-                <div className="my-auto py-6 text-center text-[11px] text-slate-500">
+                <div className="my-auto py-6 text-center text-[11px] text-slate-400">
                   No tasks in this stage
                 </div>
               )}

@@ -25,11 +25,11 @@ export const StoreSelector: React.FC = () => {
         <Button
           variant="outline"
           size="sm"
-          className="h-8 border-[#1E293B] bg-[#090D14] hover:bg-[#0F172A] text-slate-200 flex items-center gap-2 px-2.5 max-w-[240px]"
+          className="h-8 border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 flex items-center gap-2 px-2.5 max-w-[240px]"
         >
-          <Store className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+          <Store className="h-3.5 w-3.5 text-sky-600 shrink-0" />
           <div className="flex flex-col text-left truncate">
-            <span className="text-xs font-semibold truncate leading-tight">
+            <span className="text-xs font-semibold truncate leading-tight text-slate-900">
               {storeInfo?.name || activeStore.name}
             </span>
           </div>
@@ -37,11 +37,11 @@ export const StoreSelector: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-72 bg-[#0F172A] border-[#1E293B]">
-        <DropdownMenuLabel className="text-[10px] text-slate-400">
+      <DropdownMenuContent align="start" className="w-72 bg-white border-slate-200 shadow-xl">
+        <DropdownMenuLabel className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase">
           SELECT RETAIL STORE
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-[#1E293B]" />
+        <DropdownMenuSeparator className="bg-slate-100" />
 
         {STORES_LIST.map((store) => {
           const isSelected = store.id === activeStoreId
@@ -49,33 +49,33 @@ export const StoreSelector: React.FC = () => {
             <DropdownMenuItem
               key={store.id}
               onClick={() => setActiveStoreId(store.id)}
-              className="flex items-start justify-between p-2.5 cursor-pointer focus:bg-[#1E293B]"
+              className="flex items-start justify-between p-2.5 cursor-pointer hover:bg-slate-50 focus:bg-slate-50"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-white">
+                  <span className="text-xs font-bold text-slate-900">
                     {store.name}
                   </span>
-                  <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-800 text-slate-400">
+                  <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                     {store.code}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                  <MapPin className="h-3 w-3 text-slate-500" />
-                  <span>{store.location}</span>
-                </div>
-                <div className="flex items-center gap-3 text-[10px] font-mono text-cyan-400/80 pt-0.5">
-                  <span>{store.camerasCount} Cameras</span>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-slate-400" />
+                    <span>{store.location}</span>
+                  </span>
                   <span>•</span>
-                  <span>{store.zonesCount} Zones</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-0.5 text-slate-400">
-                    <Cpu className="h-2.5 w-2.5" />
-                    {store.activeEdgeDevice}
+                  <span className="flex items-center gap-1">
+                    <Cpu className="h-3 w-3 text-sky-600" />
+                    <span>{store.activeEdgeDevice}</span>
                   </span>
                 </div>
               </div>
-              {isSelected && <Check className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />}
+
+              {isSelected && (
+                <Check className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+              )}
             </DropdownMenuItem>
           )
         })}

@@ -31,32 +31,32 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
   const [overlayMode, setOverlayMode] = useState<'AI_OVERLAY' | 'RAW_FEED'>('AI_OVERLAY')
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[400px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[400px] font-sans">
       {/* Header & Mode Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-400">
+          <div className="p-1.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-600">
             <Camera className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 font-sans">
               <span>Live Shelf Evidence</span>
             </h3>
-            <span className="text-[11px] text-slate-400 font-sans">
+            <span className="text-[11px] text-slate-500 font-sans">
               Camera {cameraCode} · Shelf {shelfCode}
             </span>
           </div>
         </div>
 
         {/* Live Feed vs AI Overlay Toggle */}
-        <div className="flex items-center rounded-lg bg-[#090D14] p-1 border border-[#1E293B] text-xs">
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs shadow-2xs">
           <button
             onClick={() => setOverlayMode('RAW_FEED')}
             className={cn(
               'px-3 py-1 rounded-md transition-all cursor-pointer text-[11px] font-medium flex items-center gap-1.5',
               overlayMode === 'RAW_FEED'
-                ? 'bg-[#1E293B] text-white font-semibold shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-900'
             )}
           >
             <Eye className="h-3 w-3" />
@@ -68,8 +68,8 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
             className={cn(
               'px-3 py-1 rounded-md transition-all cursor-pointer text-[11px] font-medium flex items-center gap-1.5',
               overlayMode === 'AI_OVERLAY'
-                ? 'bg-cyan-600 text-white font-bold shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-sky-600 text-white font-bold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-900'
             )}
           >
             <Scan className="h-3 w-3" />
@@ -79,7 +79,7 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
       </div>
 
       {/* Simulated Live Camera Player with AI Computer Vision Bounding Boxes - Full Responsive Size */}
-      <div className="relative flex-1 min-h-[300px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden p-3.5 flex flex-col justify-between shadow-inner">
+      <div className="relative flex-1 min-h-[300px] rounded-xl bg-[#070A0F] border border-slate-200 overflow-hidden p-3.5 flex flex-col justify-between shadow-inner">
         {/* Subtle scanline texture */}
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
@@ -90,11 +90,11 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
 
         {/* Top HUD Banner */}
         <div className="flex items-center justify-between text-xs z-10 font-mono">
-          <span className="flex items-center gap-2 font-bold text-cyan-300">
+          <span className="flex items-center gap-2 font-bold text-sky-400">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Camera {cameraCode} · Live</span>
           </span>
-          <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded border border-[#1E293B] text-slate-300 text-xs">
+          <span className="bg-slate-900/90 px-2.5 py-1 rounded-md border border-slate-700 text-slate-200 text-xs">
             {shelfName}
           </span>
         </div>
@@ -103,9 +103,9 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
         {overlayMode === 'AI_OVERLAY' && (
           <div className="absolute inset-0 p-4 sm:p-6 flex flex-col justify-center pointer-events-none">
             {/* Shelf Region of Interest (ROI) Guide Outline */}
-            <div className="relative w-full h-44 sm:h-48 border-2 border-cyan-500/60 bg-cyan-950/15 rounded-xl p-3 flex flex-col justify-between shadow-lg">
+            <div className="relative w-full h-44 sm:h-48 border-2 border-sky-500/60 bg-sky-950/15 rounded-xl p-3 flex flex-col justify-between shadow-lg">
               {/* ROI Label */}
-              <div className="absolute -top-3 left-3 bg-[#0F172A] px-2 py-0.5 rounded border border-cyan-500/60 text-[10px] text-cyan-300 font-mono font-bold shadow-sm">
+              <div className="absolute -top-3 left-3 bg-slate-900 px-2 py-0.5 rounded-md border border-sky-500/60 text-[10px] text-sky-300 font-mono font-bold shadow-sm">
                 ROI: SHELF_{shelfCode}
               </div>
 
@@ -142,7 +142,7 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
         )}
 
         {/* Bottom Stream Status */}
-        <div className="flex items-center justify-between text-xs text-slate-300 z-10 bg-[#0F172A]/90 px-3 py-2 rounded-lg border border-[#1E293B] font-mono mt-auto">
+        <div className="flex items-center justify-between text-xs text-slate-200 z-10 bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-700 font-mono mt-auto">
           <span>Updated 1 sec ago</span>
           <span className="font-medium text-slate-200">
             Shelf Availability: <strong className="text-rose-400 font-bold">{availability}%</strong> ({visibleUnits} units visible)

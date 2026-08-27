@@ -71,23 +71,25 @@ export const CopilotCategoryChips: React.FC<CopilotCategoryChipsProps> = ({
   const activePrompts = CATEGORY_PROMPTS[selectedCategory] || CATEGORY_PROMPTS.ALL
 
   return (
-    <div className="space-y-2 select-none text-xs">
+    <div className="space-y-2 select-none text-xs font-sans">
       {/* Category Pills Bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => onSelectCategory(c.id)}
-            className={cn(
-              'px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer border',
-              selectedCategory === c.id
-                ? 'bg-cyan-950 text-cyan-300 border-cyan-500/60 font-semibold'
-                : 'bg-[#090D14] text-slate-400 border-[#1E293B] hover:text-white hover:border-slate-700'
-            )}
-          >
-            {c.label}
-          </button>
-        ))}
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200 gap-0.5">
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onSelectCategory(c.id)}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer',
+                selectedCategory === c.id
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              )}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Suggested Prompt Chips (Max 4) */}
@@ -96,7 +98,7 @@ export const CopilotCategoryChips: React.FC<CopilotCategoryChipsProps> = ({
           <button
             key={idx}
             onClick={() => onSelectPrompt(prompt)}
-            className="text-[11px] text-slate-300 bg-[#090D14] hover:bg-[#131D31] hover:text-cyan-300 border border-[#1E293B] hover:border-cyan-500/50 rounded-lg px-2.5 py-1.5 text-left transition-all cursor-pointer font-medium leading-snug truncate"
+            className="text-[11px] text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg px-2.5 py-1.5 text-left transition-all cursor-pointer font-semibold leading-snug truncate shadow-2xs"
           >
             {prompt}
           </button>

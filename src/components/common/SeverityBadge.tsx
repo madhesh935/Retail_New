@@ -13,31 +13,31 @@ export const SeverityBadge: React.FC<SeverityBadgeProps> = ({
   className,
   size = 'sm',
 }) => {
-  let badgeStyle = 'bg-slate-900 border-slate-700 text-slate-300'
+  let badgeStyle = 'bg-slate-100 border-slate-200 text-slate-700 font-semibold'
   let label = severity.toUpperCase()
 
   switch (severity) {
     case 'critical':
-      badgeStyle = 'bg-rose-950/80 border-rose-500/60 text-rose-300 font-bold'
+      badgeStyle = 'bg-rose-50 border-rose-200 text-rose-700 font-bold'
       break
     case 'high':
-      badgeStyle = 'bg-amber-950/70 border-amber-500/50 text-amber-300 font-semibold'
+      badgeStyle = 'bg-amber-50 border-amber-200 text-amber-800 font-bold'
       break
     case 'medium':
-      badgeStyle = 'bg-yellow-950/60 border-yellow-500/40 text-yellow-300'
+      badgeStyle = 'bg-amber-50/60 border-amber-200 text-amber-700 font-semibold'
       break
     case 'low':
-      badgeStyle = 'bg-blue-950/60 border-blue-500/40 text-blue-300'
+      badgeStyle = 'bg-sky-50 border-sky-200 text-sky-700 font-semibold'
       break
     case 'info':
-      badgeStyle = 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
+      badgeStyle = 'bg-sky-50 border-sky-200 text-sky-700 font-semibold'
       break
   }
 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded border font-mono font-medium tracking-wider uppercase select-none',
+        'inline-flex items-center rounded-md border font-mono tracking-wider uppercase select-none shadow-2xs',
         size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs',
         badgeStyle,
         className

@@ -33,21 +33,21 @@ export const ShopperAnalyticsPage: React.FC = () => {
       {/* ======================================================= */}
       {/* 1. PAGE HEADER */}
       {/* ======================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Users className="h-4 w-4 text-cyan-400" />
+            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
+              <Users className="h-4 w-4 text-sky-600" />
               <span>Shopper Analytics</span>
             </h1>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-mono">
               Live Flow &amp; Density
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Updated 2 sec ago</span>
         </div>
       </div>
@@ -74,18 +74,18 @@ export const ShopperAnalyticsPage: React.FC = () => {
         </div>
 
         <div className="lg:col-span-6 xl:col-span-5 flex flex-col">
-          <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[420px]">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[420px]">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-2">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
               <div className="flex items-center gap-2">
-                <div className="p-1 rounded bg-[#1E293B] text-purple-400">
+                <div className="p-1 rounded-md bg-purple-50 text-purple-600 border border-purple-200">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-white tracking-wide">
+                  <h3 className="text-xs font-semibold text-slate-900 tracking-wide font-sans">
                     Shopper Interest vs Shelf Availability
                   </h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-sans">
                     Quadrants identifying high-interest areas needing replenishment
                   </p>
                 </div>
@@ -98,11 +98,11 @@ export const ShopperAnalyticsPage: React.FC = () => {
             </div>
 
             {/* Footer Alert */}
-            <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[11px] text-slate-400">
-              <span className="text-rose-400 font-medium">
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-sans">
+              <span className="text-rose-700 font-medium">
                 Cold Beverages: 82% Interest / 61% Shelf Availability
               </span>
-              <span className="text-amber-300 font-medium">Needs Attention</span>
+              <span className="text-amber-700 font-semibold">Needs Attention</span>
             </div>
           </div>
         </div>

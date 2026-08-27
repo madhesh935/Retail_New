@@ -19,87 +19,87 @@ export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
   latestHighMessage = 'B4 Depletion · Floor Spill',
 }) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 select-none">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 select-none font-sans">
       {/* 1. Critical */}
-      <div className="rounded-lg bg-[#0F172A] border border-rose-500/40 p-3.5 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-rose-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-medium text-slate-400 truncate">
+          <span className="text-[11px] font-medium text-slate-500 truncate">
             Critical
           </span>
           <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-rose-400 tracking-tight">
+          <div className="text-2xl font-bold text-rose-700 tracking-tight font-mono">
             {criticalCount}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-500 mt-0.5">
             Need immediate action
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-rose-400 font-medium truncate">
+        <div className="mt-2 pt-1.5 border-t border-rose-100 text-[11px] text-rose-700 font-semibold truncate">
           {latestCriticalMessage}
         </div>
       </div>
 
       {/* 2. High */}
-      <div className="rounded-lg bg-[#0F172A] border border-[#1E293B] p-3.5 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-medium text-slate-400 truncate">
+          <span className="text-[11px] font-medium text-slate-500 truncate">
             High Severity
           </span>
-          <span className="h-2 w-2 rounded-full bg-amber-400" />
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-amber-300 tracking-tight">
+          <div className="text-2xl font-bold text-amber-800 tracking-tight font-mono">
             {highCount}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-500 mt-0.5">
             Priority operational issues
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-amber-400 font-medium truncate">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-amber-800 font-semibold truncate">
           {latestHighMessage}
         </div>
       </div>
 
       {/* 3. Active Incidents */}
-      <div className="rounded-lg bg-[#0F172A] border border-[#1E293B] p-3.5 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-medium text-slate-400 truncate">
+          <span className="text-[11px] font-medium text-slate-500 truncate">
             Active Incidents
           </span>
-          <span className="h-2 w-2 rounded-full bg-blue-400" />
+          <span className="h-2 w-2 rounded-full bg-blue-500" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-white tracking-tight">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight font-mono">
             {activeCount}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-500 mt-0.5">
             Assigned / In Progress
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-blue-400 font-medium">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-blue-700 font-semibold">
           Under active resolution
         </div>
       </div>
 
       {/* 4. Resolved Today */}
-      <div className="rounded-lg bg-[#0F172A] border border-[#1E293B] p-3.5 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-medium text-slate-400 truncate">
+          <span className="text-[11px] font-medium text-slate-500 truncate">
             Resolved Today
           </span>
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-emerald-400 tracking-tight">
+          <div className="text-2xl font-bold text-emerald-700 tracking-tight font-mono">
             {resolvedTodayCount}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-500 mt-0.5">
             Completed & confirmed
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-[#1E293B] text-[11px] text-emerald-400 font-medium">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-emerald-700 font-semibold">
           100% resolution rate
         </div>
       </div>

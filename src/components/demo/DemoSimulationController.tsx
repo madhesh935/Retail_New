@@ -276,30 +276,30 @@ export const DemoSimulationController: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#0D1524] border-b border-amber-500/50 px-3.5 py-1.5 text-xs select-none font-mono text-amber-200">
+    <div className="bg-amber-50 border-b border-amber-200 px-3.5 py-1.5 text-xs select-none font-sans text-amber-900 shadow-2xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         {/* Left: Engine Mode Header */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="p-1 rounded bg-amber-950 border border-amber-500/50 text-amber-400 shrink-0">
+          <div className="p-1 rounded-md bg-amber-100 border border-amber-200 text-amber-700 shrink-0 shadow-2xs">
             <Zap className="h-3.5 w-3.5" />
           </div>
           <div className="flex items-center gap-2 whitespace-nowrap">
-            <span className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">
+            <span className="font-bold text-amber-800 uppercase tracking-wider text-[11px]">
               SCENARIO SIMULATION ACTIVE
             </span>
           </div>
         </div>
 
         {/* Right: Quick Action Triggers */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px] shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 text-[10px] shrink-0 font-sans">
           {/* Trigger 1: B4 Depletion */}
           <Button
             variant="outline"
             size="xs"
             onClick={runB4DepletionSimulation}
-            className="border-amber-500/50 bg-amber-950/40 text-amber-200 hover:bg-amber-900/60 text-[10px] h-6 px-2 gap-1 font-mono cursor-pointer whitespace-nowrap"
+            className="border-amber-200 bg-white text-amber-800 hover:bg-amber-100 text-[10px] h-6 px-2 gap-1 font-semibold cursor-pointer whitespace-nowrap shadow-2xs"
           >
-            <PackageCheck className="h-3 w-3 text-amber-400 shrink-0" />
+            <PackageCheck className="h-3 w-3 text-amber-600 shrink-0" />
             <span>Deplete Shelf B4</span>
           </Button>
 
@@ -308,9 +308,9 @@ export const DemoSimulationController: React.FC = () => {
             variant="outline"
             size="xs"
             onClick={runQueueC1SurgeSimulation}
-            className="border-amber-500/50 bg-amber-950/40 text-amber-200 hover:bg-amber-900/60 text-[10px] h-6 px-2 gap-1 font-mono cursor-pointer whitespace-nowrap"
+            className="border-rose-200 bg-white text-rose-700 hover:bg-rose-50 text-[10px] h-6 px-2 gap-1 font-semibold cursor-pointer whitespace-nowrap shadow-2xs"
           >
-            <Users className="h-3 w-3 text-rose-400 shrink-0" />
+            <Users className="h-3 w-3 text-rose-600 shrink-0" />
             <span>Surge Queue C1</span>
           </Button>
 
@@ -319,9 +319,9 @@ export const DemoSimulationController: React.FC = () => {
             variant="outline"
             size="xs"
             onClick={runFullLifecycleSimulation}
-            className="border-cyan-500/50 bg-cyan-950/40 text-cyan-200 hover:bg-cyan-900/60 text-[10px] h-6 px-2 gap-1 font-mono cursor-pointer whitespace-nowrap"
+            className="border-sky-200 bg-white text-sky-700 hover:bg-sky-50 text-[10px] h-6 px-2 gap-1 font-semibold cursor-pointer whitespace-nowrap shadow-2xs"
           >
-            <Sparkles className="h-3 w-3 text-cyan-400 shrink-0" />
+            <Sparkles className="h-3 w-3 text-sky-600 shrink-0" />
             <span>Run Closed-Loop Sequence</span>
           </Button>
 
@@ -329,14 +329,14 @@ export const DemoSimulationController: React.FC = () => {
             variant="outline"
             size="xs"
             onClick={() => setDemoMode(false)}
-            className="border-amber-500/40 bg-amber-950/80 text-amber-300 hover:bg-amber-900 text-[10px] font-mono h-6 px-2 whitespace-nowrap"
+            className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[10px] font-semibold h-6 px-2 whitespace-nowrap shadow-2xs"
           >
             Return to Live Stream
           </Button>
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-amber-400 hover:text-white p-1 cursor-pointer"
+            className="text-amber-700 hover:text-amber-900 p-1 cursor-pointer"
             title="Toggle details"
           >
             {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -346,15 +346,15 @@ export const DemoSimulationController: React.FC = () => {
 
       {/* Expanded Step Status Tracker */}
       {isExpanded && activeSimulation && (
-        <div className="mt-2 pt-2 border-t border-amber-950/80 grid grid-cols-1 sm:grid-cols-4 gap-2 text-[10px]">
-          <div className="bg-[#090D14] p-2 rounded border border-amber-500/30 col-span-4 flex items-center justify-between">
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+        <div className="mt-2 pt-2 border-t border-amber-200 grid grid-cols-1 sm:grid-cols-4 gap-2 text-[10px]">
+          <div className="bg-white p-2.5 rounded-lg border border-amber-200 col-span-4 flex items-center justify-between shadow-2xs">
+            <span className="font-bold text-slate-900 flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
               <span>
                 Active Simulation: <strong>{activeSimulation}</strong> • Phase {simStep}/4
               </span>
             </span>
-            <span className="text-emerald-400 font-mono">Real-Time State Dispatched to Zustand & 3D Twin</span>
+            <span className="text-emerald-700 font-mono font-bold">Real-Time State Dispatched to Zustand & 3D Twin</span>
           </div>
         </div>
       )}

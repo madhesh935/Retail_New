@@ -97,22 +97,22 @@ export const QueueIntelligencePage: React.FC = () => {
   return (
     <div className="space-y-4 select-none font-mono">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <ListOrdered className="h-4 w-4 text-cyan-400" />
+            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
+              <ListOrdered className="h-4 w-4 text-sky-600" />
               <span>Queue Intelligence</span>
             </h1>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 font-medium">
+            <span className="text-[10px] px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-medium font-mono">
               QueueSense Live
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <div className="flex items-center gap-1.5 bg-[#0F172A] px-2.5 py-1 rounded border border-[#1E293B]">
-            <Clock className="h-3.5 w-3.5 text-cyan-400" />
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
+          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+            <Clock className="h-3.5 w-3.5 text-sky-600" />
             <span>Temporal Sync: <strong>1.5s Interval</strong></span>
           </div>
         </div>
@@ -123,7 +123,7 @@ export const QueueIntelligencePage: React.FC = () => {
 
       {/* 2. Large Operational Counter Cards (C1 Critical, C2 Healthy, C3 Closed, C4 Self) */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
           Operational Checkout Registers (C1 — C4)
         </div>
         <OperationalCounterCards
@@ -147,20 +147,20 @@ export const QueueIntelligencePage: React.FC = () => {
         </div>
 
         <div className="lg:col-span-6 flex flex-col">
-          <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full font-mono">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
               <div className="flex items-center gap-2">
-                <div className="p-1 rounded bg-amber-950 border border-amber-500/40 text-amber-400">
+                <div className="p-1 rounded-md bg-amber-50 border border-amber-200 text-amber-600">
                   <Clock className="h-3.5 w-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider font-sans">
                     Queue Length Progression Forecast (Now → +10m)
                   </h3>
                 </div>
               </div>
 
-              <span className="text-[10px] text-rose-400 font-bold bg-rose-950 px-2 py-0.5 rounded border border-rose-500/40 animate-pulse">
+              <span className="text-[10px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200 animate-pulse">
                 Threshold: 10
               </span>
             </div>
@@ -169,9 +169,9 @@ export const QueueIntelligencePage: React.FC = () => {
               <QueueForecastChart threshold={10} activeLane={activeLane} />
             </div>
 
-            <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[10px] text-slate-400">
-              <span className="text-rose-400 font-bold">Unmitigated Queue reaches {activeLane.forecast5Min} at +5m</span>
-              <span className="text-emerald-400 font-bold">Mitigated: {Math.max(0, activeLane.forecast5Min - 8)} shoppers</span>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+              <span className="text-rose-600 font-bold">Unmitigated Queue reaches {activeLane.forecast5Min} at +5m</span>
+              <span className="text-emerald-700 font-bold">Mitigated: {Math.max(0, activeLane.forecast5Min - 8)} shoppers</span>
             </div>
           </div>
         </div>
@@ -217,18 +217,18 @@ export const QueueIntelligencePage: React.FC = () => {
             initial={{ opacity: 0, y: 50, x: 50 }}
             animate={{ opacity: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 bg-[#0F172A] border border-cyan-500/50 shadow-lg shadow-cyan-900/20 rounded-lg p-4 z-50 flex items-start gap-3 max-w-sm"
+            className="fixed bottom-6 right-6 bg-white border border-sky-200 shadow-xl rounded-xl p-4 z-50 flex items-start gap-3 max-w-sm"
           >
-            <div className="bg-cyan-950 p-2 rounded-full border border-cyan-500/30 text-cyan-400 shrink-0 mt-0.5">
+            <div className="bg-sky-50 p-2 rounded-full border border-sky-200 text-sky-600 shrink-0 mt-0.5">
               <BellRing className="h-4 w-4" />
             </div>
             <div className="flex-1 pr-2">
-              <h4 className="text-cyan-300 font-bold text-[10px] uppercase tracking-wider mb-1">Queue Intelligence Alert</h4>
-              <p className="text-slate-200 text-xs font-sans leading-relaxed">{notification.message}</p>
+              <h4 className="text-sky-700 font-bold text-[10px] uppercase tracking-wider mb-1">Queue Intelligence Alert</h4>
+              <p className="text-slate-800 text-xs font-sans leading-relaxed">{notification.message}</p>
             </div>
             <button 
               onClick={() => setNotification(null)}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-slate-400 hover:text-slate-700 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>

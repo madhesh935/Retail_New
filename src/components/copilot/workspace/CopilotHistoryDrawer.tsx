@@ -102,20 +102,20 @@ export const CopilotHistoryDrawer: React.FC<CopilotHistoryDrawerProps> = ({
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-start select-none">
+    <div className="fixed inset-0 z-50 flex justify-start select-none font-sans">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in-0"
         onClick={onClose}
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-sm h-full bg-[#0B0F17] border-r border-[#1E293B] z-10 flex flex-col shadow-2xl p-4 animate-in slide-in-from-left duration-200">
+      <div className="relative w-full max-w-sm h-full bg-white border-r border-slate-200 z-10 flex flex-col shadow-2xl p-4 animate-in slide-in-from-left duration-200 font-sans">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-cyan-400" />
-            <h3 className="text-xs font-semibold text-white">
+            <Clock className="h-4 w-4 text-sky-600" />
+            <h3 className="text-xs font-bold text-slate-900">
               Recent Conversations
             </h3>
           </div>
@@ -128,9 +128,9 @@ export const CopilotHistoryDrawer: React.FC<CopilotHistoryDrawerProps> = ({
                 onNewAnalysis()
                 onClose()
               }}
-              className="h-6 px-2 text-[10px] text-cyan-300 border-cyan-500/40 hover:bg-cyan-950/60 gap-1"
+              className="h-6 px-2 text-[10px] text-slate-700 border-slate-200 bg-white hover:bg-slate-50 gap-1 shadow-2xs font-semibold"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3 text-sky-600" />
               <span>New</span>
             </Button>
 
@@ -138,7 +138,7 @@ export const CopilotHistoryDrawer: React.FC<CopilotHistoryDrawerProps> = ({
               variant="ghost"
               size="icon-xs"
               onClick={onClose}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-400 hover:text-slate-900"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -147,13 +147,13 @@ export const CopilotHistoryDrawer: React.FC<CopilotHistoryDrawerProps> = ({
 
         {/* Search History Box */}
         <div className="my-3 relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <input
             type="text"
             placeholder="Search conversation history..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#090D14] border border-[#1E293B] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 shadow-2xs font-sans"
           />
         </div>
 
@@ -170,26 +170,26 @@ export const CopilotHistoryDrawer: React.FC<CopilotHistoryDrawerProps> = ({
                   onClose()
                 }}
                 className={cn(
-                  'w-full p-2.5 rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between border',
+                  'w-full p-2.5 rounded-xl text-left transition-all cursor-pointer group flex flex-col justify-between border shadow-2xs',
                   isSelected
-                    ? 'bg-[#131D31] border-cyan-500/60 text-white shadow-sm'
-                    : 'bg-[#090D14] border-transparent hover:border-[#1E293B] hover:bg-[#0F172A] text-slate-300'
+                    ? 'bg-sky-50 border-sky-500 text-slate-900'
+                    : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
                 )}
               >
                 <div className="flex items-center justify-between w-full">
-                  <span className="font-semibold text-xs text-white group-hover:text-cyan-300 truncate">
+                  <span className="font-bold text-xs text-slate-900 group-hover:text-sky-700 truncate">
                     {ses.title}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-[10px] text-slate-400 font-mono">
                     {ses.timestamp}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
-                  <span className="px-1.5 py-0.5 rounded bg-[#0F172A] text-slate-400 border border-[#1E293B]">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1.5">
+                  <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 font-medium">
                     {ses.category}
                   </span>
-                  <span className="text-slate-500 truncate max-w-[180px]">
+                  <span className="text-slate-400 truncate max-w-[180px]">
                     {ses.prompt}
                   </span>
                 </div>
@@ -199,9 +199,9 @@ export const CopilotHistoryDrawer: React.FC<CopilotHistoryDrawerProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="pt-2 border-t border-[#1E293B] text-[10px] text-slate-500 flex justify-between">
+        <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-500 flex justify-between items-center">
           <span>{filteredSessions.length} conversations stored</span>
-          <Button variant="ghost" size="xs" onClick={onClose} className="h-6 text-[10px]">
+          <Button variant="ghost" size="xs" onClick={onClose} className="h-6 text-[10px] text-slate-500 hover:text-slate-900">
             Close
           </Button>
         </div>

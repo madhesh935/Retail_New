@@ -14,22 +14,22 @@ export const DwellAnalyticsCard: React.FC = () => {
   const maxDwell = 5.0 // scale baseline
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[380px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[380px] font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-blue-400">
+          <div className="p-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200">
             <Clock className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Dwell Time by Zone
             </h3>
           </div>
         </div>
 
-        <span className="text-[11px] text-slate-400">
-          Store Avg: <strong className="text-white">18.4 min</strong>
+        <span className="text-[11px] text-slate-500">
+          Store Avg: <strong className="text-slate-900">18.4 min</strong>
         </span>
       </div>
 
@@ -41,16 +41,16 @@ export const DwellAnalyticsCard: React.FC = () => {
           return (
             <div key={zone.id} className="space-y-1 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-white text-xs flex items-center gap-2">
+                <span className="font-semibold text-slate-900 text-xs flex items-center gap-2">
                   <span>{zone.name}</span>
                   <span className="text-[10px] text-slate-500 font-normal">({zone.aisle})</span>
                 </span>
-                <span className="font-mono font-bold text-white text-xs">
+                <span className="font-mono font-bold text-slate-900 text-xs">
                   {zone.avgDwellLabel}
                 </span>
               </div>
 
-              <div className="h-2 w-full bg-[#090D14] rounded-full overflow-hidden border border-[#1E293B]">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -74,10 +74,10 @@ export const DwellAnalyticsCard: React.FC = () => {
       </div>
 
       {/* Separate Checkout Wait Time Callout */}
-      <div className="mt-2 pt-3 border-t border-[#1E293B] bg-[#090D14] p-3 rounded-lg flex items-center justify-between text-xs">
+      <div className="mt-2 pt-3 border-t border-slate-100 bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs font-sans">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-amber-300">Checkout Queue Wait:</span>
-          <span className="text-slate-400">
+          <span className="font-bold text-amber-800">Checkout Queue Wait:</span>
+          <span className="text-slate-600">
             {CHECKOUT_ZONE.avgDwellLabel} average service wait (Queue friction, not product browsing)
           </span>
         </div>

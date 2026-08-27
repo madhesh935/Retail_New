@@ -62,21 +62,21 @@ export const CustomerFlowMap: React.FC = () => {
     CUSTOMER_ROUTES.find((r) => r.id === selectedRouteId) || CUSTOMER_ROUTES[0]
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[420px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[420px] font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-cyan-400">
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
             <Route className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Shopper Flow Patterns
             </h3>
           </div>
         </div>
 
-        <span className="text-[10px] text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 font-medium">
+        <span className="text-[10px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200 font-semibold">
           4 Dominant Routes
         </span>
       </div>
@@ -84,48 +84,48 @@ export const CustomerFlowMap: React.FC = () => {
       {/* Main Flow Content */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 my-3 flex-1 items-stretch">
         {/* Left 6 cols: SVG Single Route Floor Overlay */}
-        <div className="md:col-span-6 relative h-64 md:h-auto rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden p-2 flex flex-col justify-between">
+        <div className="md:col-span-6 relative h-64 md:h-auto rounded-xl bg-slate-50 border border-slate-200 overflow-hidden p-2 flex flex-col justify-between shadow-2xs">
           <svg className="w-full h-full" viewBox="0 0 400 320">
             {/* Zone Shapes */}
             {/* Entrance */}
-            <rect x="140" y="10" width="120" height="30" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="200" y="28" fill="#94A3B8" fontSize="10" textAnchor="middle" fontWeight="bold">
+            <rect x="140" y="10" width="120" height="30" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="200" y="28" fill="#475569" fontSize="10" textAnchor="middle" fontWeight="bold" fontFamily="sans-serif">
               ENTRANCE
             </text>
 
             {/* Produce */}
-            <rect x="25" y="75" width="100" height="60" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="75" y="110" fill="#94A3B8" fontSize="10" textAnchor="middle">
+            <rect x="25" y="75" width="100" height="60" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="75" y="110" fill="#475569" fontSize="10" textAnchor="middle" fontFamily="sans-serif">
               Produce
             </text>
 
             {/* Dairy */}
-            <rect x="150" y="75" width="100" height="60" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="200" y="110" fill="#94A3B8" fontSize="10" textAnchor="middle">
+            <rect x="150" y="75" width="100" height="60" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="200" y="110" fill="#475569" fontSize="10" textAnchor="middle" fontFamily="sans-serif">
               Dairy
             </text>
 
             {/* Beverages */}
-            <rect x="275" y="75" width="100" height="60" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="325" y="110" fill="#94A3B8" fontSize="10" textAnchor="middle">
+            <rect x="275" y="75" width="100" height="60" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="325" y="110" fill="#475569" fontSize="10" textAnchor="middle" fontFamily="sans-serif">
               Beverages
             </text>
 
             {/* Household */}
-            <rect x="25" y="170" width="100" height="60" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="75" y="205" fill="#94A3B8" fontSize="10" textAnchor="middle">
+            <rect x="25" y="170" width="100" height="60" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="75" y="205" fill="#475569" fontSize="10" textAnchor="middle" fontFamily="sans-serif">
               Household
             </text>
 
             {/* Electronics */}
-            <rect x="150" y="170" width="100" height="60" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="200" y="205" fill="#94A3B8" fontSize="10" textAnchor="middle">
+            <rect x="150" y="170" width="100" height="60" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="200" y="205" fill="#475569" fontSize="10" textAnchor="middle" fontFamily="sans-serif">
               Electronics
             </text>
 
             {/* Checkout */}
-            <rect x="250" y="250" width="125" height="45" rx="4" fill="#0F172A" stroke="#1E293B" strokeWidth="1" />
-            <text x="312" y="278" fill="#94A3B8" fontSize="10" textAnchor="middle" fontWeight="bold">
+            <rect x="250" y="250" width="125" height="45" rx="6" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
+            <text x="312" y="278" fill="#475569" fontSize="10" textAnchor="middle" fontWeight="bold" fontFamily="sans-serif">
               CHECKOUT
             </text>
 
@@ -144,9 +144,9 @@ export const CustomerFlowMap: React.FC = () => {
             <circle cx="200" cy="35" r="5" fill={activeRoute.color} />
           </svg>
 
-          <div className="text-[10px] text-slate-400 z-10 flex items-center justify-between px-1">
-            <span>Showing: <strong className="text-white">{activeRoute.name}</strong></span>
-            <span className="font-semibold" style={{ color: activeRoute.color }}>{activeRoute.percentage}% of Shoppers</span>
+          <div className="text-[10px] text-slate-500 z-10 flex items-center justify-between px-1 bg-white/90 p-1.5 rounded-lg border border-slate-200">
+            <span>Showing: <strong className="text-slate-900">{activeRoute.name}</strong></span>
+            <span className="font-bold font-mono" style={{ color: activeRoute.color }}>{activeRoute.percentage}% of Shoppers</span>
           </div>
         </div>
 
@@ -160,33 +160,33 @@ export const CustomerFlowMap: React.FC = () => {
                 key={route.id}
                 onClick={() => setSelectedRouteId(route.id)}
                 className={cn(
-                  'p-2.5 rounded-lg border text-left transition-all cursor-pointer w-full flex flex-col justify-between',
+                  'p-2.5 rounded-xl border text-left transition-all cursor-pointer w-full flex flex-col justify-between shadow-2xs',
                   isSelected
-                    ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-1 ring-cyan-400/80'
-                    : 'bg-[#090D14] border-[#1E293B] hover:border-slate-600'
+                    ? 'bg-sky-50 border-sky-400 shadow-sm ring-1 ring-sky-400'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-1">
-                  <div className="flex items-center gap-1.5 font-semibold text-xs text-white">
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
                     <span
                       className="h-2 w-2 rounded-full shrink-0"
                       style={{ backgroundColor: route.color }}
                     />
                     <span>{idx + 1}. {route.name}</span>
                   </div>
-                  <span className="text-xs font-bold font-mono text-white">
+                  <span className="text-xs font-bold font-mono text-slate-900">
                     {route.percentage}%
                   </span>
                 </div>
 
-                <div className="text-[11px] text-slate-400 flex items-center gap-1 flex-wrap my-0.5">
+                <div className="text-[11px] text-slate-600 flex items-center gap-1 flex-wrap my-0.5">
                   {route.steps.map((step, i) => (
                     <React.Fragment key={i}>
-                      <span className={cn(i === 0 || i === route.steps.length - 1 ? 'text-slate-300' : 'text-slate-200')}>
+                      <span className={cn(i === 0 || i === route.steps.length - 1 ? 'text-slate-900 font-semibold' : 'text-slate-700')}>
                         {step}
                       </span>
                       {i < route.steps.length - 1 && (
-                        <ArrowRight className="h-2.5 w-2.5 text-slate-600" />
+                        <ArrowRight className="h-2.5 w-2.5 text-slate-400" />
                       )}
                     </React.Fragment>
                   ))}
@@ -202,7 +202,7 @@ export const CustomerFlowMap: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="pt-2 border-t border-[#1E293B] text-[10px] text-slate-400">
+      <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-500">
         Aggregate transitions derived from anonymous cross-zone sensor continuity
       </div>
     </div>

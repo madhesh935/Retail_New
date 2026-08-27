@@ -27,27 +27,29 @@ export const ReportsTimeFilterBar: React.FC<ReportsTimeFilterBarProps> = ({
   ]
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 select-none font-mono text-xs shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 select-none font-sans text-xs shadow-2xs">
       {/* Time Period Tabs */}
       <div className="flex flex-wrap items-center gap-1">
         <span className="text-slate-500 font-bold mr-1 flex items-center gap-1 text-[11px]">
-          <Calendar className="h-3.5 w-3.5 text-cyan-400" />
+          <Calendar className="h-3.5 w-3.5 text-sky-600" />
           <span>Period:</span>
         </span>
-        {periods.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => onChangePeriod(p.id)}
-            className={cn(
-              'px-2.5 py-1 rounded border transition-colors cursor-pointer text-[10px]',
-              period === p.id
-                ? 'bg-cyan-950 text-cyan-300 border-cyan-500/60 font-bold'
-                : 'bg-[#090D14] text-slate-400 border-[#1E293B] hover:text-white'
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200 gap-0.5">
+          {periods.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onChangePeriod(p.id)}
+              className={cn(
+                'px-2.5 py-1 rounded-md transition-colors cursor-pointer text-[10px] font-semibold',
+                period === p.id
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Export Action Buttons */}
@@ -56,9 +58,9 @@ export const ReportsTimeFilterBar: React.FC<ReportsTimeFilterBarProps> = ({
           variant="outline"
           size="xs"
           onClick={onExportDaily}
-          className="text-[10px] h-7 px-2.5 gap-1.5 text-slate-300 border-[#1E293B] hover:text-white hover:bg-[#131D31]"
+          className="text-[10px] h-7 px-2.5 gap-1.5 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs font-semibold"
         >
-          <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-400" />
+          <FileSpreadsheet className="h-3.5 w-3.5 text-sky-600" />
           <span>Export Daily Report</span>
         </Button>
 
@@ -66,7 +68,7 @@ export const ReportsTimeFilterBar: React.FC<ReportsTimeFilterBarProps> = ({
           variant="action"
           size="xs"
           onClick={onExportWeekly}
-          className="text-[10px] h-7 px-2.5 gap-1.5 font-mono"
+          className="text-[10px] h-7 px-2.5 gap-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
         >
           <Download className="h-3.5 w-3.5" />
           <span>Export Weekly Report</span>

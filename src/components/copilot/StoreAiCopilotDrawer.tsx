@@ -217,21 +217,21 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
     <div className="fixed inset-0 z-50 flex justify-end select-none font-mono">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in-0"
         onClick={onClose}
       />
 
       {/* Slide-over Copilot Panel */}
-      <div className="relative w-full max-w-lg h-full bg-[#0B0F17] border-l border-[#1E293B] z-10 flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+      <div className="relative w-full max-w-lg h-full bg-white border-l border-slate-200 z-10 flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 font-sans">
         {/* Header */}
-        <div className="p-4 border-b border-[#1E293B] bg-[#0F172A]/80 flex flex-col gap-2">
+        <div className="p-4 border-b border-slate-100 bg-white flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-[#041523] border-2 border-[#008B9E] flex items-center justify-center text-[#00E5FF] font-bold text-xs shadow-sm">
+              <div className="h-8 w-8 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 font-bold text-xs shadow-2xs">
                 <svg
                   viewBox="0 0 48 48"
                   fill="none"
-                  stroke="#00E5FF"
+                  stroke="#0284C7"
                   strokeWidth="3.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -246,13 +246,13 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
                 </svg>
               </div>
               <div>
-                <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                   <span>Store AI Copilot</span>
-                  <span className="text-[9px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-500/40 font-bold">
+                  <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200 font-bold">
                     Edge Active
                   </span>
                 </h3>
-                <span className="text-[10px] text-slate-400 font-sans">
+                <span className="text-[10px] text-slate-500 font-sans">
                   Ask questions about current store operations.
                 </span>
               </div>
@@ -263,10 +263,10 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
                 variant="outline"
                 size="xs"
                 onClick={handleOpenFullCopilot}
-                className="text-[10px] h-6 px-2 text-cyan-300 border-cyan-500/40 hover:bg-cyan-950/60 gap-1 font-mono"
+                className="text-[10px] h-6 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 gap-1 shadow-2xs font-semibold"
                 title="Open Full Copilot Workspace"
               >
-                <Maximize2 className="h-3 w-3 text-cyan-400" />
+                <Maximize2 className="h-3 w-3 text-sky-600" />
                 <span className="hidden sm:inline">Full Workspace</span>
               </Button>
               <Button
@@ -274,7 +274,7 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
                 size="icon-xs"
                 onClick={handleResetChat}
                 title="Reset Conversation"
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-900"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
               </Button>
@@ -282,7 +282,7 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onClose}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-900"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -290,17 +290,17 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
           </div>
 
           {/* Context Awareness Pill */}
-          <div className="flex items-center justify-between text-[9px] bg-[#090D14] p-1.5 rounded border border-[#1E293B] text-slate-400">
+          <div className="flex items-center justify-between text-[9px] bg-slate-50 p-1.5 rounded-lg border border-slate-200 text-slate-600 shadow-2xs">
             <span className="flex items-center gap-1">
-              <Compass className="h-3 w-3 text-cyan-400" />
-              <span>Active Context: <strong className="text-white">/{currentPath}</strong></span>
+              <Compass className="h-3 w-3 text-sky-600" />
+              <span>Active Context: <strong className="text-slate-900 font-mono">/{currentPath}</strong></span>
             </span>
-            <span className="text-cyan-400 font-bold">Store 01 (Chennai Central)</span>
+            <span className="text-sky-700 font-bold">Store 01 (Chennai Central)</span>
           </div>
         </div>
 
         {/* Chat Feed */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
           {messages.map((msg) => (
             <CopilotMessageBubble
               key={msg.id}
@@ -310,9 +310,9 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
           ))}
 
           {isThinking && (
-            <div className="flex items-center gap-2 text-cyan-400 text-xs py-2">
+            <div className="flex items-center gap-2 text-sky-700 text-xs py-2 font-semibold">
               <Cpu className="h-3.5 w-3.5 animate-spin" />
-              <span className="font-mono text-[10px]">Running edge tool query & rate equations...</span>
+              <span className="text-[10px]">Running edge tool query & rate equations...</span>
             </div>
           )}
 
@@ -320,14 +320,14 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
         </div>
 
         {/* Suggested Chips Footer */}
-        <div className="p-3 border-t border-[#1E293B] bg-[#0B0F17] space-y-2">
+        <div className="p-3 border-t border-slate-100 bg-white space-y-2">
           {/* Page-Specific Context Prompts */}
           <div className="flex flex-wrap gap-1">
             {getContextualPrompts().map((prompt, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSend(prompt)}
-                className="text-[9px] text-slate-300 bg-[#090D14] hover:bg-[#131D31] hover:text-cyan-300 border border-[#1E293B] hover:border-cyan-500/50 rounded px-2 py-0.5 text-left transition-colors cursor-pointer font-sans"
+                className="text-[9px] text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-md px-2 py-0.5 text-left transition-colors cursor-pointer font-sans shadow-2xs"
               >
                 {prompt}
               </button>
@@ -347,14 +347,14 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
               placeholder="Ask Store AI anything about live operations..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              className="flex-1 bg-[#090D14] border border-[#1E293B] rounded-md px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-sans"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 font-sans shadow-2xs"
             />
             <Button
               type="submit"
               variant="action"
               size="sm"
               disabled={!inputValue.trim() || isThinking}
-              className="h-8 px-3 gap-1"
+              className="h-8 px-3 gap-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
             >
               <Send className="h-3 w-3" />
             </Button>

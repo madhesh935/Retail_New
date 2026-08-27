@@ -116,14 +116,14 @@ export const LayerControlPanel: React.FC<LayerControlPanelProps> = ({
   const activeCount = Object.values(layers).filter(Boolean).length
 
   return (
-    <div className="w-56 rounded-lg bg-[#0F172A]/90 backdrop-blur-md border border-[#1E293B] shadow-2xl p-3 select-none flex flex-col gap-2.5 z-20">
+    <div className="w-56 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl p-3 select-none flex flex-col gap-2.5 z-20 font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#1E293B]">
-        <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-white uppercase">
-          <Layers className="h-3.5 w-3.5 text-cyan-400" />
+      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 uppercase">
+          <Layers className="h-3.5 w-3.5 text-sky-600" />
           <span>Twin Layers</span>
         </div>
-        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-500/40 font-bold">
+        <span className="text-[10px] font-mono text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md border border-sky-200 font-bold">
           {activeCount}/{layerItems.length}
         </span>
       </div>
@@ -139,20 +139,20 @@ export const LayerControlPanel: React.FC<LayerControlPanelProps> = ({
               key={item.key}
               onClick={() => onToggleLayer(item.key)}
               className={cn(
-                'w-full flex items-center justify-between px-2 py-1.5 rounded text-left transition-all text-xs font-mono cursor-pointer group',
+                'w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-xs cursor-pointer group',
                 isActive
-                  ? 'bg-[#1E293B] text-white border-l-2 border-cyan-400'
-                  : 'text-slate-400 hover:bg-[#131D31] hover:text-slate-200 border-l-2 border-transparent'
+                  ? 'bg-sky-50 text-slate-900 font-semibold border-l-2 border-sky-600'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-l-2 border-transparent'
               )}
             >
               <div className="flex items-center gap-2 truncate">
-                <Icon className={cn('h-3.5 w-3.5 shrink-0', isActive ? item.color : 'text-slate-500')} />
-                <span className="truncate text-[11px] font-sans font-medium">{item.label}</span>
+                <Icon className={cn('h-3.5 w-3.5 shrink-0', isActive ? item.color : 'text-slate-400')} />
+                <span className="truncate text-[11px] font-medium">{item.label}</span>
               </div>
 
               <div className="flex items-center gap-1 shrink-0 ml-1">
                 {item.countBadge && (
-                  <span className="text-[9px] text-slate-500 group-hover:text-slate-400 font-mono hidden sm:inline">
+                  <span className="text-[9px] text-slate-400 group-hover:text-slate-600 font-mono hidden sm:inline">
                     {item.countBadge}
                   </span>
                 )}
@@ -160,8 +160,8 @@ export const LayerControlPanel: React.FC<LayerControlPanelProps> = ({
                   className={cn(
                     'h-3.5 w-3.5 rounded flex items-center justify-center border transition-colors',
                     isActive
-                      ? 'bg-cyan-950 border-cyan-500 text-cyan-400'
-                      : 'border-slate-700 text-transparent'
+                      ? 'bg-sky-600 border-sky-600 text-white'
+                      : 'border-slate-300 text-transparent'
                   )}
                 >
                   <Check className="h-2.5 w-2.5" />
@@ -173,17 +173,17 @@ export const LayerControlPanel: React.FC<LayerControlPanelProps> = ({
       </div>
 
       {/* Quick Select Preset Buttons */}
-      <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[10px] font-mono text-slate-400">
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono text-slate-500 font-medium">
         <button
           onClick={onEnableAll}
-          className="hover:text-cyan-300 transition-colors cursor-pointer"
+          className="hover:text-sky-700 transition-colors cursor-pointer"
         >
           Enable All
         </button>
         <span>•</span>
         <button
           onClick={onDisableAll}
-          className="hover:text-rose-400 transition-colors cursor-pointer"
+          className="hover:text-rose-700 transition-colors cursor-pointer"
         >
           Clear All
         </button>

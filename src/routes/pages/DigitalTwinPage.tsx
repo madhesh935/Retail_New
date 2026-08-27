@@ -140,17 +140,17 @@ export const DigitalTwinPage: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] min-h-[640px] space-y-2 select-none">
       {/* Top Controls Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2">
-          <h1 className="text-base font-bold text-white font-mono uppercase tracking-tight flex items-center gap-2">
-            <Box className="h-4 w-4 text-cyan-400" />
+          <h1 className="text-base font-bold text-slate-900 font-sans uppercase tracking-tight flex items-center gap-2">
+            <Box className="h-4 w-4 text-sky-600" />
             <span>3D Digital Twin</span>
           </h1>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-bold">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold">
             {storeInfo?.name || 'Store 01 — Chennai Central'}
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             LIVE
           </span>
         </div>
@@ -167,18 +167,18 @@ export const DigitalTwinPage: React.FC = () => {
       </div>
 
       {/* Main 3D Viewport Area */}
-      <div className="relative flex-1 w-full rounded-lg overflow-hidden border border-[#1E293B] shadow-inner bg-[#070A0F]">
+      <div className="relative flex-1 w-full rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-[#070A0F]">
         {/* Floating Layer Popover Button & Panel */}
         <div className="absolute top-3 left-3 z-20">
           <Button
             size="sm"
             variant="outline"
             onClick={() => setIsLayerPanelOpen((prev) => !prev)}
-            className="h-8 px-2.5 bg-[#090D14]/90 backdrop-blur-md border-[#1E293B] hover:bg-[#131D31] text-white text-xs font-mono flex items-center gap-1.5 shadow-xl"
+            className="h-8 px-2.5 bg-white/95 backdrop-blur-md border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-sans flex items-center gap-1.5 shadow-lg"
           >
-            <Layers className="h-3.5 w-3.5 text-cyan-400" />
+            <Layers className="h-3.5 w-3.5 text-sky-600" />
             <span>Layers</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-bold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-bold font-mono">
               {activeLayerCount}
             </span>
             <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${isLayerPanelOpen ? 'rotate-180' : ''}`} />

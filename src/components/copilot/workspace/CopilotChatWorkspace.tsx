@@ -169,7 +169,7 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
   }
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0B0F17] p-3.5 flex flex-col h-full select-none text-xs shadow-sm space-y-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-3.5 flex flex-col h-full select-none text-xs shadow-2xs space-y-3 font-sans">
       {/* Scrollable Conversation Container */}
       <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 flex flex-col">
         {/* Active Messages List */}
@@ -185,17 +185,17 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                 )}
               >
                 {!isUser && (
-                  <div className="h-7 w-7 rounded-lg bg-cyan-950 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="h-7 w-7 rounded-lg bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                     <Bot className="h-4 w-4" />
                   </div>
                 )}
 
                 <div
                   className={cn(
-                    'rounded-lg p-3 max-w-[88%] space-y-2',
+                    'rounded-xl p-3 max-w-[88%] space-y-2 shadow-2xs',
                     isUser
-                      ? 'bg-cyan-950/80 border border-cyan-500/50 text-white shadow-sm'
-                      : 'bg-[#0F172A] border border-[#1E293B] text-slate-200'
+                      ? 'bg-sky-50 border border-sky-200 text-slate-900'
+                      : 'bg-slate-50 border border-slate-200 text-slate-800'
                   )}
                 >
                   {/* User/Bot Text Content */}
@@ -210,22 +210,22 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                     <div className="space-y-2.5">
                       {/* Observation */}
                       {msg.structured.observation && (
-                        <div className="text-xs leading-relaxed text-slate-200">
+                        <div className="text-xs leading-relaxed text-slate-700">
                           {msg.structured.observation}
                         </div>
                       )}
 
                       {/* Recommendation & Reason */}
                       {msg.structured.action && (
-                        <div className="p-2 rounded bg-[#090D14] border border-emerald-500/30 text-xs">
-                          <span className="text-[10px] text-emerald-400 font-semibold block uppercase">
+                        <div className="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-200 text-xs">
+                          <span className="text-[10px] text-emerald-800 font-bold block uppercase">
                             Recommended Action
                           </span>
-                          <div className="text-white font-medium mt-0.5">
+                          <div className="text-slate-900 font-bold mt-0.5">
                             {msg.structured.action}
                           </div>
                           {msg.structured.prediction && (
-                            <div className="text-[11px] text-amber-300 mt-1">
+                            <div className="text-[11px] text-amber-800 font-medium mt-1">
                               {msg.structured.prediction}
                             </div>
                           )}
@@ -238,10 +238,10 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                           {Object.entries(msg.structured.rawMetrics).map(([key, val], idx) => (
                             <div
                               key={idx}
-                              className="bg-[#090D14] px-2 py-0.5 rounded border border-[#1E293B] text-[10px] flex items-center gap-1.5"
+                              className="bg-white px-2 py-0.5 rounded-md border border-slate-200 text-[10px] flex items-center gap-1.5 shadow-2xs font-mono"
                             >
-                              <span className="text-slate-400 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                              <strong className="text-cyan-300 font-semibold">{String(val)}</strong>
+                              <span className="text-slate-500 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                              <strong className="text-sky-700 font-bold">{String(val)}</strong>
                             </div>
                           ))}
                         </div>
@@ -249,14 +249,14 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
 
                       {/* Action Buttons */}
                       {msg.structured.actions && msg.structured.actions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#1E293B]">
+                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200">
                           {msg.structured.actions.map((act, idx) => (
                             <Button
                               key={idx}
                               variant="action"
                               size="xs"
                               onClick={() => handleTriggerAction(act)}
-                              className="h-7 px-2.5 text-[11px] gap-1"
+                              className="h-7 px-2.5 text-[11px] gap-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
                             >
                               {act.label}
                             </Button>
@@ -267,10 +267,10 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                   )}
 
                   {/* Message Timestamp & Grounding Badge */}
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
                     <span>{msg.timestamp}</span>
                     {!isUser && (
-                      <span className="text-cyan-400/80 font-medium">
+                      <span className="text-sky-700 font-semibold">
                         ● Grounded in live store operations
                       </span>
                     )}
@@ -278,7 +278,7 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                 </div>
 
                 {isUser && (
-                  <div className="h-7 w-7 rounded-lg bg-[#1E293B] text-slate-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="h-7 w-7 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                     <User className="h-4 w-4" />
                   </div>
                 )}
@@ -300,8 +300,8 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
 
         {/* Thinking Indicator */}
         {isThinking && (
-          <div className="flex gap-2.5 items-center text-xs text-slate-400 pl-1">
-            <div className="h-7 w-7 rounded-lg bg-cyan-950 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shrink-0">
+          <div className="flex gap-2.5 items-center text-xs text-slate-500 pl-1">
+            <div className="h-7 w-7 rounded-lg bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0">
               <Sparkles className="h-4 w-4 animate-spin" />
             </div>
             <span>Checking live store data...</span>
@@ -312,7 +312,7 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
       </div>
 
       {/* Sticky Bottom Input Composer */}
-      <div className="pt-2 border-t border-[#1E293B] bg-[#0B0F17] space-y-2">
+      <div className="pt-2 border-t border-slate-100 bg-white space-y-2">
         {/* Input Bar */}
         <div className="flex items-center gap-2">
           <textarea
@@ -321,7 +321,7 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
             onKeyDown={handleKeyDown}
             placeholder="Ask Store AI about queues, inventory, staff allocations..."
             rows={1}
-            className="flex-1 bg-[#090D14] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none h-10"
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 resize-none h-10 shadow-2xs"
           />
 
           <Button
@@ -329,7 +329,7 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
             size="sm"
             onClick={() => handleSendMessage()}
             disabled={!inputValue.trim() || isThinking}
-            className="h-10 px-4 gap-1.5 text-xs font-semibold shrink-0"
+            className="h-10 px-4 gap-1.5 text-xs font-semibold shrink-0 bg-sky-600 hover:bg-sky-700 text-white"
           >
             <span>Send</span>
             <Send className="h-3.5 w-3.5" />

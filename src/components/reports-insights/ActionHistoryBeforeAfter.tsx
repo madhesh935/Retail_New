@@ -107,21 +107,21 @@ export const ActionHistoryBeforeAfter: React.FC = () => {
     allRecords.find((r) => r.id === selectedId) || allRecords[0]
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none font-mono h-full min-h-[440px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans h-full min-h-[440px]">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-purple-950 border border-purple-500/40 text-purple-400">
+          <div className="p-1 rounded-md bg-purple-50 border border-purple-200 text-purple-600">
             <Sparkles className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               AI Action History & Measurable Operational Effect
             </h3>
           </div>
         </div>
 
-        <span className="text-[10px] text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/40 font-bold">
+        <span className="text-[10px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200 font-bold">
           Click Action to Inspect Effect
         </span>
       </div>
@@ -138,22 +138,22 @@ export const ActionHistoryBeforeAfter: React.FC = () => {
                 key={rec.id}
                 onClick={() => setSelectedId(rec.id)}
                 className={cn(
-                  'w-full p-2.5 rounded-lg border text-left transition-all cursor-pointer group flex flex-col justify-between space-y-1',
+                  'w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer group flex flex-col justify-between space-y-1 shadow-2xs',
                   isSelected
-                    ? 'bg-[#131D31] border-cyan-400 shadow-md ring-1 ring-cyan-400'
-                    : 'bg-[#090D14] border-[#1E293B] hover:bg-[#0F172A]'
+                    ? 'bg-sky-50 border-sky-500 ring-1 ring-sky-500'
+                    : 'bg-white border-slate-200 hover:bg-slate-50'
                 )}
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-1.5 font-bold text-xs text-white">
-                    <span className="text-cyan-400 font-mono">{rec.time}</span>
-                    <span className="font-sans text-xs">{rec.actionTitle}</span>
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
+                    <span className="text-sky-700 font-mono">{rec.time}</span>
+                    <span className="text-xs">{rec.actionTitle}</span>
                   </div>
                 </div>
 
-                <div className="text-[10px] text-emerald-400 font-semibold flex items-center justify-between w-full">
+                <div className="text-[10px] text-emerald-700 font-bold flex items-center justify-between w-full font-sans">
                   <span>{rec.summaryResult}</span>
-                  <span className="text-slate-400 font-normal">{rec.assignedStaff}</span>
+                  <span className="text-slate-500 font-normal">{rec.assignedStaff}</span>
                 </div>
               </button>
             )
@@ -161,18 +161,18 @@ export const ActionHistoryBeforeAfter: React.FC = () => {
         </div>
 
         {/* Right 6 cols: Before vs After Measurable Effect Card */}
-        <div className="md:col-span-6 p-3.5 rounded-lg bg-[#090D14] border border-cyan-500/30 flex flex-col justify-between space-y-3">
+        <div className="md:col-span-6 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3 shadow-2xs">
           <div>
-            <div className="flex items-center justify-between pb-2 border-b border-[#1E293B]">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <div>
-                <h4 className="text-xs font-bold text-white font-sans">
+                <h4 className="text-xs font-bold text-slate-900">
                   {activeRecord.actionTitle}
                 </h4>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                   Target: {activeRecord.targetEntity} • {activeRecord.time}
                 </span>
               </div>
-              <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[9px] font-bold uppercase">
+              <span className="px-1.5 py-0.5 rounded-md bg-white text-sky-700 border border-slate-200 text-[9px] font-bold uppercase shadow-2xs">
                 {activeRecord.category}
               </span>
             </div>
@@ -180,46 +180,46 @@ export const ActionHistoryBeforeAfter: React.FC = () => {
             {/* Before vs After Visualizer */}
             <div className="grid grid-cols-2 gap-2 my-2.5">
               {/* BEFORE */}
-              <div className="p-2.5 rounded bg-rose-950/20 border border-rose-500/40 space-y-0.5 text-center">
-                <span className="text-[9px] text-rose-400 font-bold uppercase block">
+              <div className="p-2.5 rounded-lg bg-white border border-rose-200 space-y-0.5 text-center shadow-2xs">
+                <span className="text-[9px] text-rose-700 font-bold uppercase block">
                   BEFORE INTERVENTION
                 </span>
-                <div className="text-base font-bold text-rose-400 font-mono">
+                <div className="text-base font-bold text-rose-700 font-mono">
                   {activeRecord.beforeValue}
                 </div>
-                <span className="text-[9px] text-slate-400">{activeRecord.beforeMetricLabel}</span>
+                <span className="text-[9px] text-slate-500 font-sans">{activeRecord.beforeMetricLabel}</span>
               </div>
 
               {/* AFTER */}
-              <div className="p-2.5 rounded bg-emerald-950/25 border border-emerald-500/50 space-y-0.5 text-center">
-                <span className="text-[9px] text-emerald-400 font-bold uppercase block">
+              <div className="p-2.5 rounded-lg bg-white border border-emerald-200 space-y-0.5 text-center shadow-2xs">
+                <span className="text-[9px] text-emerald-700 font-bold uppercase block">
                   AFTER INTERVENTION
                 </span>
-                <div className="text-base font-bold text-emerald-400 font-mono">
+                <div className="text-base font-bold text-emerald-700 font-mono">
                   {activeRecord.afterValue}
                 </div>
-                <span className="text-[9px] text-emerald-300">{activeRecord.afterMetricLabel}</span>
+                <span className="text-[9px] text-slate-500 font-sans">{activeRecord.afterMetricLabel}</span>
               </div>
             </div>
 
             {/* Operational Gain Banner */}
-            <div className="p-2 rounded bg-emerald-950/40 border border-emerald-500/50 space-y-1 text-xs">
-              <span className="text-[10px] text-slate-400 block font-bold uppercase">
+            <div className="p-2.5 rounded-lg bg-white border border-emerald-200 space-y-1 text-xs shadow-2xs">
+              <span className="text-[10px] text-slate-500 block font-bold uppercase">
                 Measurable Operational Effect:
               </span>
-              <div className="text-emerald-300 font-sans text-xs font-semibold">
+              <div className="text-emerald-800 text-xs font-bold font-sans">
                 {activeRecord.operationalGain}
               </div>
             </div>
           </div>
 
           {/* Verification Footer */}
-          <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[9px] text-slate-400">
-            <span className="flex items-center gap-1 text-slate-300">
-              <ShieldCheck className="h-3 w-3 text-cyan-400" />
+          <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-500">
+            <span className="flex items-center gap-1 text-slate-700 font-medium">
+              <ShieldCheck className="h-3.5 w-3.5 text-sky-600" />
               <span>{activeRecord.verificationMethod}</span>
             </span>
-            <span className="text-emerald-400 font-bold">Closed-Loop Verified</span>
+            <span className="text-emerald-700 font-bold">Closed-Loop Verified</span>
           </div>
         </div>
       </div>

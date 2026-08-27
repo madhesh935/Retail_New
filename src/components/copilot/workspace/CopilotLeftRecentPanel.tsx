@@ -96,10 +96,10 @@ export const CopilotLeftRecentPanel: React.FC<CopilotLeftRecentPanelProps> = ({
   onNewAnalysis,
 }) => {
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-3 flex flex-col h-full select-none font-mono text-xs shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-3.5 flex flex-col h-full select-none font-sans text-xs shadow-2xs">
       {/* Header with + New Analysis button */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-[#1E293B] mb-2">
-        <span className="text-xs font-bold text-white uppercase tracking-wider">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-2">
+        <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
           Recent Activity
         </span>
 
@@ -107,9 +107,9 @@ export const CopilotLeftRecentPanel: React.FC<CopilotLeftRecentPanelProps> = ({
           variant="outline"
           size="xs"
           onClick={onNewAnalysis}
-          className="text-[10px] h-6 px-2 text-cyan-300 border-cyan-500/40 hover:bg-cyan-950/60 gap-1"
+          className="text-[10px] h-6 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 gap-1 shadow-2xs font-semibold"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3 w-3 text-sky-600" />
           <span>New</span>
         </Button>
       </div>
@@ -125,18 +125,18 @@ export const CopilotLeftRecentPanel: React.FC<CopilotLeftRecentPanelProps> = ({
               key={ses.id}
               onClick={() => onSelectSession(ses)}
               className={cn(
-                'w-full p-2 rounded-lg text-left transition-all cursor-pointer group flex items-start gap-2 border',
+                'w-full p-2 rounded-xl text-left transition-all cursor-pointer group flex items-start gap-2 border shadow-2xs',
                 isSelected
-                  ? 'bg-[#131D31] border-cyan-500/60 text-white shadow-sm'
-                  : 'bg-[#090D14] border-transparent hover:border-[#1E293B] hover:bg-[#0F172A] text-slate-300'
+                  ? 'bg-sky-50 border-sky-500 text-slate-900'
+                  : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
               )}
             >
               <div
                 className={cn(
-                  'p-1 rounded shrink-0 mt-0.5',
+                  'p-1.5 rounded-lg shrink-0 mt-0.5 shadow-2xs',
                   isSelected
-                    ? 'bg-cyan-950 text-cyan-400 border border-cyan-500/40'
-                    : 'bg-[#0F172A] text-slate-400 border border-[#1E293B]'
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-50 text-slate-500 border border-slate-200'
                 )}
               >
                 <Icon className="h-3 w-3" />
@@ -145,14 +145,14 @@ export const CopilotLeftRecentPanel: React.FC<CopilotLeftRecentPanelProps> = ({
               <div className="flex-1 min-w-0">
                 <div
                   className={cn(
-                    'text-[11px] font-sans font-semibold truncate',
-                    isSelected ? 'text-cyan-300' : 'text-slate-200 group-hover:text-white'
+                    'text-[11px] font-sans font-bold truncate',
+                    isSelected ? 'text-sky-700' : 'text-slate-900'
                   )}
                 >
                   {ses.title}
                 </div>
                 <div className="flex items-center justify-between text-[9px] text-slate-500 font-mono mt-0.5">
-                  <span className="uppercase">{ses.category}</span>
+                  <span className="uppercase font-semibold">{ses.category}</span>
                   <span>{ses.timestamp}</span>
                 </div>
               </div>
@@ -162,9 +162,9 @@ export const CopilotLeftRecentPanel: React.FC<CopilotLeftRecentPanelProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="pt-2 border-t border-[#1E293B] text-[9px] text-slate-500 flex items-center justify-between mt-2">
+      <div className="pt-2 border-t border-slate-100 text-[9px] text-slate-500 flex items-center justify-between mt-2 font-sans">
         <span>History Grounded</span>
-        <span className="text-cyan-400">Zero Hallucinations</span>
+        <span className="text-emerald-700 font-bold">Live Operational Data</span>
       </div>
     </div>
   )

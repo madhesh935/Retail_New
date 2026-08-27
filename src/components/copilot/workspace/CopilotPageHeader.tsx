@@ -24,16 +24,16 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
   const isConnected = connectionState === 'CONNECTED'
 
   return (
-    <div className="space-y-2 pb-3 border-b border-[#1E293B] select-none">
+    <div className="space-y-2 pb-3 border-b border-slate-200 select-none font-sans">
       {/* Top Title & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-cyan-400" />
+            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-sky-600" />
               <span>Store AI Copilot</span>
             </h1>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
               Live Operations Assistant
             </span>
           </div>
@@ -44,9 +44,9 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={onToggleHistory}
-            className="h-7 text-xs px-2.5 gap-1.5 text-slate-300 border-[#1E293B] hover:bg-[#1E293B]"
+            className="h-7 text-xs px-2.5 gap-1.5 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs font-semibold"
           >
-            <History className="h-3.5 w-3.5 text-slate-400" />
+            <History className="h-3.5 w-3.5 text-slate-500" />
             <span>History</span>
           </Button>
 
@@ -54,7 +54,7 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
             variant="action"
             size="sm"
             onClick={onGenerateBrief}
-            className="h-7 text-xs px-3 gap-1.5 shadow-sm"
+            className="h-7 text-xs px-3 gap-1.5 shadow-2xs bg-sky-600 hover:bg-sky-700 text-white font-semibold"
           >
             <FileText className="h-3.5 w-3.5" />
             <span>Generate Store Brief</span>
@@ -63,9 +63,9 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
       </div>
 
       {/* Sub-header Single Compact Connection Status Row */}
-      <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-400 pt-0.5">
-        <span className="flex items-center gap-1.5 font-medium text-slate-200">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+      <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-500 pt-0.5">
+        <span className="flex items-center gap-1.5 font-bold text-emerald-700">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Live Store Data</span>
         </span>
         <span>•</span>
@@ -73,7 +73,7 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
         <span>•</span>
         <span>6/6 Cameras Online</span>
         <span>•</span>
-        <span className="text-slate-500">Updated 2 sec ago</span>
+        <span className="text-slate-400">Updated 2 sec ago</span>
       </div>
     </div>
   )

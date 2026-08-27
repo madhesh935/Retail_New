@@ -19,11 +19,11 @@ export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
       },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: '#0F172A',
-        borderColor: '#1E293B',
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
         textStyle: {
-          color: '#F8FAFC',
-          fontFamily: 'JetBrains Mono',
+          color: '#0F172A',
+          fontFamily: 'Inter, sans-serif',
           fontSize: 11,
         },
         padding: [6, 10],
@@ -35,7 +35,7 @@ export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
       xAxis: {
         type: 'category',
         data: ['14:00', '15:00', '16:00', '17:00', '18:00 (Now)', '+9m (Pred 0%)'],
-        axisLine: { lineStyle: { color: '#1E293B' } },
+        axisLine: { lineStyle: { color: '#E2E8F0' } },
         axisLabel: {
           color: '#64748B',
           fontSize: 9,
@@ -46,7 +46,7 @@ export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
         type: 'value',
         max: 100,
         min: 0,
-        splitLine: { lineStyle: { color: '#131D31', type: 'dashed' } },
+        splitLine: { lineStyle: { color: '#F1F5F9', type: 'dashed' } },
         axisLabel: {
           color: '#64748B',
           fontSize: 9,

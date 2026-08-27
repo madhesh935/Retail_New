@@ -33,23 +33,24 @@ export const FootfallTrendChart: React.FC = () => {
       },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: '#0F172A',
-        borderColor: '#1E293B',
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
         textStyle: {
-          color: '#F8FAFC',
-          fontFamily: 'Inter, sans-serif',
+          color: '#0F172A',
+          fontFamily: 'system-ui, sans-serif',
           fontSize: 11,
         },
         padding: [6, 10],
+        extraCssText: 'box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-radius: 8px;',
       },
       legend: {
         data: ['Actual Footfall', 'Forecast Demand'],
         top: 0,
         right: 0,
         textStyle: {
-          color: '#94A3B8',
+          color: '#64748B',
           fontSize: 10,
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: 'system-ui, sans-serif',
         },
         itemWidth: 12,
         itemHeight: 6,
@@ -57,20 +58,20 @@ export const FootfallTrendChart: React.FC = () => {
       xAxis: {
         type: 'category',
         data: hours,
-        axisLine: { lineStyle: { color: '#1E293B' } },
+        axisLine: { lineStyle: { color: '#CBD5E1' } },
         axisLabel: {
           color: '#64748B',
-          fontSize: 9,
-          fontFamily: 'monospace',
+          fontSize: 10,
+          fontFamily: 'system-ui, sans-serif',
         },
       },
       yAxis: {
         type: 'value',
-        splitLine: { lineStyle: { color: '#131D31', type: 'dashed' } },
+        splitLine: { lineStyle: { color: '#F1F5F9', type: 'dashed' } },
         axisLabel: {
           color: '#64748B',
-          fontSize: 9,
-          fontFamily: 'monospace',
+          fontSize: 10,
+          fontFamily: 'system-ui, sans-serif',
         },
       },
       series: [
@@ -80,7 +81,7 @@ export const FootfallTrendChart: React.FC = () => {
           smooth: true,
           data: actualCounts,
           showSymbol: false,
-          lineStyle: { color: '#06B6D4', width: 2.5 },
+          lineStyle: { color: '#0284C7', width: 2.5 },
           areaStyle: {
             color: {
               type: 'linear',
@@ -89,8 +90,8 @@ export const FootfallTrendChart: React.FC = () => {
               x2: 0,
               y2: 1,
               colorStops: [
-                { offset: 0, color: 'rgba(6, 182, 212, 0.3)' },
-                { offset: 1, color: 'rgba(6, 182, 212, 0.0)' },
+                { offset: 0, color: 'rgba(2, 132, 199, 0.2)' },
+                { offset: 1, color: 'rgba(2, 132, 199, 0.0)' },
               ],
             },
           },

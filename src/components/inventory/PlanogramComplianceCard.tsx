@@ -68,21 +68,21 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
   }
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
       {/* Collapsible Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-emerald-400">
+          <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200">
             <Sparkles className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide flex items-center gap-2">
               <span>Planogram Compliance</span>
-              <span className="text-emerald-400 font-bold text-xs bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30">
+              <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
                 93%
               </span>
             </h3>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-500">
               3 active placement issues detected
             </span>
           </div>
@@ -92,7 +92,7 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
           variant="outline"
           size="xs"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-[11px] h-7 px-2.5 gap-1 text-slate-300 border-[#1E293B]"
+          className="text-[11px] h-7 px-2.5 gap-1 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs"
         >
           <span>{isExpanded ? 'Collapse' : 'View Issues'}</span>
           {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -101,33 +101,33 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
 
       {/* Expanded Violations List */}
       {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-[#1E293B] space-y-2.5">
+        <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
           {violations.map((v) => {
             const isTaskCreated = createdTasks[v.id]
 
             return (
               <div
                 key={v.id}
-                className="p-3 rounded-lg border border-[#1E293B] bg-[#090D14] space-y-2 text-xs"
+                className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2 text-xs shadow-2xs"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white font-mono bg-[#1E293B] px-1.5 py-0.5 rounded text-[11px]">
+                    <span className="font-bold text-slate-900 font-mono bg-white px-1.5 py-0.5 rounded-md text-[11px] border border-slate-200">
                       {v.shelfCode}
                     </span>
-                    <span className="font-semibold text-amber-300 text-xs">{v.issueType}</span>
+                    <span className="font-bold text-amber-800 text-xs">{v.issueType}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">{v.location}</span>
+                  <span className="text-[10px] text-slate-500">{v.location}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#0F172A] p-2 rounded border border-[#1E293B]">
+                <div className="grid grid-cols-2 gap-2 text-[11px] bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Expected</span>
-                    <span className="text-slate-200 font-medium">{v.expected}</span>
+                    <span className="text-[10px] text-slate-500 block font-sans">Expected</span>
+                    <span className="text-slate-800 font-medium">{v.expected}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Detected</span>
-                    <span className="text-rose-400 font-medium">{v.detected}</span>
+                    <span className="text-[10px] text-slate-500 block font-sans">Detected</span>
+                    <span className="text-rose-700 font-bold">{v.detected}</span>
                   </div>
                 </div>
 
@@ -139,14 +139,14 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
                     onClick={() => {
                       if (onViewCamera) onViewCamera(v.cameraCode)
                     }}
-                    className="text-[11px] h-7 px-2.5 gap-1.5 text-slate-300 border-[#1E293B] hover:bg-[#1E293B]"
+                    className="text-[11px] h-7 px-2.5 gap-1.5 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs"
                   >
-                    <Camera className="h-3 w-3 text-cyan-400" />
+                    <Camera className="h-3 w-3 text-sky-600" />
                     <span>View Camera</span>
                   </Button>
 
                   {isTaskCreated ? (
-                    <span className="text-emerald-400 text-[11px] font-medium flex items-center gap-1 px-2 py-1">
+                    <span className="text-emerald-700 text-[11px] font-bold flex items-center gap-1 px-2 py-1 bg-emerald-50 rounded-md border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" /> Task Created
                     </span>
                   ) : (
@@ -154,7 +154,7 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
                       variant="action"
                       size="xs"
                       onClick={() => handleCreateTask(v.id)}
-                      className="text-[11px] h-7 px-2.5 gap-1.5"
+                      className="text-[11px] h-7 px-2.5 gap-1.5 bg-sky-600 hover:bg-sky-700 text-white"
                     >
                       <Plus className="h-3 w-3" /> Create Task
                     </Button>

@@ -6,6 +6,15 @@ import { AppLayout } from '@/components/layout/AppLayout'
 const CustomerPwaLayout = lazy(() =>
   import('@/customer-pwa/CustomerPwaLayout').then((m) => ({ default: m.CustomerPwaLayout }))
 )
+const StaffPwaLayout = lazy(() =>
+  import('@/staff-pwa/StaffPwaLayout').then((m) => ({ default: m.StaffPwaLayout }))
+)
+const StaffLoginPage = lazy(() =>
+  import('@/staff-pwa/pages/StaffLoginPage').then((m) => ({ default: m.StaffLoginPage }))
+)
+const StaffAttendancePage = lazy(() =>
+  import('@/staff-pwa/pages/StaffAttendancePage').then((m) => ({ default: m.StaffAttendancePage }))
+)
 const CommandCenterPage = lazy(() =>
   import('./pages/CommandCenterPage').then((m) => ({ default: m.CommandCenterPage }))
 )
@@ -59,6 +68,12 @@ export const AppRoutes: React.FC = () => {
         <Route path="/shop/:storeId" element={<CustomerPwaLayout />} />
         <Route path="/shop/:storeId/copilot" element={<CustomerPwaLayout defaultTab="COPILOT" />} />
 
+        {/* Standalone Mobile-First Staff Operations Companion PWA Routes */}
+        <Route path="/staff/login" element={<StaffLoginPage />} />
+        <Route path="/staff/attendance" element={<StaffAttendancePage />} />
+        <Route path="/staff" element={<StaffPwaLayout />} />
+        <Route path="/staff/:storeId" element={<StaffPwaLayout />} />
+
         {/* Internal Store Operations Command Center (Manager View) */}
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/command-center" replace />} />
@@ -69,7 +84,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/queue-intelligence" element={<QueueIntelligencePage />} />
           <Route path="/queues" element={<QueueIntelligencePage />} />
           <Route path="/staff-operations" element={<StaffOperationsPage />} />
-          <Route path="/staff" element={<StaffOperationsPage />} />
+          
+          {/* Internal Pages */}
           <Route path="/incidents-actions" element={<IncidentsActionsPage />} />
           <Route path="/incidents" element={<IncidentsActionsPage />} />
           <Route path="/copilot" element={<CopilotWorkspacePage />} />

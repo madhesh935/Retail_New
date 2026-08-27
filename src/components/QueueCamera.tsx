@@ -98,24 +98,28 @@ const QueueCamera: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h2>Smart Queue Intelligence</h2>
+    <div className="p-5 font-sans select-none space-y-4">
+      <h2 className="text-base font-bold text-slate-900">Smart Queue Intelligence</h2>
       
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+          {error}
+        </div>
+      )}
       
-      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+      <div className="flex gap-4 flex-wrap">
         {/* Camera Feed */}
-        <div style={{ flex: '1', minWidth: '300px', maxWidth: '600px' }}>
-          <div style={{ position: 'relative', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+        <div className="flex-1 min-w-[300px] max-w-[600px]">
+          <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-200 shadow-inner">
             <video 
               ref={videoRef} 
               autoPlay 
               playsInline 
               muted 
-              style={{ width: '100%', display: 'block' }} 
+              className="w-full block object-cover" 
             />
             {!isStreaming && !error && (
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#fff' }}>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-300 font-mono text-xs">
                 Loading Camera...
               </div>
             )}
@@ -125,29 +129,29 @@ const QueueCamera: React.FC = () => {
         </div>
 
         {/* Stats Panel */}
-        <div style={{ flex: '1', minWidth: '250px', background: '#f5f5f5', padding: '20px', borderRadius: '8px' }}>
-          <h3>Live Queue Stats</h3>
+        <div className="flex-1 min-w-[250px] bg-slate-50 border border-slate-200 p-5 rounded-xl shadow-2xs space-y-3">
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Live Queue Stats</h3>
           {stats ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div style={{ background: '#fff', padding: '15px', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>People at Counter</div>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2c3e50' }}>{stats.people_count}</div>
+            <div className="flex flex-col gap-3">
+              <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-2xs">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">People at Counter</div>
+                <div className="text-2xl font-bold font-mono text-slate-900">{stats.people_count}</div>
               </div>
               
-              <div style={{ background: '#fff', padding: '15px', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>Avg Wait Time</div>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#e67e22' }}>
-                  {stats.average_wait_time_seconds.toFixed(1)} <span style={{ fontSize: '16px', fontWeight: 'normal' }}>sec</span>
+              <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-2xs">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg Wait Time</div>
+                <div className="text-2xl font-bold font-mono text-amber-800">
+                  {stats.average_wait_time_seconds.toFixed(1)} <span className="text-xs font-normal text-slate-500">sec</span>
                 </div>
               </div>
               
-              <div style={{ background: '#fff', padding: '15px', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <div style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Visits Processed</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#27ae60' }}>{stats.total_completed_visits}</div>
+              <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-2xs">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Visits Processed</div>
+                <div className="text-2xl font-bold font-mono text-emerald-700">{stats.total_completed_visits}</div>
               </div>
             </div>
           ) : (
-            <p>Waiting for backend connection...</p>
+            <p className="text-xs text-slate-500">Waiting for backend connection...</p>
           )}
         </div>
       </div>

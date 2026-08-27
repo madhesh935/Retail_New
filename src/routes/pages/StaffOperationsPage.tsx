@@ -86,26 +86,26 @@ export const StaffOperationsPage: React.FC = () => {
       {/* ======================================================= */}
       {/* 1. PAGE HEADER */}
       {/* ======================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Users className="h-4 w-4 text-cyan-400" />
+            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
+              <Users className="h-4 w-4 text-sky-600" />
               <span>Staff Operations</span>
             </h1>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-mono">
               Shift B · 14:00–22:00
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <div className="flex items-center gap-1.5 bg-[#0F172A] px-2.5 py-1 rounded-lg border border-[#1E293B]">
-            <Clock className="h-3.5 w-3.5 text-cyan-400" />
+        <div className="flex items-center gap-3 text-xs text-slate-500 font-sans">
+          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+            <Clock className="h-3.5 w-3.5 text-sky-600" />
             <span>Shift B: <strong>12 On Shift</strong></span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Updated 2 sec ago</span>
           </div>
         </div>

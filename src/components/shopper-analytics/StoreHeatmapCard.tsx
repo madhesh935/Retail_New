@@ -33,17 +33,17 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
   const checkoutZone = CANONICAL_ZONE_ANALYTICS.find((z) => z.id === 'zone-checkout')!
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-amber-400">
+          <div className="p-1 rounded-md bg-amber-50 text-amber-600 border border-amber-200">
             <Flame className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide flex items-center gap-2">
               <span>Live Store Traffic Map</span>
-              <span className="text-[10px] text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 font-medium">
+              <span className="text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-semibold">
                 {timeRange.replace(/_/g, ' ')}
               </span>
             </h3>
@@ -53,7 +53,7 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
         {/* Filters & View Mode */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {/* Time Range Pills */}
-          <div className="flex items-center rounded-lg bg-[#090D14] p-1 border border-[#1E293B]">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200 shadow-2xs">
             {(
               [
                 { key: 'LIVE', label: 'Live' },
@@ -68,8 +68,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
                 className={cn(
                   'px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] font-medium',
                   timeRange === range.key
-                    ? 'bg-[#1E293B] text-white font-semibold shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
                 )}
               >
                 {range.label}
@@ -78,14 +78,14 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
           </div>
 
           {/* Heatmap vs Zone View Toggle */}
-          <div className="flex items-center rounded-lg bg-[#090D14] p-1 border border-[#1E293B]">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200 shadow-2xs">
             <button
               onClick={() => setViewMode('HEATMAP')}
               className={cn(
                 'px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] font-medium flex items-center gap-1',
                 viewMode === 'HEATMAP'
-                  ? 'bg-[#1E293B] text-amber-300 font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-amber-700 font-semibold shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
               )}
             >
               <Flame className="h-3 w-3" />
@@ -96,8 +96,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] font-medium flex items-center gap-1',
                 viewMode === 'ZONE_VIEW'
-                  ? 'bg-[#1E293B] text-cyan-300 font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-sky-700 font-semibold shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
               )}
             >
               <Layers className="h-3 w-3" />
@@ -108,7 +108,7 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
       </div>
 
       {/* Main Floor Spatial Map Canvas */}
-      <div className="relative w-full h-[360px] my-3 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden p-3">
+      <div className="relative w-full h-[360px] my-3 rounded-xl bg-[#070A0F] border border-slate-200 overflow-hidden p-3">
         {/* Soft Heat Density Radial Overlays (Visible in Heatmap Mode) */}
         {viewMode === 'HEATMAP' && (
           <div className="absolute inset-0 pointer-events-none transition-opacity duration-300">
@@ -127,9 +127,9 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
         <div className="relative w-full h-full flex flex-col justify-between z-10">
           {/* Top Row: Store Entrance Lobby */}
           <div className="flex justify-center">
-            <div className="w-64 py-2 px-3 rounded-lg bg-[#0F172A]/90 border border-[#1E293B] text-center shadow-sm flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-300">Store Entrance & Lobby</span>
-              <span className="text-[10px] text-cyan-400 font-medium">Inflow: 1,840 / day</span>
+            <div className="w-64 py-2 px-3 rounded-lg bg-slate-900/90 border border-slate-700 text-center shadow-sm flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-200">Store Entrance & Lobby</span>
+              <span className="text-[10px] text-sky-400 font-medium font-mono">Inflow: 1,840 / day</span>
             </div>
           </div>
 
@@ -143,8 +143,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group',
                 selectedZoneId === produceZone.id
-                  ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
-                  : 'bg-[#0F172A]/90 border-[#1E293B] hover:border-slate-500'
+                  ? 'bg-slate-900/95 border-sky-400 shadow-sm ring-2 ring-sky-400'
+                  : 'bg-slate-900/80 border-slate-700 hover:border-slate-500'
               )}
             >
               <div className="flex items-center justify-between">
@@ -153,10 +153,10 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
                   HIGH
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-300">
                 <span>{produceZone.visitors} visitors today</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1E293B]/70">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700">
                 <span>Dwell: <strong className="text-white">{produceZone.avgDwellLabel}</strong></span>
                 <span>Shelf: <strong className="text-emerald-400">{produceZone.shelfAvailability}%</strong></span>
               </div>
@@ -170,20 +170,20 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group',
                 selectedZoneId === dairyZone.id
-                  ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
-                  : 'bg-[#0F172A]/90 border-[#1E293B] hover:border-slate-500'
+                  ? 'bg-slate-900/95 border-sky-400 shadow-sm ring-2 ring-sky-400'
+                  : 'bg-slate-900/80 border-slate-700 hover:border-slate-500'
               )}
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white text-xs">{dairyZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#1E293B] text-slate-300">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-600">
                   MEDIUM
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-300">
                 <span>{dairyZone.visitors} visitors today</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1E293B]/70">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700">
                 <span>Dwell: <strong className="text-white">{dairyZone.avgDwellLabel}</strong></span>
                 <span>Shelf: <strong className="text-amber-300">{dairyZone.shelfAvailability}%</strong></span>
               </div>
@@ -197,8 +197,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group',
                 selectedZoneId === beverageZone.id
-                  ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
-                  : 'bg-[#0F172A]/90 border-rose-500/40 hover:border-rose-400'
+                  ? 'bg-slate-900/95 border-sky-400 shadow-sm ring-2 ring-sky-400'
+                  : 'bg-slate-900/80 border-rose-500/60 hover:border-rose-400'
               )}
             >
               <div className="flex items-center justify-between">
@@ -207,10 +207,10 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
                   HIGH
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-300">
                 <span>{beverageZone.visitors} visitors today</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1E293B]/70">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700">
                 <span>Dwell: <strong className="text-white">{beverageZone.avgDwellLabel}</strong></span>
                 <span>Shelf: <strong className="text-rose-400">{beverageZone.shelfAvailability}%</strong></span>
               </div>
@@ -227,20 +227,20 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group',
                 selectedZoneId === householdZone.id
-                  ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
-                  : 'bg-[#0F172A]/90 border-[#1E293B] hover:border-slate-500'
+                  ? 'bg-slate-900/95 border-sky-400 shadow-sm ring-2 ring-sky-400'
+                  : 'bg-slate-900/80 border-slate-700 hover:border-slate-500'
               )}
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white text-xs">{householdZone.name}</span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#1E293B] text-slate-400">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
                   LOW
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-300">
                 <span>{householdZone.visitors} visitors today</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1E293B]/70">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700">
                 <span>Dwell: <strong className="text-white">{householdZone.avgDwellLabel}</strong></span>
                 <span>Shelf: <strong className="text-emerald-400">{householdZone.shelfAvailability}%</strong></span>
               </div>
@@ -254,8 +254,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group',
                 selectedZoneId === electronicsZone.id
-                  ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
-                  : 'bg-[#0F172A]/90 border-[#1E293B] hover:border-slate-500'
+                  ? 'bg-slate-900/95 border-sky-400 shadow-sm ring-2 ring-sky-400'
+                  : 'bg-slate-900/80 border-slate-700 hover:border-slate-500'
               )}
             >
               <div className="flex items-center justify-between">
@@ -264,10 +264,10 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
                   HIGH DWELL
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-300">
                 <span>{electronicsZone.visitors} visitors today</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1E293B]/70">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700">
                 <span>Dwell: <strong className="text-purple-300">{electronicsZone.avgDwellLabel}</strong></span>
                 <span>Shelf: <strong className="text-emerald-400">{electronicsZone.shelfAvailability}%</strong></span>
               </div>
@@ -281,8 +281,8 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
               className={cn(
                 'p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between h-28 relative group',
                 selectedZoneId === checkoutZone.id
-                  ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
-                  : 'bg-[#0F172A]/90 border-[#1E293B] hover:border-slate-500'
+                  ? 'bg-slate-900/95 border-sky-400 shadow-sm ring-2 ring-sky-400'
+                  : 'bg-slate-900/80 border-slate-700 hover:border-slate-500'
               )}
             >
               <div className="flex items-center justify-between">
@@ -291,10 +291,10 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
                   REGISTERS C1–C4
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-300">
                 <span>{checkoutZone.visitors} transitions</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1E293B]/70">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700">
                 <span>Queue Wait: <strong className="text-amber-300">{checkoutZone.avgDwellLabel}</strong></span>
                 <span>Staff: <strong className="text-emerald-400">3 Active</strong></span>
               </div>
@@ -304,26 +304,26 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
 
         {/* Hover Tooltip Overlay */}
         {hoveredZone && (
-          <div className="absolute top-2 right-2 bg-[#0F172A]/95 border border-[#1E293B] p-2.5 rounded-lg text-xs shadow-xl pointer-events-none z-20 w-48 space-y-1">
-            <div className="font-bold text-white text-xs border-b border-[#1E293B] pb-1 flex justify-between">
+          <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-md border border-slate-200 p-2.5 rounded-xl text-xs shadow-xl pointer-events-none z-20 w-48 space-y-1">
+            <div className="font-bold text-slate-900 text-xs border-b border-slate-100 pb-1 flex justify-between">
               <span>{hoveredZone.name}</span>
-              <span className="text-cyan-400 font-mono text-[10px]">{hoveredZone.aisle}</span>
+              <span className="text-sky-700 font-mono text-[10px]">{hoveredZone.aisle}</span>
             </div>
-            <div className="text-[11px] text-slate-300 space-y-0.5 pt-0.5">
-              <div className="flex justify-between"><span>Visitors Today:</span> <strong className="text-white">{hoveredZone.visitors}</strong></div>
-              <div className="flex justify-between"><span>Current Inside:</span> <strong className="text-cyan-300">{hoveredZone.currentOccupancy}</strong></div>
-              <div className="flex justify-between"><span>Avg Dwell:</span> <strong className="text-white">{hoveredZone.avgDwellLabel}</strong></div>
-              <div className="flex justify-between"><span>Traffic Level:</span> <strong className="text-amber-300">{hoveredZone.trafficLevel}</strong></div>
-              <div className="flex justify-between"><span>Shelf Availability:</span> <strong className="text-emerald-400">{hoveredZone.shelfAvailability}%</strong></div>
+            <div className="text-[11px] text-slate-600 space-y-0.5 pt-0.5 font-sans">
+              <div className="flex justify-between"><span>Visitors Today:</span> <strong className="text-slate-900 font-mono">{hoveredZone.visitors}</strong></div>
+              <div className="flex justify-between"><span>Current Inside:</span> <strong className="text-sky-700 font-mono">{hoveredZone.currentOccupancy}</strong></div>
+              <div className="flex justify-between"><span>Avg Dwell:</span> <strong className="text-slate-900 font-mono">{hoveredZone.avgDwellLabel}</strong></div>
+              <div className="flex justify-between"><span>Traffic Level:</span> <strong className="text-amber-800 font-mono">{hoveredZone.trafficLevel}</strong></div>
+              <div className="flex justify-between"><span>Shelf Availability:</span> <strong className="text-emerald-700 font-mono">{hoveredZone.shelfAvailability}%</strong></div>
             </div>
           </div>
         )}
       </div>
 
       {/* Footer Info */}
-      <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[11px] text-slate-400">
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-sans">
         <span>Click any zone to view live camera evidence and deep analytics</span>
-        <span className="text-cyan-400 font-medium">● Store Map Synchronized</span>
+        <span className="text-sky-700 font-semibold">● Store Map Synchronized</span>
       </div>
     </div>
   )

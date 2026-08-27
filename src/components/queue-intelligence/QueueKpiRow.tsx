@@ -35,123 +35,123 @@ export const QueueKpiRow: React.FC = () => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 select-none font-mono">
       {/* 1. Active Counters */}
-      <div className="rounded-lg bg-[#0F172A] border border-cyan-500/40 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 hover:border-sky-300 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 truncate font-sans">
             Active Counters
           </span>
-          <div className="p-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-            <ListOrdered className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
+            <ListOrdered className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-white tracking-tight">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight">
             {activeCount}/{totalCount}
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">{assistedCount} Assisted, {selfCount} Self</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{assistedCount} Assisted, {selfCount} Self</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-cyan-400">{openLaneCodes || 'None'} Open</span>
-          <span className="text-amber-400">{closedLanes ? `${closedLanes} Standby` : ''}</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-sky-700 font-semibold">{openLaneCodes || 'None'} Open</span>
+          <span className="text-amber-700 font-semibold">{closedLanes ? `${closedLanes} Standby` : ''}</span>
         </div>
       </div>
 
       {/* 2. Average Queue */}
-      <div className="rounded-lg bg-[#0F172A] border border-cyan-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 hover:border-sky-300 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 truncate font-sans">
             Average Queue
           </span>
-          <div className="p-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-            <Users className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
+            <Users className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-white tracking-tight flex items-baseline gap-1">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1">
             <span>{avgQueueLength}</span>
             <span className="text-xs text-slate-400 font-normal">people</span>
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Across active lanes</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Across active lanes</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400 flex items-center gap-0.5">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
             <ArrowDownRight className="h-3 w-3" /> -0.8
           </span>
-          <span className="text-slate-500 text-[9px]">vs peak</span>
+          <span className="text-slate-400 text-[9px]">vs peak</span>
         </div>
       </div>
 
       {/* 3. Average Wait */}
-      <div className="rounded-lg bg-[#0F172A] border border-emerald-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 hover:border-emerald-300 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 truncate font-sans">
             Average Wait
           </span>
-          <div className="p-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30">
-            <Clock className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200">
+            <Clock className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-white tracking-tight flex items-baseline gap-1">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight flex items-baseline gap-1">
             <span>{avgWaitMin}</span>
             <span className="text-xs text-slate-400 font-normal">min</span>
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Target SLA: &lt;3.0 min</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Target SLA: &lt;3.0 min</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400 flex items-center gap-0.5">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
             <ArrowDownRight className="h-3 w-3" /> 18% lower
           </span>
-          <span className="text-slate-500 text-[9px]">than yesterday</span>
+          <span className="text-slate-400 text-[9px]">than yesterday</span>
         </div>
       </div>
 
       {/* 4. Customers Served / Hour */}
-      <div className="rounded-lg bg-[#0F172A] border border-blue-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 hover:border-sky-300 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 truncate font-sans">
             Customers Served / Hr
           </span>
-          <div className="p-1 rounded bg-blue-950 text-blue-400 border border-blue-500/30">
-            <Zap className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
+            <Zap className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-blue-300 tracking-tight">{customersServedHr}</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Peak Capacity: 180/hr</div>
+          <div className="text-2xl font-bold text-slate-900 tracking-tight">{customersServedHr}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Peak Capacity: 180/hr</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400 flex items-center gap-0.5">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
             <ArrowUpRight className="h-3 w-3" /> Live
           </span>
-          <span className="text-slate-500 text-[9px]">Throughput</span>
+          <span className="text-slate-400 text-[9px]">Throughput</span>
         </div>
       </div>
 
       {/* 5. Highest Risk Counter */}
-      <div className="rounded-lg bg-[#0F172A] border border-rose-500/40 p-3 flex flex-col justify-between shadow-sm col-span-2 md:col-span-1">
+      <div className="rounded-xl bg-white border border-rose-200 hover:border-rose-300 p-3.5 flex flex-col justify-between shadow-2xs col-span-2 md:col-span-1">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 truncate font-sans">
             Highest Risk Counter
           </span>
-          <div className="p-1 rounded bg-rose-950 text-rose-400 border border-rose-500/30">
-            <ShieldAlert className="h-3 w-3 animate-pulse" />
+          <div className="p-1 rounded-md bg-rose-50 text-rose-600 border border-rose-200">
+            <ShieldAlert className="h-3.5 w-3.5 animate-pulse" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-rose-400 tracking-tight">
+          <div className="text-2xl font-bold text-rose-600 tracking-tight">
             Counter C{highestRiskQueue?.laneNumber || 1}
           </div>
-          <div className="text-[10px] text-rose-300/90 font-medium mt-0.5">
+          <div className="text-[10px] text-rose-600 font-medium mt-0.5">
             Queue: {highestRiskQueue?.currentQueueLength || 0} • Wait: {highestRiskWaitMin} min
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-rose-400 font-semibold flex items-center gap-1">
+        <div className="mt-2 pt-1.5 border-t border-rose-100 flex items-center justify-between text-[10px]">
+          <span className="text-rose-700 font-semibold flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
             {highestRiskQueue?.status === 'CONGESTED' ? 'High' : 'Normal'} Congestion Risk
           </span>
-          <span className="text-cyan-400">Monitoring</span>
+          <span className="text-sky-700 font-semibold">Monitoring</span>
         </div>
       </div>
     </div>

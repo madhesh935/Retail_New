@@ -91,43 +91,34 @@ export const LiveEntranceVisionCard: React.FC = () => {
   };
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none font-mono">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-mono">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1E293B] mb-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100 mb-2.5">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-400">
+          <div className="p-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600">
             <Camera className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 font-sans">
               <span>Live Entrance Vision Pipeline</span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-500/40 font-normal">
+              <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-mono font-normal">
                 CAM-01 (Entrance)
               </span>
             </h3>
           </div>
         </div>
-      </div>
 
-      {/* RTSP Stream Status & Occupancy Count Bar (Above Video) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-md bg-[#070D18] border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-3 shadow-xs">
+        {/* Occupancy Count Badge */}
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <span className="tracking-wide text-white">RTSP STREAM • CAM-01 (Main Entrance)</span>
-        </div>
-        
-        {/* Occupancy Count Badge Above Video */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400 font-mono font-normal">Live Inflow (Occupancy):</span>
-          <span className="px-2.5 py-0.5 rounded bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm shadow-cyan-500/20">
-            <Users className="h-3.5 w-3.5 text-cyan-400" />
-            <span>{currentOccupancy || totalEntered} Shoppers</span>
+          <span className="px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs font-mono flex items-center gap-1.5 shadow-2xs">
+            <Users className="h-3.5 w-3.5 text-emerald-600" />
+            <span>{currentOccupancy || totalEntered} Shoppers Inflow</span>
           </span>
         </div>
       </div>
 
       {/* Live Video Player */}
-      <div className="relative h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden p-3 flex flex-col justify-between shadow-inner touch-none">
+      <div className="relative h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-slate-800 overflow-hidden p-3 flex flex-col justify-between shadow-inner touch-none">
         <video 
           ref={videoRef} 
           autoPlay 
@@ -161,12 +152,12 @@ export const LiveEntranceVisionCard: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[10px] text-slate-400 mt-2">
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 mt-2">
         <span className="flex items-center gap-1">
-          <Cpu className="h-3 w-3 text-cyan-400" />
+          <Cpu className="h-3 w-3 text-sky-600" />
           <span>Real-Time Person Tracking &amp; Line Crossing</span>
         </span>
-        <span className="text-emerald-400 font-bold">100% Edge Processing</span>
+        <span className="text-emerald-700 font-bold">100% Edge Processing</span>
       </div>
     </div>
   )

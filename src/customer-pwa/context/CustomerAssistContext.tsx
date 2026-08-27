@@ -9,6 +9,7 @@ import {
 } from '../types/customerAssist.types'
 import { useCustomerShopping } from './CustomerShoppingContext'
 import { realStoreApi } from '@/services/api/realStoreApi'
+import { useAppStore } from '@/store/useAppStore'
 
 const LOCAL_STORAGE_KEY = 're_customer_assist_active_req'
 const ANONYMOUS_SESSION_KEY = 're_anonymous_shopper_id'
@@ -69,6 +70,56 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
       localStorage.removeItem(LOCAL_STORAGE_KEY)
     }
   }, [])
+
+  // Two-way synchronization with Store Associate Companion state
+  useEffect(() => {
+    const unsub = useAppStore.subscribe((state) => {
+      if (activeRequest) {
+        const match = state.customerRequests.find((r) => r.id === activeRequest.id)
+        if (match) {
+          const newStatus = match.status === 'ASSISTING' ? 'ARRIVED' : match.status === 'ACCEPTED' ? 'ON_THE_WAY' : (match.status as CustomerAssistStatus)
+          setActiveRequest((prev) => {
+            if (!prev) return null
+            if (
+              prev.status !== newStatus ||
+              prev.messages.length !== match.messages.length ||
+              prev.backroomItemFound !== match.backroomItemFound
+            ) {
+              const updated: CustomerAssistRequest = {
+                ...prev,
+                status: newStatus,
+                assignedAssociate: match.assignedStaffName
+                  ? {
+                      name: `${match.assignedStaffName} (Store Associate)`,
+                      role: match.isBackroomFlow ? 'Inventory Restocker' : 'Floor Assistance',
+                      estimatedArrival: '~1 min',
+                      avatarColor: '#2563EB',
+                    }
+                  : prev.assignedAssociate,
+                backroomItemFound: match.backroomItemFound,
+                messages: match.messages.map((m) => ({
+                  id: m.id,
+                  sender: m.sender,
+                  text: m.text,
+                  timestamp: m.timestamp,
+                })),
+                timeline: match.timeline.map((t) => ({
+                  status: t.status as CustomerAssistStatus,
+                  title: t.title,
+                  timestamp: t.timestamp,
+                  note: t.note,
+                })),
+              }
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
+              return updated
+            }
+            return prev
+          })
+        }
+      }
+    })
+    return () => unsub()
+  }, [activeRequest?.id])
 
   // Sync active request changes to localStorage
   const saveRequestState = useCallback((req: CustomerAssistRequest | null) => {
@@ -155,11 +206,30 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
       console.warn('Backend assist submission notice:', e)
     }
 
+    // Sync directly to Staff App Zustand store in real time
+    useAppStore.getState().receiveCustomerRequest({
+      id: newRequest.id,
+      requestType: newRequest.requestType as any,
+      typeLabel: newRequest.typeLabel,
+      productName: newRequest.product?.name,
+      productSku: newRequest.product?.id,
+      shelfCode: newRequest.shelfCode,
+      zoneId: newRequest.zoneId,
+      zoneName: newRequest.zoneName,
+      message: newRequest.message || '',
+      receivedAt: 'Just now',
+      status: 'REQUESTED',
+      isBackroomFlow: newRequest.isBackroomFlow,
+      backroomBay: newRequest.isBackroomFlow ? 'Bay D2 (Cold Room Rack 2)' : undefined,
+      messages: [],
+      timeline: newRequest.timeline,
+    })
+
     saveRequestState(newRequest)
     setIsCreating(false)
     closeHelpSheet()
     setActiveTab('HELP')
-    showToast('✓ Staff help requested. Finding an available associate...')
+    showToast('✓ Staff help requested. Dispatched to store floor team.')
 
     // Step 2: Associate Assigned (after 2.5s)
     const timer1 = window.setTimeout(() => {

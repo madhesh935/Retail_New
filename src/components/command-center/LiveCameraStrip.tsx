@@ -132,12 +132,12 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
       </div>
 
       {/* Bottom Telemetry Summary */}
-      <div className="p-3.5 rounded-xl bg-[#090D14] border border-[#1E293B] flex items-center justify-between">
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
         <div>
-          <span className="text-xs font-bold text-white block">Real-Time Telemetry Summary</span>
-          <p className="text-xs text-slate-300 mt-0.5">{feed.summary}</p>
+          <span className="text-xs font-bold text-slate-900 block">Real-Time Telemetry Summary</span>
+          <p className="text-xs text-slate-600 mt-0.5">{feed.summary}</p>
         </div>
-        <span className="text-xs font-mono px-2 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
+        <span className="text-xs font-mono px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
           STREAM NOMINAL
         </span>
       </div>
@@ -264,12 +264,12 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
       </div>
 
       {/* Bottom Telemetry Summary */}
-      <div className="p-3.5 rounded-xl bg-[#090D14] border border-[#1E293B] flex items-center justify-between">
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
         <div>
-          <span className="text-xs font-bold text-white block">Real-Time Telemetry Summary</span>
-          <p className="text-xs text-slate-300 mt-0.5">{feed.summary}</p>
+          <span className="text-xs font-bold text-slate-900 block">Real-Time Telemetry Summary</span>
+          <p className="text-xs text-slate-600 mt-0.5">{feed.summary}</p>
         </div>
-        <span className="text-xs font-mono px-2 py-1 rounded bg-rose-950/80 text-rose-300 border border-rose-500/40 font-bold">
+        <span className="text-xs font-mono px-2 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold">
           ALERT: CONGESTED
         </span>
       </div>
@@ -461,14 +461,14 @@ export const LiveCameraStrip: React.FC = () => {
   ]
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 space-y-3 shadow-sm select-none font-sans">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3 shadow-2xs select-none font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-[#1E293B]">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#131D31] text-cyan-400 border border-cyan-500/30">
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
             <Camera className="h-3.5 w-3.5" />
           </div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
             Live Cameras
           </h3>
         </div>
@@ -477,7 +477,7 @@ export const LiveCameraStrip: React.FC = () => {
           variant="outline"
           size="xs"
           onClick={() => navigate('/cameras')}
-          className="text-slate-300 border-[#1E293B] hover:bg-[#131D31] text-xs gap-1 h-7 cursor-pointer"
+          className="text-slate-700 border-slate-200 hover:bg-slate-50 text-xs gap-1 h-7 cursor-pointer"
         >
           <span>All Cameras</span>
           <ArrowRight className="h-3 w-3" />
@@ -494,33 +494,33 @@ export const LiveCameraStrip: React.FC = () => {
             <div
               key={feed.id}
               className={cn(
-                'rounded-lg bg-[#090D14] border p-2.5 transition-all flex flex-col justify-between space-y-2 group shadow-sm',
+                'rounded-xl bg-white border p-2.5 transition-all flex flex-col justify-between space-y-2 group shadow-2xs',
                 isCritical
-                  ? 'border-rose-500/50 hover:border-rose-400'
+                  ? 'border-rose-300 hover:border-rose-400 bg-rose-50/10'
                   : isWarning
-                  ? 'border-amber-500/40 hover:border-amber-400'
-                  : 'border-[#1E293B] hover:border-cyan-500/40'
+                  ? 'border-amber-300 hover:border-amber-400'
+                  : 'border-slate-200 hover:border-sky-300'
               )}
             >
               {/* Card Header: Camera ID & Live status */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-[10px] font-mono font-bold text-cyan-300 bg-[#131D31] px-1.5 py-0.5 rounded border border-cyan-500/30">
+                  <span className="text-[10px] font-mono font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
                     {feed.code}
                   </span>
-                  <span className="text-xs font-semibold text-white truncate">
+                  <span className="text-xs font-semibold text-slate-900 truncate">
                     {feed.name}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-400 font-bold shrink-0">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-700 font-bold shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   LIVE
                 </div>
               </div>
 
-              {/* Viewport Frame - Increased Size & Live Video Feed */}
-              <div className="relative w-full h-44 sm:h-48 rounded-lg bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-2 shadow-inner group-hover:border-cyan-500/50 transition-all">
+              {/* Viewport Frame - Live Video Feed */}
+              <div className="relative w-full h-44 sm:h-48 rounded-lg bg-[#070A0F] border border-slate-800 overflow-hidden flex flex-col justify-between p-2 shadow-inner group-hover:border-sky-500/50 transition-all">
                 {/* Live Video Feed Element */}
                 <div className="absolute inset-0">
                   {feed.code === 'C01' ? (
@@ -534,16 +534,16 @@ export const LiveCameraStrip: React.FC = () => {
 
                 {/* Card Top HUD */}
                 <div className="z-10 flex items-center justify-between pointer-events-none">
-                  <span className="text-[10px] text-cyan-300 font-mono font-bold bg-[#070A0F]/85 px-1.5 py-0.5 rounded border border-cyan-500/30 flex items-center gap-1 shadow-sm">
+                  <span className="text-[10px] text-sky-300 font-mono font-bold bg-black/80 px-1.5 py-0.5 rounded border border-sky-500/30 flex items-center gap-1 shadow-2xs">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     {feed.fps} FPS
                   </span>
                   {isCritical ? (
-                    <span className="px-1.5 py-0.5 rounded bg-rose-950/90 text-rose-300 border border-rose-500/50 text-[9px] font-mono font-bold flex items-center gap-1 shadow-sm">
+                    <span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-mono font-bold flex items-center gap-1 shadow-2xs">
                       <AlertOctagon className="h-2.5 w-2.5" /> ALERT
                     </span>
                   ) : (
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-1 shadow-sm">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-mono font-bold flex items-center gap-1 shadow-2xs">
                       <CheckCircle2 className="h-2.5 w-2.5" /> OPTIMAL
                     </span>
                   )}
@@ -554,7 +554,7 @@ export const LiveCameraStrip: React.FC = () => {
               <p
                 className={cn(
                   'text-[11px] leading-tight line-clamp-1 min-h-[16px]',
-                  isCritical ? 'text-rose-300 font-medium' : 'text-slate-400'
+                  isCritical ? 'text-rose-600 font-medium' : 'text-slate-500'
                 )}
               >
                 {feed.summary}
@@ -565,7 +565,7 @@ export const LiveCameraStrip: React.FC = () => {
                 variant="outline"
                 size="xs"
                 onClick={() => setSelectedCamera(feed)}
-                className="w-full text-xs h-7 text-slate-300 border-[#1E293B] hover:bg-[#131D31] hover:text-white cursor-pointer font-sans"
+                className="w-full text-xs h-7 text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 cursor-pointer font-sans"
               >
                 View Feed
               </Button>
@@ -577,29 +577,29 @@ export const LiveCameraStrip: React.FC = () => {
       {/* Full-Screen Feed Detail Modal Dialog */}
       {selectedCamera && (
         <Dialog open={!!selectedCamera} onOpenChange={() => setSelectedCamera(null)}>
-          <DialogContent className="w-[95vw] max-w-6xl h-[88vh] max-h-[860px] bg-[#0A0F1D] border border-[#1E293B] text-white p-4 sm:p-6 flex flex-col overflow-hidden rounded-2xl shadow-2xl font-sans">
+          <DialogContent className="w-[95vw] max-w-6xl h-[88vh] max-h-[860px] bg-white border border-slate-200 text-slate-900 p-4 sm:p-6 flex flex-col overflow-hidden rounded-2xl shadow-2xl font-sans">
             {/* Modal Header */}
-            <DialogHeader className="border-b border-[#1E293B] pb-3 shrink-0">
+            <DialogHeader className="border-b border-slate-100 pb-3 shrink-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-6">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-400">
+                  <div className="p-1.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-600">
                     <Camera className="h-4 w-4" />
                   </div>
                   <div>
-                    <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2 font-mono">
-                      <span className="text-cyan-300 bg-[#131D31] px-2 py-0.5 rounded border border-cyan-500/30 text-xs">
+                    <DialogTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 font-mono">
+                      <span className="text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 text-xs">
                         {selectedCamera.code}
                       </span>
                       <span>{selectedCamera.name} • Live Stream Feed</span>
                     </DialogTitle>
-                    <p className="text-xs text-slate-400 font-sans mt-0.5">
+                    <p className="text-xs text-slate-500 font-sans mt-0.5">
                       Edge-AI Jetson Vision Stream • {selectedCamera.resolution} • {selectedCamera.latencyMs}ms latency
                     </p>
                   </div>
                 </div>
 
                 {/* Camera Selector Tabs in Header */}
-                <div className="flex items-center gap-1.5 bg-[#090D16] p-1 rounded-lg border border-[#1E293B]">
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
                   {feeds.map((f) => (
                     <button
                       key={f.id}
@@ -607,8 +607,8 @@ export const LiveCameraStrip: React.FC = () => {
                       className={cn(
                         'px-2.5 py-1 rounded text-xs font-mono font-medium transition-all cursor-pointer flex items-center gap-1.5',
                         selectedCamera.id === f.id
-                          ? 'bg-cyan-600 text-white shadow-sm font-bold'
-                          : 'text-slate-400 hover:text-white hover:bg-[#131D31]'
+                          ? 'bg-sky-600 text-white shadow-xs font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                       )}
                     >
                       <span>{f.code}</span>
@@ -627,7 +627,7 @@ export const LiveCameraStrip: React.FC = () => {
                 <LiveCheckoutModalStream feed={selectedCamera} />
               ) : (
                 <div className="space-y-3 font-mono">
-                  <div className="relative w-full h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-4 shadow-inner">
+                  <div className="relative w-full h-80 sm:h-96 md:h-[480px] rounded-xl bg-[#070A0F] border border-slate-800 overflow-hidden flex flex-col justify-between p-4 shadow-inner">
                     <div className="flex items-center justify-between text-xs font-mono text-cyan-400 z-10">
                       <span className="flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -646,22 +646,22 @@ export const LiveCameraStrip: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-300 font-mono z-10 pt-2 border-t border-[#1E293B]/60">
+                    <div className="flex items-center justify-between text-xs text-slate-300 font-mono z-10 pt-2 border-t border-slate-800">
                       <span>Detection Model: YOLOv8-Retail-Edge</span>
                       <span className="text-emerald-400 font-bold">100% On-Device Neural Processing</span>
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-[#090D14] border border-[#1E293B] flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-white block">Real-Time Telemetry Summary</span>
-                      <p className="text-xs text-slate-300 mt-0.5">{selectedCamera.summary}</p>
+                      <span className="text-xs font-bold text-slate-900 block">Real-Time Telemetry Summary</span>
+                      <p className="text-xs text-slate-600 mt-0.5">{selectedCamera.summary}</p>
                     </div>
                     <span className={cn(
                       'text-xs font-mono px-2 py-1 rounded font-bold',
                       selectedCamera.status === 'CRITICAL'
-                        ? 'bg-rose-950/80 text-rose-300 border border-rose-500/40'
-                        : 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     )}>
                       {selectedCamera.status === 'CRITICAL' ? 'ALERT' : 'STREAM NOMINAL'}
                     </span>

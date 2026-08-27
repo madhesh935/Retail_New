@@ -10,15 +10,15 @@ export const DemoModeBanner: React.FC = () => {
   if (!isDemoMode) return null
 
   return (
-    <div className="bg-amber-950/90 border-b border-amber-500/40 px-3.5 py-1.5 text-amber-200 text-xs flex items-center justify-between shadow-inner shrink-0 select-none">
+    <div className="bg-amber-50 border-b border-amber-200 px-3.5 py-1.5 text-amber-900 text-xs flex items-center justify-between shadow-2xs shrink-0 select-none font-sans">
       <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center h-4 w-4 rounded bg-amber-500/20 text-amber-400">
+        <div className="flex items-center justify-center h-4 w-4 rounded bg-amber-100 text-amber-700">
           <Info className="h-3 w-3" />
         </div>
-        <span className="font-mono font-bold tracking-wider uppercase text-[11px] text-amber-300">
+        <span className="font-bold tracking-wider uppercase text-[11px] text-amber-800">
           DEMO MODE ACTIVE
         </span>
-        <span className="text-amber-200/80 text-[11px] hidden md:inline">
+        <span className="text-amber-700 text-[11px] hidden md:inline">
           — Real-time simulated Edge AI telemetry is running. Mock data adapter engaged.
         </span>
       </div>
@@ -28,7 +28,7 @@ export const DemoModeBanner: React.FC = () => {
           variant="outline"
           size="xs"
           onClick={() => setDemoMode(false)}
-          className="border-amber-500/40 text-amber-200 hover:bg-amber-900/60 text-[10px] font-mono h-5.5 px-2"
+          className="border-amber-300 text-amber-800 bg-white hover:bg-amber-100/60 text-[10px] font-semibold h-5.5 px-2 shadow-2xs"
         >
           Switch to Live Backend
         </Button>

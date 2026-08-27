@@ -53,53 +53,53 @@ RISK MATRIX:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none font-mono">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none font-sans">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity animate-in fade-in-0"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in-0"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-lg rounded-xl border border-[#1E293B] bg-[#0B0F17] p-5 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-150 text-xs">
+      <div className="relative w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-2xl z-10 space-y-4 animate-in zoom-in-95 duration-150 text-xs">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="p-1 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-400">
+            <div className="p-1 rounded-md bg-sky-50 border border-sky-200 text-sky-600">
               <FileText className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 Store Operations Brief
               </h3>
-              <span className="text-[10px] text-cyan-400">
+              <span className="text-[10px] text-sky-700 font-semibold">
                 Automated Operational Intelligence Digest
               </span>
             </div>
           </div>
 
-          <Button variant="ghost" size="icon-xs" onClick={onClose} className="text-slate-400 hover:text-white">
+          <Button variant="ghost" size="icon-xs" onClick={onClose} className="text-slate-400 hover:text-slate-900">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Content Box */}
-        <div className="p-3.5 rounded-lg bg-[#090D14] border border-[#1E293B] space-y-3 font-mono text-[11px] text-slate-200">
-          <div className="text-cyan-300 font-bold border-b border-slate-800 pb-1.5 flex justify-between">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 text-[11px] text-slate-700 shadow-2xs">
+          <div className="text-sky-700 font-bold border-b border-slate-200 pb-1.5 flex justify-between font-sans">
             <span>MORNING OPERATIONS BRIEF</span>
-            <span className="text-[9px] text-slate-400">Store 01 • Chennai Central</span>
+            <span className="text-[9px] text-slate-400 font-mono">Store 01 • Chennai Central</span>
           </div>
 
-          <p className="text-slate-300 font-sans leading-relaxed">
-            Traffic is currently <strong className="text-cyan-300">14% above</strong> the typical level for this time period. Shelf health is <strong className="text-emerald-400">86%</strong>, with Beverage B4 and Dairy D2 requiring attention. Checkout C1 has a <strong className="text-rose-400">92% probability</strong> of congestion within five minutes.
+          <p className="text-slate-700 leading-relaxed">
+            Traffic is currently <strong className="text-sky-700">14% above</strong> the typical level for this time period. Shelf health is <strong className="text-emerald-700">86%</strong>, with Beverage B4 and Dairy D2 requiring attention. Checkout C1 has a <strong className="text-rose-700">92% probability</strong> of congestion within five minutes.
           </p>
 
           {/* Priorities */}
-          <div className="space-y-1 bg-[#0F172A] p-2.5 rounded border border-[#1E293B]">
-            <span className="text-[10px] font-bold text-white uppercase block">
+          <div className="space-y-1 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-900 uppercase block">
               Immediate Priorities:
             </span>
-            <div className="space-y-0.5 text-slate-300 font-sans text-xs">
+            <div className="space-y-0.5 text-slate-700 text-xs">
               <div>1. Replenish Beverage B4 (24 units from Bay 3B)</div>
               <div>2. Open Standby Counter C3</div>
               <div>3. Assign S02 (Marcus Vance) to billing support</div>
@@ -108,23 +108,23 @@ RISK MATRIX:
 
           {/* Risks Summary */}
           <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-            <div className="bg-[#0F172A] p-1.5 rounded border border-amber-500/40">
+            <div className="bg-white p-2 rounded-lg border border-amber-200 shadow-2xs">
               <span className="text-slate-500 block">Inventory</span>
-              <strong className="text-amber-300">2 Risks</strong>
+              <strong className="text-amber-800 font-bold">2 Risks</strong>
             </div>
-            <div className="bg-[#0F172A] p-1.5 rounded border border-rose-500/40">
+            <div className="bg-white p-2 rounded-lg border border-rose-200 shadow-2xs">
               <span className="text-slate-500 block">Queue</span>
-              <strong className="text-rose-400">1 Risk</strong>
+              <strong className="text-rose-700 font-bold">1 Risk</strong>
             </div>
-            <div className="bg-[#0F172A] p-1.5 rounded border border-emerald-500/40">
+            <div className="bg-white p-2 rounded-lg border border-emerald-200 shadow-2xs">
               <span className="text-slate-500 block">Edge Hardware</span>
-              <strong className="text-emerald-400">0 Critical</strong>
+              <strong className="text-emerald-700 font-bold">0 Critical</strong>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#1E293B]">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
           <Button
             variant="outline"
             size="xs"
@@ -132,9 +132,9 @@ RISK MATRIX:
               onClose()
               navigate('/reports-insights')
             }}
-            className="text-[11px] h-7 px-2.5 text-slate-300 border-[#1E293B] gap-1"
+            className="text-[11px] h-7 px-2.5 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 gap-1 shadow-2xs font-semibold"
           >
-            <ExternalLink className="h-3.5 w-3.5 text-cyan-400" />
+            <ExternalLink className="h-3.5 w-3.5 text-sky-600" />
             <span>Open Reports & Insights</span>
           </Button>
 
@@ -143,9 +143,9 @@ RISK MATRIX:
               variant="outline"
               size="xs"
               onClick={handleCopy}
-              className="text-[11px] h-7 px-2.5 text-cyan-300 border-[#1E293B] gap-1 font-mono"
+              className="text-[11px] h-7 px-2.5 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 gap-1 shadow-2xs font-semibold"
             >
-              {isCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+              {isCopied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
               <span>{isCopied ? 'Copied' : 'Copy Summary'}</span>
             </Button>
 
@@ -156,7 +156,7 @@ RISK MATRIX:
                 alert('Store brief saved to Reports history.')
                 onClose()
               }}
-              className="text-[11px] h-7 px-2.5 font-mono"
+              className="text-[11px] h-7 px-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
             >
               <span>Save Brief</span>
             </Button>

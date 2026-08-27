@@ -33,7 +33,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   const normStatus = (status || '').toUpperCase()
 
   let dotColor = 'bg-slate-400'
-  let badgeClasses = 'bg-slate-900/80 border-slate-700 text-slate-300'
+  let badgeClasses = 'bg-slate-50 border-slate-200 text-slate-700'
   let displayLabel = label || status
 
   switch (normStatus) {
@@ -41,29 +41,29 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     case 'ACTIVE':
     case 'HEALTHY':
     case 'SYNCED':
-      dotColor = 'bg-emerald-400'
-      badgeClasses = 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+      dotColor = 'bg-emerald-500'
+      badgeClasses = 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold'
       break
     case 'DEGRADED':
     case 'WARNING':
     case 'CONGESTED':
     case 'STANDBY':
-      dotColor = 'bg-amber-400'
-      badgeClasses = 'bg-amber-950/60 border-amber-500/40 text-amber-300'
+      dotColor = 'bg-amber-500'
+      badgeClasses = 'bg-amber-50 border-amber-200 text-amber-800 font-bold'
       break
     case 'CRITICAL':
     case 'OFFLINE':
       dotColor = 'bg-rose-500'
-      badgeClasses = 'bg-rose-950/60 border-rose-500/40 text-rose-300'
+      badgeClasses = 'bg-rose-50 border-rose-200 text-rose-700 font-bold'
       break
     case 'CONNECTING':
-      dotColor = 'bg-cyan-400'
-      badgeClasses = 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300'
+      dotColor = 'bg-sky-500'
+      badgeClasses = 'bg-sky-50 border-sky-200 text-sky-700 font-bold'
       break
     case 'CLOSED':
     default:
-      dotColor = 'bg-slate-500'
-      badgeClasses = 'bg-slate-900 border-slate-700 text-slate-400'
+      dotColor = 'bg-slate-400'
+      badgeClasses = 'bg-slate-100 border-slate-200 text-slate-600'
       break
   }
 
@@ -73,7 +73,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded border font-mono font-medium uppercase select-none',
+        'inline-flex items-center gap-1.5 rounded-md border font-mono uppercase select-none shadow-2xs',
         size === 'sm' ? 'px-1.5 py-0.5 text-[10px] tracking-wider' : 'px-2.5 py-1 text-xs tracking-wider',
         badgeClasses,
         className

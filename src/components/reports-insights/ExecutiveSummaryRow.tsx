@@ -23,136 +23,136 @@ export const ExecutiveSummaryRow: React.FC = () => {
   const queueActionsCount = queueActionLog.length
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-mono">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-sans">
       {/* 1. Footfall */}
-      <div className="rounded-lg bg-[#0F172A] border border-cyan-500/40 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
             Total Footfall
           </span>
-          <div className="p-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-            <Footprints className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
+            <Footprints className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-white tracking-tight">1,284</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Entrances: 1,840</div>
+          <div className="text-2xl font-bold text-slate-900 tracking-tight font-mono">1,284</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Entrances: 1,840</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400 flex items-center gap-0.5">
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
             <ArrowUpRight className="h-3 w-3" /> +12%
           </span>
-          <span className="text-slate-500 text-[9px]">vs yesterday</span>
+          <span className="text-slate-400 text-[9px]">vs yesterday</span>
         </div>
       </div>
 
       {/* 2. Average Shelf Availability */}
-      <div className="rounded-lg bg-[#0F172A] border border-emerald-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
             Avg Availability
           </span>
-          <div className="p-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30">
-            <PackageCheck className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200">
+            <PackageCheck className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-emerald-400 tracking-tight">91%</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Target SLA: 95%</div>
+          <div className="text-2xl font-bold text-emerald-700 tracking-tight font-mono">91%</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Target SLA: 95%</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400">+1.8% vs last week</span>
-          <span className="text-slate-500 text-[9px]">Optimal</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-emerald-700 font-semibold">+1.8% vs last wk</span>
+          <span className="text-slate-400 text-[9px]">Optimal</span>
         </div>
       </div>
 
       {/* 3. Average Queue Wait */}
-      <div className={`rounded-lg bg-[#0F172A] border ${isSlaBreached ? 'border-rose-500/40' : 'border-cyan-500/30'} p-3 flex flex-col justify-between shadow-sm`}>
+      <div className={`rounded-xl bg-white border ${isSlaBreached ? 'border-rose-300 ring-1 ring-rose-200' : 'border-slate-200'} p-3.5 flex flex-col justify-between shadow-2xs`}>
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
             Avg Queue Wait
           </span>
-          <div className={`p-1 rounded ${isSlaBreached ? 'bg-rose-950 text-rose-400 border border-rose-500/30' : 'bg-cyan-950 text-cyan-400 border border-cyan-500/30'}`}>
-            <Clock className="h-3 w-3" />
+          <div className={`p-1 rounded-md ${isSlaBreached ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-sky-50 text-sky-600 border border-sky-200'}`}>
+            <Clock className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className={`text-2xl font-bold tracking-tight flex items-baseline gap-1 ${isSlaBreached ? 'text-rose-400' : 'text-white'}`}>
+          <div className={`text-2xl font-bold tracking-tight flex items-baseline gap-1 font-mono ${isSlaBreached ? 'text-rose-700' : 'text-slate-900'}`}>
             <span>{avgWaitMin}</span>
-            <span className="text-xs text-slate-400 font-normal">min</span>
+            <span className="text-xs text-slate-500 font-normal">min</span>
           </div>
-          <div className={`text-[10px] mt-0.5 ${isSlaBreached ? 'text-rose-400 font-semibold' : 'text-slate-400'}`}>
-            {isSlaBreached ? '⚠️ SLA Breached (&gt;3.0 min)' : 'Max Wait SLA: 3.0 min'}
+          <div className={`text-[10px] mt-0.5 ${isSlaBreached ? 'text-rose-700 font-semibold' : 'text-slate-500'}`}>
+            {isSlaBreached ? '⚠️ SLA Breached (>3.0 min)' : 'Max Wait SLA: 3.0 min'}
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className={`flex items-center gap-0.5 ${isSlaBreached ? 'text-rose-400' : 'text-emerald-400'}`}>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className={`flex items-center gap-0.5 font-semibold ${isSlaBreached ? 'text-rose-700' : 'text-emerald-700'}`}>
             <ArrowDownRight className="h-3 w-3" /> Live
           </span>
-          <span className="text-slate-500 text-[9px]">YOLO Model</span>
+          <span className="text-slate-400 text-[9px]">YOLO Model</span>
         </div>
       </div>
 
       {/* 4. AI Actions Completed */}
-      <div className="rounded-lg bg-[#0F172A] border border-purple-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
             AI Actions Done
           </span>
-          <div className="p-1 rounded bg-purple-950 text-purple-400 border border-purple-500/30">
-            <Sparkles className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-purple-50 text-purple-600 border border-purple-200">
+            <Sparkles className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-purple-300 tracking-tight">18</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Vision Verified</div>
+          <div className="text-2xl font-bold text-purple-700 tracking-tight font-mono">18</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Vision Verified</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-purple-300 font-semibold">100% Executed</span>
-          <span className="text-slate-500 text-[9px]">Autonomous</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-purple-700 font-semibold">100% Executed</span>
+          <span className="text-slate-400 text-[9px]">Autonomous</span>
         </div>
       </div>
 
       {/* 5. Critical Incidents Resolved */}
-      <div className="rounded-lg bg-[#0F172A] border border-rose-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
             Critical Resolved
           </span>
-          <div className="p-1 rounded bg-rose-950 text-rose-400 border border-rose-500/30">
-            <ShieldCheck className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-rose-50 text-rose-600 border border-rose-200">
+            <ShieldCheck className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-rose-300 tracking-tight">7/8</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">87.5% Resolved</div>
+          <div className="text-2xl font-bold text-rose-700 tracking-tight font-mono">7/8</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">87.5% Resolved</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-rose-400">1 Active (C1 Queue)</span>
-          <span className="text-slate-500 text-[9px]">In Progress</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-rose-700 font-semibold">1 Active (C1 Queue)</span>
+          <span className="text-slate-400 text-[9px]">In Progress</span>
         </div>
       </div>
 
       {/* 6. Average Staff Response */}
-      <div className="rounded-lg bg-[#0F172A] border border-blue-500/30 p-3 flex flex-col justify-between shadow-sm">
+      <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">
             Staff Response
           </span>
-          <div className="p-1 rounded bg-blue-950 text-blue-400 border border-blue-500/30">
-            <UserCheck className="h-3 w-3" />
+          <div className="p-1 rounded-md bg-blue-50 text-blue-600 border border-blue-200">
+            <UserCheck className="h-3.5 w-3.5" />
           </div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-blue-300 tracking-tight flex items-baseline gap-1">
+          <div className="text-2xl font-bold text-blue-700 tracking-tight flex items-baseline gap-1 font-mono">
             <span>3.2</span>
-            <span className="text-xs text-slate-400 font-normal">min</span>
+            <span className="text-xs text-slate-500 font-normal">min</span>
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Dispatch to arrival</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Dispatch to arrival</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-400">-0.4 min vs target</span>
-          <span className="text-slate-500 text-[9px]">High Velocity</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+          <span className="text-emerald-700 font-semibold">-0.4 min vs target</span>
+          <span className="text-slate-400 text-[9px]">High Velocity</span>
         </div>
       </div>
     </div>

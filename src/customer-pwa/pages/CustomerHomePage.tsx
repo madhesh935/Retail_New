@@ -1,94 +1,23 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Search,
-  Bot,
   ShoppingBag,
   Navigation,
-  Sparkles,
-  MapPin,
   Tag,
   ArrowRight,
-  Zap,
-  Flame,
-  AlertTriangle,
-  ChevronRight,
-  Percent,
+  HandHelping,
 } from 'lucide-react'
 import { useCustomerShopping, STORE_CATALOG } from '../context/CustomerShoppingContext'
 import { useCustomerAssist } from '../context/CustomerAssistContext'
 import { CustomerProductCard } from '../components/CustomerProductCard'
 import { AssistanceStatusCard } from '../components/assist/AssistanceStatusCard'
-import { HandHelping } from 'lucide-react'
 
 export const CustomerHomePage: React.FC = () => {
   const { shoppingList, setActiveTab, setIsNavigating } = useCustomerShopping()
-  const { openHelpSheet, activeRequest } = useCustomerAssist()
+  const { openHelpSheet } = useCustomerAssist()
   const [showOffersModal, setShowOffersModal] = useState(false)
-  const [smartNowIndex, setSmartNowIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
 
   const listCount = shoppingList.length
-
-  const smartNowItems = [
-    {
-      id: 'checkout',
-      icon: Zap,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50/70',
-      borderColor: 'border-emerald-200',
-      title: '⚡ Fastest Checkout: Counter C2',
-      detail: '~1.8 min wait • 2 shoppers in queue',
-      actionText: 'View Checkout',
-      onAction: () => {
-        setIsNavigating(false)
-        setActiveTab('ROUTE')
-      },
-    },
-    {
-      id: 'popular',
-      icon: Flame,
-      iconColor: 'text-cyan-600',
-      bgColor: 'bg-cyan-50/70',
-      borderColor: 'border-cyan-200',
-      title: '🔥 Popular in store right now',
-      detail: 'Heritage Whole Milk & Dove Daily Moisture Shampoo',
-      actionText: 'View Items',
-      onAction: () => setActiveTab('SEARCH'),
-    },
-    {
-      id: 'busy',
-      icon: AlertTriangle,
-      iconColor: 'text-amber-600',
-      bgColor: 'bg-amber-50/70',
-      borderColor: 'border-amber-200',
-      title: '⚠️ Aisle 4 is currently busy',
-      detail: 'Smart Route can bypass it via North Concourse (+1 min)',
-      actionText: 'View Route',
-      onAction: () => setActiveTab('ROUTE'),
-    },
-    {
-      id: 'deal',
-      icon: Percent,
-      iconColor: 'text-purple-600',
-      bgColor: 'bg-purple-50/70',
-      borderColor: 'border-purple-200',
-      title: '🏷️ In-Store Deal Nearby',
-      detail: '20% off beverages in Aisle 5 & Snacks island',
-      actionText: 'View Offers',
-      onAction: () => setShowOffersModal(true),
-    },
-  ]
-
-  // Auto-rotate Smart Now every 6 seconds unless paused
-  useEffect(() => {
-    if (isPaused) return
-    const interval = setInterval(() => {
-      setSmartNowIndex((prev) => (prev + 1) % smartNowItems.length)
-    }, 6000)
-    return () => clearInterval(interval)
-  }, [isPaused, smartNowItems.length])
-
-  const activeSmartNow = smartNowItems[smartNowIndex]
 
   return (
     <div className="space-y-4 pb-6 select-none">
@@ -187,57 +116,7 @@ export const CustomerHomePage: React.FC = () => {
         </button>
       </div>
 
-      {/* 4. Dynamic SMART NOW ✦ Rotating Live Intelligence Module */}
-      <div
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        onTouchStart={() => setIsPaused(true)}
-        onTouchEnd={() => setIsPaused(false)}
-        className={`rounded-2xl border p-3.5 shadow-sm transition-all duration-300 ${activeSmartNow.bgColor} ${activeSmartNow.borderColor}`}
-      >
-        <div className="flex items-center justify-between pb-1.5 border-b border-black/5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-cyan-600" />
-              <span>SMART NOW ✦</span>
-            </span>
-          </div>
-
-          {/* Indicator dots */}
-          <div className="flex items-center gap-1">
-            {smartNowItems.map((_, idx) => (
-              <span
-                key={idx}
-                onClick={() => setSmartNowIndex(idx)}
-                className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                  smartNowIndex === idx ? 'w-4 bg-slate-800' : 'w-1.5 bg-slate-300'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-2 flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h4 className="text-xs font-bold text-slate-900 leading-tight truncate">
-              {activeSmartNow.title}
-            </h4>
-            <p className="text-[11px] text-slate-600 truncate mt-0.5">
-              {activeSmartNow.detail}
-            </p>
-          </div>
-
-          <button
-            onClick={activeSmartNow.onAction}
-            className="text-[11px] font-extrabold text-cyan-900 bg-white hover:bg-cyan-50 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1"
-          >
-            <span>{activeSmartNow.actionText}</span>
-            <ChevronRight className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
-
-      {/* 5. Popular In-Store Products */}
+      {/* 4. Popular In-Store Products */}
       <div className="space-y-2.5 pt-1">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">

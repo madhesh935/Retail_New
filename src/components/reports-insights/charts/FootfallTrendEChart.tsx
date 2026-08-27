@@ -8,28 +8,29 @@ export const FootfallTrendEChart: React.FC = () => {
       grid: { top: 25, right: 15, bottom: 20, left: 35 },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: '#0F172A',
-        borderColor: '#1E293B',
-        textStyle: { color: '#F8FAFC', fontFamily: 'JetBrains Mono', fontSize: 10 },
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
+        textStyle: { color: '#0F172A', fontFamily: 'system-ui, sans-serif', fontSize: 11 },
+        extraCssText: 'box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-radius: 8px;',
       },
       legend: {
         data: ['Today', 'Yesterday'],
         top: 0,
         right: 0,
-        textStyle: { color: '#94A3B8', fontSize: 9, fontFamily: 'JetBrains Mono' },
+        textStyle: { color: '#64748B', fontSize: 10, fontFamily: 'system-ui, sans-serif' },
         itemWidth: 10,
         itemHeight: 5,
       },
       xAxis: {
         type: 'category',
         data: ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
-        axisLine: { lineStyle: { color: '#1E293B' } },
-        axisLabel: { color: '#64748B', fontSize: 9, fontFamily: 'JetBrains Mono' },
+        axisLine: { lineStyle: { color: '#CBD5E1' } },
+        axisLabel: { color: '#64748B', fontSize: 10, fontFamily: 'system-ui, sans-serif' },
       },
       yAxis: {
         type: 'value',
-        splitLine: { lineStyle: { color: '#131D31', type: 'dashed' } },
-        axisLabel: { color: '#64748B', fontSize: 9, fontFamily: 'JetBrains Mono' },
+        splitLine: { lineStyle: { color: '#F1F5F9', type: 'dashed' } },
+        axisLabel: { color: '#64748B', fontSize: 10, fontFamily: 'system-ui, sans-serif' },
       },
       series: [
         {
@@ -37,7 +38,7 @@ export const FootfallTrendEChart: React.FC = () => {
           type: 'line',
           smooth: true,
           data: [120, 240, 310, 420, 520, 380],
-          lineStyle: { color: '#06B6D4', width: 2 },
+          lineStyle: { color: '#0284C7', width: 2 },
           areaStyle: {
             color: {
               type: 'linear',
@@ -46,8 +47,8 @@ export const FootfallTrendEChart: React.FC = () => {
               x2: 0,
               y2: 1,
               colorStops: [
-                { offset: 0, color: 'rgba(6, 182, 212, 0.3)' },
-                { offset: 1, color: 'rgba(6, 182, 212, 0.0)' },
+                { offset: 0, color: 'rgba(2, 132, 199, 0.2)' },
+                { offset: 1, color: 'rgba(2, 132, 199, 0.0)' },
               ],
             },
           },
@@ -57,7 +58,7 @@ export const FootfallTrendEChart: React.FC = () => {
           type: 'line',
           smooth: true,
           data: [100, 210, 280, 370, 460, 340],
-          lineStyle: { color: '#64748B', width: 1.5, type: 'dashed' },
+          lineStyle: { color: '#94A3B8', width: 1.5, type: 'dashed' },
         },
       ],
     }

@@ -30,29 +30,29 @@ export const TelemetryPulse: React.FC<TelemetryPulseProps> = ({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 px-2 py-1 rounded bg-[#090D14] border border-[#1E293B] font-mono text-[11px] select-none shrink-0 whitespace-nowrap',
+        'inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 font-mono text-[11px] select-none shrink-0 whitespace-nowrap shadow-2xs',
         className
       )}
     >
       <div className="relative flex h-2 w-2 shrink-0">
         {isConnected && (
-          <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
+          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
         )}
         <span
           className={cn(
             'relative inline-flex rounded-full h-2 w-2',
-            isConnected ? 'bg-cyan-400' : 'bg-rose-500'
+            isConnected ? 'bg-emerald-500' : 'bg-rose-500'
           )}
         />
       </div>
 
       {showText && (
-        <div className="flex items-center gap-1.5 text-slate-300 shrink-0 whitespace-nowrap">
-          <span className="text-cyan-400 font-semibold uppercase tracking-wider text-[10px]">
+        <div className="flex items-center gap-1.5 text-slate-600 shrink-0 whitespace-nowrap font-sans">
+          <span className="text-sky-700 font-bold uppercase tracking-wider text-[10px] font-mono">
             {isDemoMode ? 'SCENARIO MODE' : 'LIVE TELEMETRY'}
           </span>
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-400">{timeAgo}</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-slate-500 text-[11px]">{timeAgo}</span>
         </div>
       )}
     </div>

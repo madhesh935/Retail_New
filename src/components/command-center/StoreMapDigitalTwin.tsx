@@ -91,13 +91,13 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
   }
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden select-none h-full min-h-[560px] font-sans">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs relative overflow-hidden select-none h-full min-h-[560px] font-sans">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-[#1E293B] z-10 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100 z-10 shrink-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
             <span>Store Map</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#131D31] text-cyan-300 border border-cyan-500/30 font-normal">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-normal">
               Live Overview
             </span>
           </h3>
@@ -105,12 +105,12 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
 
         {/* Layer Toggles */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex flex-wrap items-center bg-[#090D14] p-0.5 rounded-lg border border-[#1E293B] text-[11px]">
+          <div className="flex flex-wrap items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px]">
             <button
               onClick={() => toggleLayer('people')}
               className={cn(
-                'px-2 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer font-medium',
-                layers.people ? 'bg-[#131D31] text-cyan-300 border border-cyan-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                'px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium',
+                layers.people ? 'bg-white text-sky-700 border border-slate-200 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <Users className="h-3 w-3" /> People
@@ -119,8 +119,8 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <button
               onClick={() => toggleLayer('heatmap')}
               className={cn(
-                'px-2 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer font-medium',
-                layers.heatmap ? 'bg-amber-950 text-amber-300 border border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                'px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium',
+                layers.heatmap ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <Flame className="h-3 w-3" /> Heatmap
@@ -129,8 +129,8 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <button
               onClick={() => toggleLayer('shelves')}
               className={cn(
-                'px-2 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer font-medium',
-                layers.shelves ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                'px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium',
+                layers.shelves ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <Box className="h-3 w-3" /> Shelves
@@ -139,8 +139,8 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <button
               onClick={() => toggleLayer('queues')}
               className={cn(
-                'px-2 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer font-medium',
-                layers.queues ? 'bg-blue-950 text-blue-300 border border-blue-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                'px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium',
+                layers.queues ? 'bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <ListOrdered className="h-3 w-3" /> Queues
@@ -149,8 +149,8 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <button
               onClick={() => toggleLayer('staff')}
               className={cn(
-                'px-2 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer font-medium',
-                layers.staff ? 'bg-purple-950 text-purple-300 border border-purple-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                'px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium',
+                layers.staff ? 'bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <UserCheck className="h-3 w-3" /> Staff
@@ -159,28 +159,28 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <button
               onClick={() => toggleLayer('alerts')}
               className={cn(
-                'px-2 py-1 rounded transition-colors flex items-center gap-1 cursor-pointer font-medium',
-                layers.alerts ? 'bg-rose-950 text-rose-300 border border-rose-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                'px-2 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium',
+                layers.alerts ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <ShieldAlert className="h-3 w-3" /> Alerts
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#090D14] border border-[#1E293B] text-[10.5px] font-mono text-slate-400">
-            <span className={cn('h-1.5 w-1.5 rounded-full', isLive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400')} />
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-[10.5px] font-mono text-slate-500">
+            <span className={cn('h-1.5 w-1.5 rounded-full', isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
             <span>{isLive ? 'Updated 2s ago' : 'Stale'}</span>
           </div>
         </div>
       </div>
 
       {/* Map Canvas */}
-      <div className="relative flex-1 w-full my-2.5 rounded-lg bg-[#070A10] border border-[#1E293B] overflow-hidden flex flex-col justify-between p-3 min-h-[460px]">
+      <div className="relative flex-1 w-full my-2.5 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden flex flex-col justify-between p-3 min-h-[460px] shadow-inner font-sans">
         {/* Floor Pattern */}
         <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
+          className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
-            backgroundImage: `linear-gradient(to right, #1E293B 1px, transparent 1px), linear-gradient(to bottom, #1E293B 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(to right, #E2E8F0 1px, transparent 1px), linear-gradient(to bottom, #E2E8F0 1px, transparent 1px)`,
             backgroundSize: '28px 28px',
           }}
         />
@@ -188,9 +188,9 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
         {/* Heatmap Layer */}
         {layers.heatmap && (
           <div className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0">
-            <div className="absolute top-[28%] left-[12%] h-40 w-40 rounded-full bg-emerald-500/15 blur-2xl" />
-            <div className="absolute top-[28%] right-[12%] h-40 w-40 rounded-full bg-rose-500/20 blur-2xl" />
-            <div className="absolute bottom-[10%] right-[10%] h-44 w-44 rounded-full bg-rose-600/25 blur-2xl animate-pulse" />
+            <div className="absolute top-[28%] left-[12%] h-40 w-40 rounded-full bg-emerald-500/10 blur-2xl" />
+            <div className="absolute top-[28%] right-[12%] h-40 w-40 rounded-full bg-rose-500/15 blur-2xl" />
+            <div className="absolute bottom-[10%] right-[10%] h-44 w-44 rounded-full bg-rose-600/20 blur-2xl animate-pulse" />
           </div>
         )}
 
@@ -207,12 +207,12 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               })
             }
             className={cn(
-              'rounded-lg border bg-[#0C121D] px-3 py-2 flex items-center justify-between cursor-pointer transition-all hover:border-cyan-500/40 shadow-sm',
-              selectedFixtureId === 'zone-entrance' ? 'border-cyan-400 ring-1 ring-cyan-400/40 bg-[#0F172A]' : 'border-[#1E293B]'
+              'rounded-xl border bg-white px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition-all hover:border-sky-300 shadow-2xs',
+              selectedFixtureId === 'zone-entrance' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/50' : 'border-slate-200'
             )}
           >
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-white uppercase tracking-wide">Entrance</span>
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">Entrance</span>
               <button
                 onClick={(e) =>
                   handleOpenCamModal(e, {
@@ -225,24 +225,24 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     latencyMs: 14,
                   })
                 }
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-[10px] text-cyan-300 font-mono hover:bg-cyan-900"
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-[10px] text-sky-700 font-mono hover:bg-sky-100 font-semibold"
               >
-                <Camera className="h-2.5 w-2.5 text-cyan-400" />
+                <Camera className="h-2.5 w-2.5 text-sky-600" />
                 <span>C01</span>
               </button>
 
-              <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono text-slate-300">
-                <span>In: <strong className="text-emerald-400">14</strong></span>
-                <span className="text-slate-600">/</span>
-                <span>Out: <strong className="text-slate-400">9</strong></span>
-                <span className="text-slate-600">|</span>
-                <span>Net: <strong className="text-cyan-300">+5</strong></span>
+              <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono text-slate-600">
+                <span>In: <strong className="text-emerald-700">14</strong></span>
+                <span className="text-slate-300">/</span>
+                <span>Out: <strong className="text-slate-500">9</strong></span>
+                <span className="text-slate-300">|</span>
+                <span>Net: <strong className="text-sky-700">+5</strong></span>
               </div>
             </div>
 
             {layers.people && (
-              <div className="flex items-center gap-1 text-[11px] text-cyan-400 font-mono">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+              <div className="flex items-center gap-1 text-[11px] text-sky-700 font-mono font-bold">
+                <span className="h-1.5 w-1.5 rounded-full bg-sky-600" />
                 <span>14 Shoppers</span>
               </div>
             )}
@@ -263,14 +263,14 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               })
             }
             className={cn(
-              'rounded-lg border bg-[#0B101A] p-3 flex flex-col justify-between space-y-2 cursor-pointer transition-all shadow-sm',
-              selectedFixtureId === 'zone-produce' ? 'border-cyan-400 ring-1 ring-cyan-400/40 bg-[#0E1522]' : 'border-[#1E293B] hover:border-slate-600'
+              'rounded-xl border bg-white p-3 flex flex-col justify-between space-y-2 cursor-pointer transition-all shadow-2xs',
+              selectedFixtureId === 'zone-produce' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/50' : 'border-slate-200 hover:border-slate-300'
             )}
           >
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-1.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
-                <span className="text-xs font-bold text-white uppercase">Produce</span>
-                <div className="text-[11px] font-mono text-cyan-300">28 shoppers • High Traffic</div>
+                <span className="text-xs font-bold text-slate-900 uppercase">Produce</span>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">28 shoppers • High Traffic</div>
               </div>
               <button
                 onClick={(e) =>
@@ -284,16 +284,16 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     latencyMs: 16,
                   })
                 }
-                className="p-1 rounded bg-[#090D14] border border-[#1E293B] hover:border-cyan-500/40 text-slate-400 hover:text-cyan-300 text-[10px] font-mono flex items-center gap-1"
+                className="p-1 rounded-md bg-slate-50 border border-slate-200 hover:border-sky-300 text-slate-500 hover:text-sky-700 text-[10px] font-mono flex items-center gap-1 shadow-2xs font-semibold"
               >
-                <Camera className="h-3 w-3 text-cyan-400" />
+                <Camera className="h-3 w-3 text-sky-600" />
                 <span>C02</span>
               </button>
             </div>
 
-            <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
-              <span>Dwell: <strong className="text-white">2m 14s</strong></span>
-              <span>Health: <strong className="text-emerald-400">92%</strong></span>
+            <div className="text-[11px] font-mono text-slate-500 flex items-center justify-between">
+              <span>Dwell: <strong className="text-slate-900">2m 14s</strong></span>
+              <span>Health: <strong className="text-emerald-700">92%</strong></span>
             </div>
 
             {layers.shelves && (
@@ -305,22 +305,22 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     id: 'shelf-a1',
                     name: 'A1 Gala Apples',
                     code: 'A1',
-                    data: { sku: 'Royal Gala Organic Apples', compliance: 92, stock: 38, status: 'OPTIMAL' },
+                    data: { sku: 'Organic Royal Gala Apples', compliance: 92, stock: 38, status: 'OPTIMAL' },
                   })
                 }}
                 className={cn(
-                  'rounded border bg-[#070A10] p-2 text-xs flex items-center justify-between transition-all cursor-pointer',
-                  selectedFixtureId === 'shelf-a1' ? 'border-emerald-400 ring-1 ring-emerald-400/40 bg-emerald-950/20' : 'border-emerald-500/40 hover:border-emerald-400'
+                  'rounded-lg border bg-slate-50 p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
+                  selectedFixtureId === 'shelf-a1' ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50' : 'border-slate-200 hover:border-emerald-300'
                 )}
               >
-                <span className="font-semibold text-white">A1 Gala Apples</span>
-                <span className="text-emerald-400 font-mono font-bold text-[11px]">92% In-Stock</span>
+                <span className="font-semibold text-slate-900">A1 Gala Apples</span>
+                <span className="text-emerald-700 font-mono font-bold text-[11px]">92% In-Stock</span>
               </div>
             )}
 
             {layers.staff && (
-              <div className="flex items-center gap-1 text-[10.5px] text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-500/30 w-fit font-mono">
-                <UserCheck className="h-3 w-3 text-purple-400" />
+              <div className="flex items-center gap-1 text-[10.5px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 w-fit font-mono font-semibold">
+                <UserCheck className="h-3 w-3 text-purple-600" />
                 <span>Liam • Restocking</span>
               </div>
             )}
@@ -338,17 +338,17 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               })
             }
             className={cn(
-              'rounded-lg border bg-[#0B101A] p-3 flex flex-col justify-between space-y-2 cursor-pointer transition-all shadow-sm',
-              selectedFixtureId === 'zone-dairy' ? 'border-cyan-400 ring-1 ring-cyan-400/40 bg-[#0E1522]' : 'border-[#1E293B] hover:border-slate-600'
+              'rounded-xl border bg-white p-3 flex flex-col justify-between space-y-2 cursor-pointer transition-all shadow-2xs',
+              selectedFixtureId === 'zone-dairy' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/50' : 'border-slate-200 hover:border-slate-300'
             )}
           >
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-1.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
-                <span className="text-xs font-bold text-white uppercase">Dairy & Bakery</span>
-                <div className="text-[11px] font-mono text-cyan-300">22 shoppers • Medium Traffic</div>
+                <span className="text-xs font-bold text-slate-900 uppercase">Dairy & Bakery</span>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">22 shoppers • Medium Traffic</div>
               </div>
-              <div className="text-right font-mono text-[10px] text-slate-400">
-                Dwell: <strong className="text-white">1m 48s</strong>
+              <div className="text-right font-mono text-[10px] text-slate-500">
+                Dwell: <strong className="text-slate-900">1m 48s</strong>
               </div>
             </div>
 
@@ -365,17 +365,17 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                   })
                 }}
                 className={cn(
-                  'rounded border bg-[#070A10] p-2 text-xs flex items-center justify-between transition-all cursor-pointer',
-                  selectedFixtureId === 'shelf-c2' ? 'border-rose-400 ring-1 ring-rose-400 bg-rose-950/30' : 'border-rose-500/60 hover:border-rose-400'
+                  'rounded-lg border bg-rose-50/30 p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
+                  selectedFixtureId === 'shelf-c2' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50' : 'border-rose-200 hover:border-rose-400'
                 )}
               >
                 <div>
-                  <span className="font-semibold text-white block">C2 Whole Milk</span>
-                  <span className="text-[10px] text-slate-400 font-mono">Backroom: 12 units</span>
+                  <span className="font-bold text-slate-900 block">C2 Whole Milk</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Backroom: 12 units</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-rose-400 font-mono font-bold text-[11px] block">OUT OF STOCK</span>
-                  <span className="text-[10px] text-rose-300 font-mono underline font-semibold">[ Refill ]</span>
+                  <span className="text-rose-700 font-mono font-bold text-[11px] block">OUT OF STOCK</span>
+                  <span className="text-[10px] text-rose-700 font-mono underline font-semibold">[ Refill ]</span>
                 </div>
               </div>
             )}
@@ -392,10 +392,10 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     data: { sku: 'Artisan Sourdough', status: 'OPTIMAL', stock: 16 },
                   })
                 }}
-                className="px-2 py-1 rounded bg-[#070A10] border border-[#1E293B] text-xs flex items-center justify-between text-slate-300 hover:border-slate-500"
+                className="px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between text-slate-700 hover:border-slate-300 shadow-2xs font-semibold"
               >
                 <span>D1 Sourdough</span>
-                <span className="text-emerald-400 font-mono text-[11px]">98% Available</span>
+                <span className="text-emerald-700 font-mono text-[11px] font-bold">98% Available</span>
               </div>
             )}
           </div>
@@ -412,14 +412,14 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               })
             }
             className={cn(
-              'rounded-lg border bg-[#0B101A] p-3 flex flex-col justify-between space-y-2 cursor-pointer transition-all shadow-sm',
-              selectedFixtureId === 'zone-beverages' ? 'border-cyan-400 ring-1 ring-cyan-400/40 bg-[#0E1522]' : 'border-[#1E293B] hover:border-slate-600'
+              'rounded-xl border bg-white p-3 flex flex-col justify-between space-y-2 cursor-pointer transition-all shadow-2xs',
+              selectedFixtureId === 'zone-beverages' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/50' : 'border-slate-200 hover:border-slate-300'
             )}
           >
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-1.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
-                <span className="text-xs font-bold text-white uppercase">Beverages</span>
-                <div className="text-[11px] font-mono text-cyan-300">18 shoppers • High Demand</div>
+                <span className="text-xs font-bold text-slate-900 uppercase">Beverages</span>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">18 shoppers • High Demand</div>
               </div>
               <button
                 onClick={(e) =>
@@ -433,9 +433,9 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     latencyMs: 15,
                   })
                 }
-                className="p-1 rounded bg-[#090D14] border border-[#1E293B] hover:border-cyan-500/40 text-slate-400 hover:text-cyan-300 text-[10px] font-mono flex items-center gap-1"
+                className="p-1 rounded-md bg-slate-50 border border-slate-200 hover:border-sky-300 text-slate-500 hover:text-sky-700 text-[10px] font-mono flex items-center gap-1 shadow-2xs font-semibold"
               >
-                <Camera className="h-3 w-3 text-cyan-400" />
+                <Camera className="h-3 w-3 text-sky-600" />
                 <span>C03</span>
               </button>
             </div>
@@ -453,15 +453,15 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                   })
                 }}
                 className={cn(
-                  'rounded border bg-[#070A10] p-2 text-xs flex items-center justify-between transition-all cursor-pointer',
-                  selectedFixtureId === 'shelf-b4' ? 'border-rose-400 ring-1 ring-rose-400 bg-rose-950/30' : 'border-rose-500/60 hover:border-rose-400'
+                  'rounded-lg border bg-rose-50/30 p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
+                  selectedFixtureId === 'shelf-b4' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50' : 'border-rose-200 hover:border-rose-400'
                 )}
               >
                 <div>
-                  <span className="font-semibold text-white block">B4 Zero Cola</span>
-                  <span className="text-[10px] text-slate-400 font-mono">17% left • Empty in 9m</span>
+                  <span className="font-bold text-slate-900 block">B4 Zero Cola</span>
+                  <span className="text-[10px] text-slate-500 font-mono">17% left • Empty in 9m</span>
                 </div>
-                <span className="text-[10px] text-rose-300 font-mono underline font-semibold cursor-pointer">[ Replenish ]</span>
+                <span className="text-[10px] text-rose-700 font-mono underline font-semibold cursor-pointer">[ Replenish ]</span>
               </div>
             )}
 
@@ -477,13 +477,13 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     data: { location: 'Cooler 2 Floor', assignedTo: 'Sarah Jenkins', status: 'IN_PROGRESS' },
                   })
                 }}
-                className="flex items-center justify-between text-[11px] font-mono text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 hover:border-amber-400 cursor-pointer"
+                className="flex items-center justify-between text-[11px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 hover:border-amber-400 cursor-pointer shadow-2xs font-semibold"
               >
                 <div className="flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
+                  <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0" />
                   <span>Cooler 2 Spill</span>
                 </div>
-                <span className="text-[10px] text-amber-400 font-sans">Sarah assigned</span>
+                <span className="text-[10px] text-amber-800 font-sans">Sarah assigned</span>
               </div>
             )}
           </div>
@@ -503,23 +503,23 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               })
             }
             className={cn(
-              'md:col-span-5 rounded-lg border bg-[#0B101A] p-3 flex flex-col justify-between space-y-1.5 cursor-pointer transition-all shadow-sm',
-              selectedFixtureId === 'zone-elec' ? 'border-cyan-400 ring-1 ring-cyan-400/40 bg-[#0E1522]' : 'border-[#1E293B] hover:border-slate-600'
+              'md:col-span-5 rounded-xl border bg-white p-3 flex flex-col justify-between space-y-1.5 cursor-pointer transition-all shadow-2xs',
+              selectedFixtureId === 'zone-elec' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/50' : 'border-slate-200 hover:border-slate-300'
             )}
           >
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-1.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
-                <span className="text-xs font-bold text-white uppercase">Electronics</span>
-                <div className="text-[11px] font-mono text-cyan-300">12 shoppers • Peak Dwell</div>
+                <span className="text-xs font-bold text-slate-900 uppercase">Electronics</span>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">12 shoppers • Peak Dwell</div>
               </div>
-              <div className="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-500/30">
+              <div className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-bold">
                 Security Normal
               </div>
             </div>
 
-            <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
-              <span>Avg Dwell: <strong className="text-white">4m 05s</strong></span>
-              <span>Alerts: <strong className="text-white">0</strong></span>
+            <div className="text-[11px] font-mono text-slate-500 flex items-center justify-between">
+              <span>Avg Dwell: <strong className="text-slate-900">4m 05s</strong></span>
+              <span>Alerts: <strong className="text-slate-900">0</strong></span>
             </div>
           </div>
 
@@ -535,13 +535,13 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               })
             }
             className={cn(
-              'md:col-span-7 rounded-lg border bg-[#0B101A] p-3 flex flex-col justify-between space-y-1.5 cursor-pointer transition-all shadow-sm',
-              selectedFixtureId === 'zone-checkout-plaza' ? 'border-cyan-400 ring-1 ring-cyan-400/40 bg-[#0E1522]' : 'border-[#1E293B] hover:border-slate-600'
+              'md:col-span-7 rounded-xl border bg-white p-3 flex flex-col justify-between space-y-1.5 cursor-pointer transition-all shadow-2xs',
+              selectedFixtureId === 'zone-checkout-plaza' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/50' : 'border-slate-200 hover:border-slate-300'
             )}
           >
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-1.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white uppercase">Checkout</span>
+                <span className="text-xs font-bold text-slate-900 uppercase">Checkout</span>
                 <button
                   onClick={(e) =>
                     handleOpenCamModal(e, {
@@ -554,14 +554,14 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                       latencyMs: 13,
                     })
                   }
-                  className="p-0.5 rounded bg-[#090D14] border border-[#1E293B] text-[10px] text-slate-400 font-mono hover:text-cyan-300 flex items-center gap-1"
+                  className="p-0.5 rounded-md bg-slate-50 border border-slate-200 text-[10px] text-slate-500 font-mono hover:text-sky-700 flex items-center gap-1 shadow-2xs font-semibold"
                 >
-                  <Camera className="h-3 w-3 text-cyan-400" />
+                  <Camera className="h-3 w-3 text-sky-600" />
                   <span>C05</span>
                 </button>
               </div>
 
-              <span className="text-[10.5px] font-mono text-emerald-400 font-semibold">
+              <span className="text-[10.5px] font-mono text-emerald-700 font-bold">
                 Best: {bestLaneStr}
               </span>
             </div>
@@ -582,12 +582,12 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     })
                   }}
                   className={cn(
-                    'p-1.5 rounded bg-[#070A10] border text-center transition-colors cursor-pointer',
-                    selectedFixtureId === 'lane-1' ? 'border-rose-400 ring-1 ring-rose-400 bg-rose-950/40' : `${q1?.status === 'CONGESTED' ? 'border-rose-500/70 hover:border-rose-400' : 'border-[#1E293B] hover:border-emerald-400'}`
+                    'p-1.5 rounded-lg border text-center transition-colors cursor-pointer shadow-2xs',
+                    selectedFixtureId === 'lane-1' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50' : `${q1?.status === 'CONGESTED' ? 'border-rose-300 bg-rose-50/40 hover:border-rose-400' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`
                   )}
                 >
-                  <div className="text-[9.5px] text-slate-400">C1 (Elena)</div>
-                  <div className={`font-bold text-xs ${q1?.status === 'CONGESTED' ? 'text-rose-400' : 'text-emerald-400'}`}>{fmtLane(q1)}</div>
+                  <div className="text-[9.5px] text-slate-500">C1 (Elena)</div>
+                  <div className={`font-bold text-xs ${q1?.status === 'CONGESTED' ? 'text-rose-700' : 'text-emerald-700'}`}>{fmtLane(q1)}</div>
                 </div>
 
                 {/* C2 */}
@@ -603,12 +603,12 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     })
                   }}
                   className={cn(
-                    'p-1.5 rounded bg-[#070A10] border text-center transition-colors cursor-pointer',
-                    selectedFixtureId === 'lane-2' ? 'border-emerald-400 ring-1 ring-emerald-400 bg-[#0E1522]' : 'border-[#1E293B] hover:border-emerald-400'
+                    'p-1.5 rounded-lg bg-slate-50 border text-center transition-colors cursor-pointer shadow-2xs',
+                    selectedFixtureId === 'lane-2' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50' : 'border-slate-200 hover:border-emerald-300'
                   )}
                 >
-                  <div className="text-[9.5px] text-slate-400">C2 (Marcus)</div>
-                  <div className="text-emerald-400 font-bold text-xs">{fmtLane(q2)}</div>
+                  <div className="text-[9.5px] text-slate-500">C2 (Marcus)</div>
+                  <div className="text-emerald-700 font-bold text-xs">{fmtLane(q2)}</div>
                 </div>
 
                 {/* C3 */}
@@ -624,12 +624,12 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     })
                   }}
                   className={cn(
-                    'p-1.5 rounded bg-[#070A10] border text-center transition-colors cursor-pointer',
-                    selectedFixtureId === 'lane-3' ? 'border-amber-400 ring-1 ring-amber-400 bg-amber-950/30' : 'border-amber-500/30 hover:border-amber-500/60'
+                    'p-1.5 rounded-lg bg-amber-50/30 border text-center transition-colors cursor-pointer shadow-2xs',
+                    selectedFixtureId === 'lane-3' ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50' : 'border-amber-200 hover:border-amber-300'
                   )}
                 >
-                  <div className="text-[9.5px] text-amber-400 font-medium">C3 Standby</div>
-                  <div className="text-amber-300 font-bold text-[10px]">[ Open C3 ]</div>
+                  <div className="text-[9.5px] text-amber-800 font-medium">C3 Standby</div>
+                  <div className="text-amber-800 font-bold text-[10px]">[ Open C3 ]</div>
                 </div>
 
                 {/* C4 */}
@@ -645,12 +645,12 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     })
                   }}
                   className={cn(
-                    'p-1.5 rounded bg-[#070A10] border text-center transition-colors cursor-pointer',
-                    selectedFixtureId === 'lane-4' ? 'border-cyan-400 ring-1 ring-cyan-400 bg-[#0E1522]' : 'border-[#1E293B] hover:border-cyan-500/40'
+                    'p-1.5 rounded-lg bg-slate-50 border text-center transition-colors cursor-pointer shadow-2xs',
+                    selectedFixtureId === 'lane-4' ? 'border-sky-500 ring-2 ring-sky-500/20 bg-sky-50' : 'border-slate-200 hover:border-sky-300'
                   )}
                 >
-                  <div className="text-[9.5px] text-slate-400">C4 (Self)</div>
-                  <div className="text-cyan-300 font-bold text-xs">{fmtLane(q4)}</div>
+                  <div className="text-[9.5px] text-slate-500">C4 (Self)</div>
+                  <div className="text-sky-700 font-bold text-xs">{fmtLane(q4)}</div>
                 </div>
               </div>
             )}
@@ -659,13 +659,13 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-[#1E293B] shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100 shrink-0 font-sans">
+        <div className="flex items-center gap-3 font-medium">
           <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-500" /> Critical</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" /> Warning</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Healthy</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-purple-400" /> Staff</span>
-          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-cyan-400" /> Shopper</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" /> Warning</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Healthy</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-purple-500" /> Staff</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-sky-500" /> Shopper</span>
         </div>
         <span className="text-slate-400 hidden md:inline">Click any zone, shelf, or counter for live inspection</span>
       </div>
@@ -677,17 +677,17 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
           if (!open) setActiveCameraModal(null)
         }}
       >
-        <DialogContent className="bg-[#0B0F17] border-[#1E293B] text-slate-100 max-w-2xl">
+        <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-2xl shadow-2xl rounded-xl font-sans">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between pr-6 font-mono text-sm">
+            <DialogTitle className="flex items-center justify-between pr-6 text-sm font-sans">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-xs font-bold">
+                <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 text-xs font-mono font-bold">
                   {activeCameraModal?.code}
                 </span>
-                <span>{activeCameraModal?.name}</span>
+                <span className="text-slate-900 font-bold">{activeCameraModal?.name}</span>
               </div>
-              <span className="text-xs text-emerald-400 flex items-center gap-1.5 font-normal">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-emerald-700 flex items-center gap-1.5 font-bold">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 LIVE
               </span>
             </DialogTitle>
@@ -695,7 +695,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
 
           {activeCameraModal && (
             <div className="space-y-4 pt-2 font-sans">
-              <div className="relative aspect-video rounded-lg bg-[#070A10] border border-[#1E293B] overflow-hidden flex items-center justify-center">
+              <div className="relative aspect-video rounded-xl bg-slate-950 border border-slate-200 overflow-hidden flex items-center justify-center shadow-inner">
                 <div
                   className="absolute inset-0 opacity-15"
                   style={{
@@ -705,15 +705,15 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 />
                 <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="bg-black/70 px-2 py-0.5 rounded text-cyan-300 border border-cyan-500/30">
+                    <span className="bg-black/70 px-2 py-0.5 rounded text-sky-300 border border-sky-500/30">
                       Camera Stream · 30 FPS
                     </span>
                     <span className="bg-black/70 px-2 py-0.5 rounded text-slate-300">
                       {activeCameraModal.resolution}
                     </span>
                   </div>
-                  <div className="self-center border border-cyan-400/80 bg-cyan-500/10 px-4 py-6 rounded text-center">
-                    <span className="text-[10px] font-mono text-cyan-300 bg-black/80 px-1.5 py-0.5 rounded">
+                  <div className="self-center border border-sky-400/80 bg-sky-500/10 px-4 py-6 rounded-lg text-center backdrop-blur-xs">
+                    <span className="text-[10px] font-mono text-sky-300 bg-black/80 px-2 py-0.5 rounded font-bold">
                       Detection Field Active
                     </span>
                   </div>
@@ -723,14 +723,14 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 </div>
               </div>
 
-              <div className="p-3 rounded bg-[#0F172A] border border-[#1E293B] flex items-center justify-between text-xs font-mono">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs font-sans shadow-2xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px] font-sans">Summary</span>
-                  <span className="text-white font-semibold">{activeCameraModal.summary}</span>
+                  <span className="text-slate-500 block text-[10px]">Summary</span>
+                  <span className="text-slate-900 font-bold">{activeCameraModal.summary}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[10px] font-sans">Location</span>
-                  <span className="text-cyan-300">{activeCameraModal.zone}</span>
+                  <span className="text-slate-500 block text-[10px]">Location</span>
+                  <span className="text-sky-700 font-mono font-bold">{activeCameraModal.zone}</span>
                 </div>
               </div>
             </div>

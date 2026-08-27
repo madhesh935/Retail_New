@@ -36,26 +36,26 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const camCode = task.cameraVerificationCode ?? 'CAM-04'
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end select-none">
+    <div className="fixed inset-0 z-50 flex justify-end select-none font-sans">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in-0"
         onClick={onClose}
       />
 
       {/* Slide-over Drawer Panel */}
-      <div className="relative w-full max-w-lg h-full bg-[#0B0F17] border-l border-[#1E293B] z-10 flex flex-col shadow-2xl p-4 animate-in slide-in-from-right duration-200">
+      <div className="relative w-full max-w-lg h-full bg-white border-l border-slate-200 z-10 flex flex-col shadow-2xl p-4 animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1E293B]">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-[#1E293B] flex items-center justify-center text-cyan-400 font-bold text-xs">
+            <div className="h-8 w-8 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700 font-bold text-xs">
               <CheckSquare className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-white">
+              <h3 className="text-xs font-bold text-slate-900">
                 {task.title}
               </h3>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-500">
                 Task #{task.id?.toUpperCase()} · {task.zone}
               </span>
             </div>
@@ -65,7 +65,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             variant="ghost"
             size="icon-xs"
             onClick={onClose}
-            className="text-slate-400 hover:text-white"
+            className="text-slate-400 hover:text-slate-900"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -74,66 +74,66 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto py-3 space-y-3.5 text-xs">
           {/* 1. Operational Problem & Details */}
-          <div className="p-3 rounded-lg bg-[#0F172A] border border-[#1E293B] space-y-2">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">
                 Task Description
               </span>
-              <span className="text-[10px] text-cyan-400 font-mono">
+              <span className="text-[10px] text-sky-700 font-mono font-semibold">
                 Created {task.createdTime || '18:40'}
               </span>
             </div>
-            <p className="text-slate-200 text-xs leading-relaxed">
+            <p className="text-slate-700 text-xs leading-relaxed font-sans">
               {task.description}
             </p>
-            <div className="pt-1 text-[11px] text-slate-400 flex items-center justify-between border-t border-[#1E293B]">
-              <span>Source: <strong className="text-slate-300">{task.source || 'Store Floor Alert'}</strong></span>
-              <span>Priority: <strong className="text-rose-400">{task.priority}</strong></span>
+            <div className="pt-1 text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-200/60">
+              <span>Source: <strong className="text-slate-800">{task.source || 'Store Floor Alert'}</strong></span>
+              <span>Priority: <strong className="text-rose-700">{task.priority}</strong></span>
             </div>
           </div>
 
           {/* 2. Staff Assignment & Location */}
-          <div className="p-3 rounded-lg bg-[#0F172A] border border-[#1E293B] space-y-2">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase block">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2 shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-500 uppercase block">
               Staff Assignment
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-[#090D14] p-2 rounded border border-[#1E293B]">
+              <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
                 <span className="text-[10px] text-slate-500 block">Assigned Staff</span>
-                <span className="font-semibold text-white text-xs">
+                <span className="font-bold text-slate-900 text-xs">
                   {task.assignedStaffName || 'Unassigned'} {task.assignedStaffId && `(${task.assignedStaffId})`}
                 </span>
               </div>
-              <div className="bg-[#090D14] p-2 rounded border border-[#1E293B]">
+              <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
                 <span className="text-[10px] text-slate-500 block">Expected Resolution</span>
-                <span className="font-semibold text-cyan-400 text-xs">{task.eta}</span>
+                <span className="font-bold text-sky-700 text-xs">{task.eta}</span>
               </div>
             </div>
 
             {/* Transit Route */}
-            <div className="p-2 rounded bg-[#090D14] border border-[#1E293B] text-[11px] space-y-1">
-              <span className="text-slate-400 font-medium block text-[10px]">Transit Route:</span>
-              <div className="text-slate-300 flex items-center gap-1.5">
-                <MapPin className="h-3 w-3 text-cyan-400 shrink-0" />
+            <div className="p-2 rounded-lg bg-white border border-slate-200 text-[11px] space-y-1 shadow-2xs">
+              <span className="text-slate-500 font-medium block text-[10px]">Transit Route:</span>
+              <div className="text-slate-700 flex items-center gap-1.5 font-sans">
+                <MapPin className="h-3 w-3 text-sky-600 shrink-0" />
                 <span>Assigned Zone</span>
-                <ArrowRight className="h-3 w-3 text-slate-500 shrink-0" />
-                <span className="text-cyan-300 font-semibold">{task.zone}</span>
+                <ArrowRight className="h-3 w-3 text-slate-400 shrink-0" />
+                <span className="text-sky-700 font-bold">{task.zone}</span>
               </div>
             </div>
           </div>
 
           {/* 3. Verification Card (if completed or has before/after data) */}
           {isCompleted && (
-            <div className="p-3 rounded-lg bg-[#0F172A] border border-emerald-500/40 space-y-2.5">
+            <div className="p-3 rounded-xl bg-emerald-50/30 border border-emerald-200 space-y-2.5 shadow-2xs">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-300 font-semibold text-xs">
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   <span>
                     {isCameraVerified ? 'Camera Vision Observation' : 'Staff Completion Confirmed'}
                   </span>
                 </div>
                 {isCameraVerified && (
-                  <span className="text-[10px] text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-bold font-mono">
                     {camCode}
                   </span>
                 )}
@@ -141,26 +141,26 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
               {isCameraVerified && (
                 <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-2 rounded bg-[#090D14] border border-rose-500/30">
-                    <span className="text-[10px] text-rose-400 font-medium block">Before Action</span>
-                    <div className="text-lg font-bold text-rose-400">{beforeVal}%</div>
+                  <div className="p-2 rounded-lg bg-white border border-rose-200 shadow-2xs">
+                    <span className="text-[10px] text-rose-700 font-semibold block">Before Action</span>
+                    <div className="text-lg font-bold text-rose-700 font-mono">{beforeVal}%</div>
                     <span className="text-[10px] text-slate-500">Low shelf stock</span>
                   </div>
 
-                  <div className="p-2 rounded bg-[#090D14] border border-emerald-500/30">
-                    <span className="text-[10px] text-emerald-400 font-medium block">After Action</span>
-                    <div className="text-lg font-bold text-emerald-400">{afterVal}%</div>
-                    <span className="text-[10px] text-emerald-300">Inventory replenished</span>
+                  <div className="p-2 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                    <span className="text-[10px] text-emerald-700 font-semibold block">After Action</span>
+                    <div className="text-lg font-bold text-emerald-700 font-mono">{afterVal}%</div>
+                    <span className="text-[10px] text-emerald-600">Inventory replenished</span>
                   </div>
                 </div>
               )}
 
-              <div className="p-2 rounded bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between text-xs">
-                <span className="text-emerald-300 text-[11px] flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                <span className="text-emerald-800 text-[11px] font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   <span>Task Successfully Resolved</span>
                 </span>
-                <span className="text-emerald-400 font-semibold text-[11px] uppercase">
+                <span className="text-emerald-700 font-bold text-[11px] uppercase">
                   Verified
                 </span>
               </div>
@@ -176,10 +176,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 onClose()
                 navigate('/digital-twin')
               }}
-              className="w-full justify-between h-8 text-xs text-slate-300 border-[#1E293B] hover:bg-[#1E293B]"
+              className="w-full justify-between h-8 text-xs text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs font-sans"
             >
               <span className="flex items-center gap-1.5">
-                <Compass className="h-3.5 w-3.5 text-cyan-400" />
+                <Compass className="h-3.5 w-3.5 text-sky-600" />
                 <span>Show Task on 3D Digital Twin</span>
               </span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -188,9 +188,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-[11px] text-slate-400">
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <span>Task #{task.id}</span>
-          <Button variant="ghost" size="xs" onClick={onClose} className="h-7 text-[11px]">
+          <Button variant="ghost" size="xs" onClick={onClose} className="h-7 text-[11px] text-slate-500 hover:text-slate-900">
             Close
           </Button>
         </div>

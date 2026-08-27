@@ -107,15 +107,15 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({
 
   const getStatusBadge = () => {
     if (!data.status) return null
-    let colorClasses = 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
+    let colorClasses = 'bg-sky-50 text-sky-700 border-sky-200'
     if (data.statusColor === 'rose') {
-      colorClasses = 'bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-rose-500/20 shadow-sm'
+      colorClasses = 'bg-rose-50 text-rose-700 border-rose-200 shadow-2xs'
     } else if (data.statusColor === 'amber') {
-      colorClasses = 'bg-amber-950/80 text-amber-300 border-amber-500/50 shadow-amber-500/20 shadow-sm'
+      colorClasses = 'bg-amber-50 text-amber-800 border-amber-200 shadow-2xs'
     } else if (data.statusColor === 'emerald') {
-      colorClasses = 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50 shadow-emerald-500/20 shadow-sm'
+      colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
     } else if (data.statusColor === 'purple') {
-      colorClasses = 'bg-purple-950/80 text-purple-300 border-purple-500/50 shadow-purple-500/20 shadow-sm'
+      colorClasses = 'bg-purple-50 text-purple-700 border-purple-200 shadow-2xs'
     }
 
     return (
@@ -133,12 +133,12 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({
         top: `${top}px`,
       }}
     >
-      <div className="w-[268px] rounded-xl bg-[#090E17]/95 backdrop-blur-xl border border-[#1E293B] shadow-2xl p-2.5 space-y-2 select-none text-slate-200 text-xs">
+      <div className="w-[268px] rounded-xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl p-2.5 space-y-2 select-none text-slate-700 text-xs">
         {/* Header */}
-        <div className="flex items-center justify-between pb-1.5 border-b border-[#1E293B]/80">
+        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
           <div className="flex items-center gap-1.5 min-w-0 pr-1">
             {getIcon()}
-            <span className="font-bold text-white text-[12px] truncate font-sans tracking-tight">
+            <span className="font-bold text-slate-900 text-[12px] truncate font-sans tracking-tight">
               {data.title}
             </span>
           </div>
@@ -146,17 +146,17 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({
         </div>
 
         {data.subtitle && (
-          <div className="text-[10.5px] text-slate-400 font-sans truncate -mt-0.5">
+          <div className="text-[10.5px] text-slate-500 font-sans truncate -mt-0.5">
             {data.subtitle}
           </div>
         )}
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-1.5 bg-[#05080F]/90 p-1.5 rounded-lg border border-[#1E293B]/60 font-mono text-[10px]">
+        <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 font-mono text-[10px]">
           {data.metrics.map((m, idx) => (
             <div key={idx} className="space-y-0.5">
-              <span className="text-slate-400 block font-sans text-[9.5px]">{m.label}</span>
-              <span className={cn('font-bold text-[11px]', m.highlight ? 'text-rose-400' : 'text-slate-100')}>
+              <span className="text-slate-500 block font-sans text-[9.5px]">{m.label}</span>
+              <span className={cn('font-bold text-[11px]', m.highlight ? 'text-rose-700' : 'text-slate-900')}>
                 {m.value}
               </span>
             </div>
@@ -165,16 +165,16 @@ export const TwinTooltip: React.FC<TwinTooltipProps> = ({
 
         {/* Alert Pill if any */}
         {data.alert && (
-          <div className="text-[9.5px] font-mono bg-rose-950/60 p-1.5 rounded-lg border border-rose-500/40 text-rose-300 font-medium flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3 shrink-0 text-rose-400" />
+          <div className="text-[9.5px] font-mono bg-rose-50 p-1.5 rounded-lg border border-rose-200 text-rose-700 font-bold flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3 shrink-0 text-rose-600" />
             <span className="truncate">{data.alert}</span>
           </div>
         )}
 
         {/* Action Hint */}
-        <div className="text-[9.5px] text-slate-400 flex items-center justify-between pt-0.5 border-t border-[#1E293B]/40">
+        <div className="text-[9.5px] text-slate-400 flex items-center justify-between pt-0.5 border-t border-slate-100 font-sans">
           <span>Click object to inspect</span>
-          <span className="text-cyan-400 font-mono flex items-center gap-0.5 text-[9px]">
+          <span className="text-sky-700 font-mono font-bold flex items-center gap-0.5 text-[9px]">
             Details <ArrowRight className="h-2.5 w-2.5" />
           </span>
         </div>

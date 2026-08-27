@@ -111,19 +111,19 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
   }
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[560px] font-sans">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[560px] font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-[#1E293B] mb-3 shrink-0">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#131D31] text-cyan-400 border border-cyan-500/30">
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
             <Sparkles className="h-3.5 w-3.5" />
           </div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
             Recommended Actions
           </h3>
         </div>
 
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/40 font-bold shrink-0">
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
           2 Urgent
         </span>
       </div>
@@ -131,56 +131,56 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
       {/* Action Cards List */}
       <div className="space-y-3 flex-1 overflow-y-auto pr-0.5">
         {/* ACTION 1: CRITICAL - CHECKOUT CONGESTION */}
-        <div className="p-3.5 rounded-lg border border-rose-500/50 bg-[#120D15] space-y-2.5 shadow-sm">
+        <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/30 space-y-2.5 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-              <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider bg-rose-950 px-1.5 py-0.5 rounded border border-rose-500/40 font-mono">
+              <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider bg-rose-100/80 px-1.5 py-0.5 rounded border border-rose-200 font-mono">
                 CRITICAL
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-mono">
-              Risk: <strong className="text-rose-400">92%</strong>
+            <span className="text-[11px] text-slate-500 font-mono">
+              Risk: <strong className="text-rose-600">92%</strong>
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-white">
+            <h4 className="text-xs font-bold text-slate-900">
               Checkout C1
             </h4>
-            <span className="text-[11px] text-amber-300 font-medium">Congestion in 5m</span>
+            <span className="text-[11px] text-amber-700 font-semibold">Congestion in 5m</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 bg-[#090D14] p-2 rounded border border-[#1E293B] text-center font-mono">
+          <div className="grid grid-cols-3 gap-2 bg-white p-2 rounded-lg border border-slate-200 text-center font-mono shadow-2xs">
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Queue</span>
-              <span className="text-white font-bold text-xs">{liveQ} → {liveForecast5}</span>
+              <span className="text-slate-900 font-bold text-xs">{liveQ} → {liveForecast5}</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Wait Time</span>
-              <span className={`font-bold text-xs ${Number(liveWaitMin) > 3 ? 'text-amber-400' : 'text-emerald-400'}`}>{liveWaitMin} min</span>
+              <span className={`font-bold text-xs ${Number(liveWaitMin) > 3 ? 'text-amber-600' : 'text-emerald-700'}`}>{liveWaitMin} min</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Confidence</span>
-              <span className={`font-bold text-xs ${congestionPct >= 80 ? 'text-rose-400' : 'text-amber-400'}`}>{congestionPct}%</span>
+              <span className={`font-bold text-xs ${congestionPct >= 80 ? 'text-rose-600' : 'text-amber-600'}`}>{congestionPct}%</span>
             </div>
           </div>
 
           <div className="space-y-1 text-xs">
-            <div className="text-[11px] text-slate-300">
-              <span className="text-slate-400">ACTION: </span>
-              <strong className="text-emerald-400 font-semibold">Open Counter C3</strong>
+            <div className="text-[11px] text-slate-700">
+              <span className="text-slate-500">ACTION: </span>
+              <strong className="text-emerald-700 font-semibold">Open Counter C3</strong>
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[11px] text-slate-500">
               <span>Suggested Staff: </span>
-              <strong className="text-slate-200">S02 Marcus Vance</strong>
+              <strong className="text-slate-800">S02 Marcus Vance</strong>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between gap-1.5 flex-wrap">
+          <div className="pt-2 border-t border-rose-100 flex items-center justify-between gap-1.5 flex-wrap">
             <div className="flex items-center gap-1.5">
               {dispatchedActions['action-1'] ? (
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-bold">
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-bold">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Staff Assigned (C3)
                 </span>
               ) : (
@@ -188,7 +188,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
                   variant="action"
                   size="xs"
                   onClick={() => handleActionDispatch('action-1')}
-                  className="gap-1 text-xs h-7 font-medium"
+                  className="gap-1 text-xs h-7 font-medium bg-sky-600 hover:bg-sky-700 text-white shadow-2xs"
                 >
                   <UserCheck className="h-3 w-3" /> Assign Staff
                 </Button>
@@ -213,7 +213,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
                     },
                   })
                 }
-                className="gap-1 text-xs h-7 text-slate-300 border-[#1E293B]"
+                className="gap-1 text-xs h-7 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs"
               >
                 <Eye className="h-3 w-3" /> View
               </Button>
@@ -223,7 +223,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
               variant="ghost"
               size="xs"
               onClick={() => onOpenWhy(queueWhyData)}
-              className="text-cyan-400 hover:text-cyan-300 gap-1 text-xs h-7 px-2"
+              className="text-sky-600 hover:text-sky-800 hover:bg-sky-50 gap-1 text-xs h-7 px-2 font-medium"
             >
               <HelpCircle className="h-3 w-3" /> Why?
             </Button>
@@ -231,60 +231,60 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
         </div>
 
         {/* ACTION 2: HIGH - SHELF STOCK-OUT */}
-        <div className="p-3.5 rounded-lg border border-amber-500/50 bg-[#15120C] space-y-2.5 shadow-sm">
+        <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/30 space-y-2.5 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider bg-amber-950 px-1.5 py-0.5 rounded border border-amber-500/40 font-mono">
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
+              <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-200 font-mono">
                 HIGH
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-mono">
-              Empty in: <strong className="text-rose-400 font-bold">9 min</strong>
+            <span className="text-[11px] text-slate-500 font-mono">
+              Empty in: <strong className="text-rose-600 font-bold">9 min</strong>
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-white">
+            <h4 className="text-xs font-bold text-slate-900">
               B4 Zero Cola
             </h4>
-            <span className="text-[11px] text-rose-300 font-medium">Stock-out predicted</span>
+            <span className="text-[11px] text-rose-600 font-semibold">Stock-out predicted</span>
           </div>
 
-          <div className="grid grid-cols-4 gap-1.5 bg-[#090D14] p-2 rounded border border-[#1E293B] text-center font-mono">
+          <div className="grid grid-cols-4 gap-1.5 bg-white p-2 rounded-lg border border-slate-200 text-center font-mono shadow-2xs">
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Stock</span>
-              <span className="text-rose-400 font-bold text-xs">17%</span>
+              <span className="text-rose-600 font-bold text-xs">17%</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Visible</span>
-              <span className="text-rose-400 font-bold text-xs">3</span>
+              <span className="text-rose-600 font-bold text-xs">3</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Backroom</span>
-              <span className="text-emerald-400 font-bold text-xs">14</span>
+              <span className="text-emerald-700 font-bold text-xs">14</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block font-sans">Time</span>
-              <span className="text-rose-400 font-bold text-xs">9m</span>
+              <span className="text-rose-600 font-bold text-xs">9m</span>
             </div>
           </div>
 
           <div className="space-y-1 text-xs">
-            <div className="text-[11px] text-slate-300">
-              <span className="text-slate-400">ACTION: </span>
-              <strong className="text-amber-300 font-semibold">Restock 24 units from Rack 3B</strong>
+            <div className="text-[11px] text-slate-700">
+              <span className="text-slate-500">ACTION: </span>
+              <strong className="text-amber-700 font-semibold">Restock 24 units from Rack 3B</strong>
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[11px] text-slate-500">
               <span>Suggested Staff: </span>
-              <strong className="text-slate-200">S03 Liam O&apos;Connor</strong>
+              <strong className="text-slate-800">S03 Liam O&apos;Connor</strong>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between gap-1.5 flex-wrap">
+          <div className="pt-2 border-t border-amber-100 flex items-center justify-between gap-1.5 flex-wrap">
             <div className="flex items-center gap-1.5">
               {dispatchedActions['action-2'] ? (
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-bold">
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-bold">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Refill Dispatched (Liam)
                 </span>
               ) : (
@@ -292,7 +292,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
                   variant="action"
                   size="xs"
                   onClick={() => handleActionDispatch('action-2')}
-                  className="gap-1 text-xs h-7 font-medium"
+                  className="gap-1 text-xs h-7 font-medium bg-amber-600 hover:bg-amber-700 text-white shadow-2xs"
                 >
                   <PackageCheck className="h-3 w-3" /> Assign Staff
                 </Button>
@@ -317,7 +317,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
                     },
                   })
                 }
-                className="gap-1 text-xs h-7 text-slate-300 border-[#1E293B]"
+                className="gap-1 text-xs h-7 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs"
               >
                 <Eye className="h-3 w-3" /> View
               </Button>
@@ -327,7 +327,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
               variant="ghost"
               size="xs"
               onClick={() => onOpenWhy(shelfWhyData)}
-              className="text-cyan-400 hover:text-cyan-300 gap-1 text-xs h-7 px-2"
+              className="text-sky-600 hover:text-sky-800 hover:bg-sky-50 gap-1 text-xs h-7 px-2 font-medium"
             >
               <HelpCircle className="h-3 w-3" /> Why?
             </Button>
@@ -335,12 +335,12 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
         </div>
 
         {/* COMPACT SAFETY NOTICE */}
-        <div className="p-2.5 rounded-lg border border-[#1E293B] bg-[#0E1522] flex items-center justify-between gap-2">
+        <div className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 shadow-2xs">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
             <div>
-              <span className="text-xs font-semibold text-white block">Cooler 2 Spill</span>
-              <span className="text-[11px] text-slate-400">Sarah assigned • Cone deployed</span>
+              <span className="text-xs font-semibold text-slate-900 block">Cooler 2 Spill</span>
+              <span className="text-[11px] text-slate-500">Sarah assigned • Cone deployed</span>
             </div>
           </div>
 
@@ -349,7 +349,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
               variant="outline"
               size="xs"
               onClick={() => navigate('/incidents')}
-              className="text-xs h-7 px-2 text-slate-300 border-[#1E293B] gap-1"
+              className="text-xs h-7 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-100 gap-1 shadow-2xs"
             >
               <span>View</span>
               <ArrowRight className="h-3 w-3" />
@@ -358,7 +358,7 @@ export const AiActionCenter: React.FC<AiActionCenterProps> = ({
               variant="ghost"
               size="xs"
               onClick={() => onOpenWhy(spillWhyData)}
-              className="text-cyan-400 text-xs h-7 px-1.5"
+              className="text-sky-600 hover:text-sky-800 text-xs h-7 px-1.5 font-medium"
             >
               Why?
             </Button>

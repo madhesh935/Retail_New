@@ -24,8 +24,8 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       percentage: 35,
       staffCount: 4,
       status: 'Adequate',
-      statusColor: 'bg-[#1E293B] text-slate-300',
-      barColor: '#06B6D4',
+      statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
+      barColor: '#0284C7',
       icon: Zap,
     },
     {
@@ -33,8 +33,8 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       percentage: 30,
       staffCount: 3,
       status: 'High Demand',
-      statusColor: 'bg-rose-950/80 text-rose-300 border border-rose-500/40',
-      barColor: '#F59E0B',
+      statusColor: 'bg-rose-50 text-rose-700 border-rose-200',
+      barColor: '#E11D48',
       icon: PackageCheck,
     },
     {
@@ -42,8 +42,8 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       percentage: 20,
       staffCount: 2,
       status: 'Available',
-      statusColor: 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30',
-      barColor: '#A855F7',
+      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      barColor: '#7C3AED',
       icon: Headphones,
     },
     {
@@ -51,28 +51,28 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       percentage: 15,
       staffCount: 2,
       status: 'Limited',
-      statusColor: 'bg-[#1E293B] text-slate-400',
-      barColor: '#10B981',
+      statusColor: 'bg-slate-100 text-slate-600 border-slate-200',
+      barColor: '#059669',
       icon: ShieldCheck,
     },
   ]
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[400px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[400px] font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-2">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-purple-400">
+          <div className="p-1 rounded-md bg-purple-50 text-purple-600 border border-purple-200">
             <Layers className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Workload by Function
             </h3>
           </div>
         </div>
 
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-slate-500">
           4 Departments
         </span>
       </div>
@@ -85,25 +85,25 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
           return (
             <div key={cat.name} className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-white font-medium text-xs">
-                  <Icon className="h-3.5 w-3.5 text-slate-400" />
+                <span className="flex items-center gap-1.5 text-slate-900 font-bold text-xs">
+                  <Icon className="h-3.5 w-3.5 text-slate-500" />
                   <span>{cat.name}</span>
                 </span>
                 <div className="flex items-center gap-2 text-[11px]">
-                  <span className="text-slate-400">{cat.staffCount} staff</span>
+                  <span className="text-slate-500">{cat.staffCount} staff</span>
                   <span
                     className={cn(
-                      'text-[9px] font-medium px-1.5 py-0.5 rounded',
+                      'text-[9px] font-bold px-1.5 py-0.5 rounded-md border uppercase',
                       cat.statusColor
                     )}
                   >
                     {cat.status}
                   </span>
-                  <strong className="text-white w-7 text-right">{cat.percentage}%</strong>
+                  <strong className="text-slate-900 w-7 text-right font-mono">{cat.percentage}%</strong>
                 </div>
               </div>
 
-              <div className="w-full h-2 bg-[#090D14] rounded-full overflow-hidden border border-[#1E293B]">
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${cat.percentage}%`, backgroundColor: cat.barColor }}
@@ -115,16 +115,16 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       </div>
 
       {/* Overloaded Department Recommendation Box */}
-      <div className="mt-2 p-3 rounded-lg bg-[#090D14] border border-[#1E293B] space-y-1.5 text-xs">
-        <div className="flex items-center justify-between text-amber-300 font-semibold text-[11px]">
+      <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs shadow-2xs">
+        <div className="flex items-center justify-between text-amber-800 font-bold text-[11px]">
           <span className="flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            <Sparkles className="h-3.5 w-3.5 text-amber-600" />
             <span>Workload Advisory</span>
           </span>
-          <span className="text-[10px] text-slate-400 font-normal">Shift B</span>
+          <span className="text-[10px] text-slate-500 font-normal">Shift B</span>
         </div>
 
-        <p className="text-[11px] text-slate-300 leading-relaxed">
+        <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
           Inventory replenishment workload is high. 1 flexible staff member (S06 Priya Sharma) is available for cross-support.
         </p>
       </div>

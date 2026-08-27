@@ -49,25 +49,25 @@ export const ReportsInsightsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 select-none font-mono">
+    <div className="space-y-4 select-none font-sans">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2 font-mono">
-              <FileText className="h-4 w-4 text-cyan-400" />
+            <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2 font-sans">
+              <FileText className="h-4 w-4 text-sky-600" />
               <span>Reports &amp; Insights</span>
             </h1>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 font-medium">
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-semibold">
               Daily Audit
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <div className="flex items-center gap-1.5 bg-[#0F172A] px-2.5 py-1 rounded border border-[#1E293B]">
-            <Clock className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Reporting Cycle: <strong>Shift B (Audited)</strong></span>
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
+          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+            <Clock className="h-3.5 w-3.5 text-sky-600" />
+            <span>Reporting Cycle: <strong className="text-slate-900">Shift B (Audited)</strong></span>
           </div>
         </div>
       </div>

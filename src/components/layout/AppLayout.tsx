@@ -31,7 +31,7 @@ export const AppLayout: React.FC = () => {
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#090D14] text-slate-100 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC] text-slate-900 font-sans">
       {/* Left Collapsible Navigation Sidebar (Desktop) */}
       <Sidebar />
 
@@ -44,7 +44,7 @@ export const AppLayout: React.FC = () => {
         <TopHeader />
 
         {/* Dynamic Route Content Outlet */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-5 bg-[#090D14] min-w-0">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-5 bg-[#F8FAFC] min-w-0">
           <div className="max-w-[1720px] mx-auto space-y-5">
             <Outlet />
           </div>

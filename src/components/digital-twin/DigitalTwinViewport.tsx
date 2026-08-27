@@ -224,7 +224,7 @@ export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[580px] bg-[#070B14] rounded-lg border border-[#1E293B] shadow-2xl overflow-hidden"
+      className="relative w-full h-full min-h-[580px] bg-slate-950 rounded-xl border border-slate-200 shadow-2xs overflow-hidden"
     >
       {/* Unified Hover Tooltip Overlay with Continuous Floating Tracking */}
       <TwinTooltip

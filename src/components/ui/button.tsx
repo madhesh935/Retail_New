@@ -4,30 +4,30 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer font-sans",
   {
     variants: {
       variant: {
         default:
-          "bg-cyan-600 text-white shadow hover:bg-cyan-500 active:bg-cyan-700",
+          "bg-sky-600 text-white shadow-2xs hover:bg-sky-700 active:bg-sky-800",
         primary:
-          "bg-blue-600 text-white shadow hover:bg-blue-500 active:bg-blue-700",
+          "bg-blue-600 text-white shadow-2xs hover:bg-blue-700 active:bg-blue-800",
         destructive:
-          "bg-rose-600/90 text-white shadow-sm hover:bg-rose-600 active:bg-rose-700",
+          "bg-rose-600 text-white shadow-2xs hover:bg-rose-700 active:bg-rose-800",
         outline:
-          "border border-slate-700 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:border-slate-600 active:bg-slate-700",
+          "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100 shadow-2xs",
         secondary:
-          "bg-slate-800 text-slate-200 hover:bg-slate-700 active:bg-slate-600 border border-slate-700/50",
+          "bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 border border-slate-200",
         ghost:
-          "text-slate-300 hover:bg-slate-800/80 hover:text-white active:bg-slate-800",
+          "text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200",
         link:
-          "text-cyan-400 underline-offset-4 hover:underline p-0 h-auto",
+          "text-sky-600 underline-offset-4 hover:underline p-0 h-auto",
         action:
-          "bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-900/80 hover:border-cyan-400",
+          "bg-sky-600 text-white shadow-2xs hover:bg-sky-700 active:bg-sky-800",
         amber:
-          "bg-amber-950/80 text-amber-300 border border-amber-500/40 hover:bg-amber-900/80",
+          "bg-amber-600 text-white shadow-2xs hover:bg-amber-700 active:bg-amber-800",
         emerald:
-          "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-900/80",
+          "bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 active:bg-emerald-800",
       },
       size: {
         default: "h-8 px-3 py-1.5",

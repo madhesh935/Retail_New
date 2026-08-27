@@ -22,30 +22,30 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
   onSelectZone,
 }) => {
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1E293B]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-slate-300">
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
             <Compass className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Zone Performance
             </h3>
           </div>
         </div>
 
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-slate-500">
           5 Main Shopping Zones
         </span>
       </div>
 
       {/* Clean Table */}
       <div className="overflow-x-auto my-2">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full text-left text-xs border-collapse font-sans">
           <thead>
-            <tr className="border-b border-[#1E293B] text-[11px] text-slate-400 font-medium">
+            <tr className="border-b border-slate-200 text-[11px] text-slate-500 font-medium">
               <th className="py-2.5 px-3">Zone</th>
               <th className="py-2.5 px-3 text-center">Visitors Today</th>
               <th className="py-2.5 px-3 text-center">Avg Dwell</th>
@@ -55,7 +55,7 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
               <th className="py-2.5 px-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1E293B] text-xs">
+          <tbody className="divide-y divide-slate-100 text-xs">
             {SHOPPING_ZONES.map((zone) => {
               const isSelected = selectedZoneId === zone.id
               const isHighRisk = zone.opportunityRisk === 'HIGH'
@@ -66,27 +66,27 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
                   key={zone.id}
                   onClick={() => onSelectZone(zone)}
                   className={cn(
-                    'hover:bg-[#131D31] transition-colors cursor-pointer',
-                    isSelected && 'bg-[#131D31]'
+                    'hover:bg-slate-50 transition-colors cursor-pointer',
+                    isSelected && 'bg-sky-50/50'
                   )}
                 >
                   {/* Zone Name */}
                   <td className="py-3 px-3">
-                    <div className="font-semibold text-white text-xs">
+                    <div className="font-semibold text-slate-900 text-xs">
                       {zone.name}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-[10px] text-slate-500">
                       {zone.aisle}
                     </div>
                   </td>
 
                   {/* Visitors */}
-                  <td className="py-3 px-3 text-center font-semibold text-white">
+                  <td className="py-3 px-3 text-center font-bold text-slate-900 font-mono">
                     {zone.visitors}
                   </td>
 
                   {/* Avg Dwell */}
-                  <td className="py-3 px-3 text-center text-slate-300">
+                  <td className="py-3 px-3 text-center text-slate-600 font-sans">
                     {zone.avgDwellLabel}
                   </td>
 
@@ -94,12 +94,12 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
                   <td className="py-3 px-3 text-center">
                     <span
                       className={cn(
-                        'inline-block px-2 py-0.5 rounded text-[10px] font-medium uppercase',
+                        'inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase border',
                         zone.trafficLevel === 'High'
-                          ? 'bg-amber-950/80 text-amber-300 border border-amber-500/30'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
                           : zone.trafficLevel === 'Medium'
-                          ? 'bg-[#1E293B] text-slate-200'
-                          : 'bg-[#1E293B]/60 text-slate-400'
+                          ? 'bg-slate-100 text-slate-700 border-slate-200'
+                          : 'bg-slate-50 text-slate-500 border-slate-200'
                       )}
                     >
                       {zone.trafficLevel}
@@ -107,14 +107,14 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
                   </td>
 
                   {/* Shelf Availability */}
-                  <td className="py-3 px-3 text-center font-semibold">
+                  <td className="py-3 px-3 text-center font-bold font-mono">
                     <span
                       className={cn(
                         zone.shelfAvailability < 70
-                          ? 'text-rose-400'
+                          ? 'text-rose-700'
                           : zone.shelfAvailability < 85
-                          ? 'text-amber-400'
-                          : 'text-emerald-400'
+                          ? 'text-amber-800'
+                          : 'text-emerald-700'
                       )}
                     >
                       {zone.shelfAvailability}%
@@ -125,12 +125,12 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
                   <td className="py-3 px-3 text-center">
                     <span
                       className={cn(
-                        'inline-block px-2 py-0.5 rounded text-[10px] font-medium uppercase',
+                        'inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border',
                         isHighRisk
-                          ? 'bg-rose-950/80 text-rose-300 border border-rose-500/40'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
                           : isMedRisk
-                          ? 'bg-amber-950/80 text-amber-300 border border-amber-500/30'
-                          : 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       )}
                       title="High shopper activity combined with limited shelf availability."
                     >
@@ -149,7 +149,7 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
                         e.stopPropagation()
                         onSelectZone(zone)
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] text-sky-700 hover:text-sky-800 font-semibold cursor-pointer"
                     >
                       <span>Details</span>
                       <ChevronRight className="h-3 w-3" />
@@ -163,16 +163,16 @@ export const ZonePerformanceTable: React.FC<ZonePerformanceTableProps> = ({
       </div>
 
       {/* Checkout Separate Section */}
-      <div className="mt-2 pt-3 border-t border-[#1E293B] bg-[#090D14] p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+      <div className="mt-2 pt-3 border-t border-slate-100 bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-2xs font-sans">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-white">Checkout Plaza (Registers C1–C4):</span>
-          <span className="text-slate-400">
+          <span className="font-bold text-slate-900">Checkout Plaza (Registers C1–C4):</span>
+          <span className="text-slate-600">
             {CHECKOUT_ZONE.visitors} customer transitions · {CHECKOUT_ZONE.avgDwellLabel} average queue wait
           </span>
         </div>
         <button
           onClick={() => onSelectZone(CHECKOUT_ZONE)}
-          className="text-cyan-400 hover:text-cyan-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+          className="text-sky-700 hover:text-sky-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
         >
           <span>View Checkout Cameras →</span>
         </button>

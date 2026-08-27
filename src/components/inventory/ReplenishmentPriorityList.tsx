@@ -193,21 +193,21 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
     : REPLENISHMENT_PRIORITIES.slice(0, 3)
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[460px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[460px] font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-3">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-amber-400">
+          <div className="p-1 rounded-md bg-amber-50 text-amber-600 border border-amber-200">
             <ListOrdered className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Replenishment Priorities
             </h3>
           </div>
         </div>
 
-        <span className="text-[10px] text-amber-400 font-medium bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30">
+        <span className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
           AI Ranked
         </span>
       </div>
@@ -223,12 +223,12 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
             <div
               key={item.rank}
               className={cn(
-                'p-3 rounded-lg border space-y-2 transition-all',
+                'p-3 rounded-xl border space-y-2 transition-all shadow-2xs',
                 isCritical
-                  ? 'bg-[#0F172A] border-rose-500/40'
+                  ? 'bg-rose-50/20 border-rose-200'
                   : item.rank === 2
-                  ? 'bg-[#0F172A] border-amber-500/30'
-                  : 'bg-[#0F172A] border-[#1E293B]'
+                  ? 'bg-amber-50/20 border-amber-200'
+                  : 'bg-slate-50 border-slate-200'
               )}
             >
               {/* Header Row: Rank, Shelf & Status */}
@@ -242,18 +242,18 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
                   >
                     #{item.rank}
                   </span>
-                  <span className="text-xs font-bold text-white font-mono shrink-0">{item.name}</span>
-                  <span className="text-xs text-slate-300 font-medium truncate">
+                  <span className="text-xs font-bold text-slate-900 font-mono shrink-0">{item.name}</span>
+                  <span className="text-xs text-slate-700 font-medium truncate">
                     {item.sku}
                   </span>
                 </div>
 
                 <span
                   className={cn(
-                    'text-[9px] px-2 py-0.5 rounded font-semibold shrink-0 uppercase tracking-wide',
+                    'text-[9px] px-2 py-0.5 rounded-md font-bold shrink-0 uppercase tracking-wide border',
                     isCritical
-                      ? 'bg-rose-950/80 text-rose-300 border border-rose-500/40'
-                      : 'bg-amber-950/80 text-amber-300 border border-amber-500/30'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
                   )}
                 >
                   {isCritical ? 'CRITICAL' : 'HIGH'}
@@ -261,20 +261,20 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
               </div>
 
               {/* Middle Metrics Row */}
-              <div className="flex items-center justify-between gap-2 text-[11px] bg-[#090D14] px-3 py-2 rounded border border-[#1E293B]">
+              <div className="flex items-center justify-between gap-2 text-[11px] bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400 text-[10px]">Availability:</span>
-                  <strong className={isCritical ? 'text-rose-400' : 'text-amber-400'}>
+                  <span className="text-slate-500 text-[10px] font-sans">Availability:</span>
+                  <strong className={isCritical ? 'text-rose-700' : 'text-amber-800'}>
                     {item.availability}%
                   </strong>
-                  <span className="text-slate-600">·</span>
-                  <span className="text-slate-400 text-[10px]">Backroom:</span>
-                  <span className="text-slate-200 font-semibold">{item.posStock}</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-slate-500 text-[10px] font-sans">Backroom:</span>
+                  <span className="text-slate-900 font-bold">{item.posStock}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-right">
-                  <span className="text-slate-400 text-[10px]">Stockout:</span>
-                  <strong className="text-rose-400">~{item.stockoutMinutes} min</strong>
+                  <span className="text-slate-500 text-[10px] font-sans">Stockout:</span>
+                  <strong className="text-rose-700">~{item.stockoutMinutes} min</strong>
                 </div>
               </div>
 
@@ -282,24 +282,24 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
               <div className="flex items-center justify-between gap-2 pt-1">
                 <div className="flex items-center gap-1.5 text-[11px]">
                   {isAssigned ? (
-                    <span className="inline-flex items-center gap-1 text-emerald-400 font-medium text-[11px]">
+                    <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>Assigned ({assignedStaff})</span>
                     </span>
                   ) : (
-                    <span className="text-amber-300 font-medium text-[11px]">
+                    <span className="text-amber-800 font-medium text-[11px] font-sans">
                       {item.recommendation}
                     </span>
                   )}
                 </div>
 
                 {/* Right-aligned Buttons */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 font-sans">
                   <Button
                     variant="ghost"
                     size="xs"
                     onClick={() => onOpenWhy(item.whyData)}
-                    className="text-cyan-400 hover:text-cyan-300 gap-1 text-[11px] h-7 px-2"
+                    className="text-sky-700 hover:text-sky-800 gap-1 text-[11px] h-7 px-2"
                   >
                     <HelpCircle className="h-3 w-3" />
                     <span>Why?</span>
@@ -309,7 +309,7 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
                     variant="outline"
                     size="xs"
                     onClick={() => onSelectShelf(item.shelfId)}
-                    className="gap-1 text-[11px] h-7 px-2 text-slate-300 border-[#1E293B] hover:bg-[#1E293B]"
+                    className="gap-1 text-[11px] h-7 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs"
                   >
                     <Eye className="h-3 w-3" />
                     <span>View Shelf</span>
@@ -320,7 +320,7 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
                       variant="action"
                       size="xs"
                       onClick={() => handleAssign(item.rank, 'S04')}
-                      className="gap-1 text-[11px] h-7 px-2.5"
+                      className="gap-1 text-[11px] h-7 px-2.5 bg-sky-600 hover:bg-sky-700 text-white"
                     >
                       <UserCheck className="h-3 w-3" />
                       <span>Assign</span>
@@ -334,13 +334,13 @@ export const ReplenishmentPriorityList: React.FC<ReplenishmentPriorityListProps>
       </div>
 
       {/* Footer / View All Toggle */}
-      <div className="pt-2 mt-2 border-t border-[#1E293B] flex items-center justify-between text-xs">
-        <span className="text-slate-400 text-[11px]">
+      <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-sans">
+        <span className="text-slate-500 text-[11px]">
           Showing top {displayedPriorities.length} of {REPLENISHMENT_PRIORITIES.length} urgent facings
         </span>
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-cyan-400 hover:text-cyan-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
+          className="text-sky-700 hover:text-sky-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
         >
           <span>{showAll ? 'Show Top 3 Only' : 'View All Priorities →'}</span>
         </button>

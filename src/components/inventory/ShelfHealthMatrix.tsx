@@ -71,22 +71,22 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
   ]
 
   return (
-    <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-4 flex flex-col justify-between shadow-sm select-none h-full min-h-[460px]">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[460px] font-sans">
       {/* Header & Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E293B] shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-[#1E293B] text-slate-300">
+          <div className="p-1 rounded-md bg-sky-50 text-sky-600 border border-sky-200">
             <Grid className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-white tracking-wide">
+            <h3 className="text-xs font-bold text-slate-900 tracking-wide">
               Shelf Health Matrix (A1 — D4)
             </h3>
           </div>
         </div>
 
         {/* Clean Segmented Filter Bar */}
-        <div className="flex items-center rounded-lg bg-[#090D14] p-1 border border-[#1E293B] text-xs">
+        <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs shadow-2xs">
           {(
             [
               { key: 'ALL', label: 'All' },
@@ -102,8 +102,8 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
               className={cn(
                 'px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] font-medium',
                 filter === f.key
-                  ? 'bg-[#1E293B] text-white font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
               )}
             >
               {f.label}
@@ -120,7 +120,7 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
 
           return (
             <div key={aisleName} className="space-y-1.5">
-              <div className="text-[10px] text-slate-400 font-medium tracking-wide">
+              <div className="text-[10px] text-slate-500 font-semibold tracking-wide uppercase">
                 {aisleName}
               </div>
 
@@ -136,42 +136,42 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
                       key={shelf.id}
                       onClick={() => onSelectShelf(shelf)}
                       className={cn(
-                        'p-2.5 rounded-lg border text-left transition-all flex flex-col justify-between cursor-pointer group relative',
+                        'p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer group relative shadow-2xs',
                         isSelected
-                          ? 'bg-[#131D31] border-cyan-400 shadow-sm ring-2 ring-cyan-400/80'
+                          ? 'bg-sky-50 border-sky-500 shadow-sm ring-2 ring-sky-400'
                           : isCritical || isOos
-                          ? 'bg-[#0F172A] border-rose-500/40 hover:border-rose-400'
+                          ? 'bg-rose-50/30 border-rose-200 hover:border-rose-400'
                           : isLow
-                          ? 'bg-[#0F172A] border-amber-500/30 hover:border-amber-400'
-                          : 'bg-[#0F172A] border-[#1E293B] hover:border-slate-600'
+                          ? 'bg-amber-50/30 border-amber-200 hover:border-amber-400'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       )}
                     >
                       <div className="flex items-center justify-between w-full mb-1">
-                        <span className="font-mono font-bold text-white text-xs">{shelf.code}</span>
+                        <span className="font-mono font-bold text-slate-900 text-xs">{shelf.code}</span>
                         <span
                           className={cn(
-                            'text-[9px] px-1.5 py-0.5 rounded font-medium',
+                            'text-[9px] px-1.5 py-0.5 rounded-md font-semibold border',
                             shelf.status === 'HEALTHY'
-                              ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : shelf.status === 'LOW'
-                              ? 'bg-amber-950/80 text-amber-300 border border-amber-500/30'
-                              : 'bg-rose-950/80 text-rose-300 border border-rose-500/40'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-rose-50 text-rose-700 border-rose-200'
                           )}
                         >
                           {shelf.status === 'OUT_OF_STOCK' ? 'OOS' : shelf.status}
                         </span>
                       </div>
 
-                      <div className="text-[11px] text-slate-200 truncate w-full font-medium">
+                      <div className="text-[11px] text-slate-700 truncate w-full font-medium">
                         {shelf.sku}
                       </div>
 
-                      <div className="flex items-center justify-between w-full mt-2 pt-1.5 border-t border-[#1E293B] text-[10px]">
-                        <span className={cn('font-semibold', isCritical || isOos ? 'text-rose-400' : isLow ? 'text-amber-400' : 'text-slate-300')}>
+                      <div className="flex items-center justify-between w-full mt-2 pt-1.5 border-t border-slate-100 text-[10px]">
+                        <span className={cn('font-bold', isCritical || isOos ? 'text-rose-700' : isLow ? 'text-amber-800' : 'text-slate-600')}>
                           {shelf.availability}%
                         </span>
                         {(isCritical || isLow) && (
-                          <span className="text-[9px] text-slate-400 truncate max-w-[80px]">
+                          <span className="text-[9px] text-slate-500 truncate max-w-[80px] font-mono">
                             {shelf.predictedDepletion}
                           </span>
                         )}
