@@ -65,7 +65,7 @@ export const ExpiryDetailDrawer: React.FC<ExpiryDetailDrawerProps> = ({
 
   const handleCreateRotation = () => {
     createRotationTask(batch.id)
-    showToast(`✓ Stock Rotation task dispatched to Floor Staff for Shelf ${batch.shelfCode || 'Floor'}!`)
+    showToast(`✓ Stock Rotation task dispatched to Floor Staff for Shelf ${batch.shelfCode || 'Unassigned'}!`)
   }
 
   const handleCreateCheck = () => {
@@ -108,7 +108,7 @@ export const ExpiryDetailDrawer: React.FC<ExpiryDetailDrawerProps> = ({
                   : 'bg-sky-100 text-sky-800'
               )}
             >
-              {batch.shelfCode || 'B4'}
+              {batch.shelfCode || 'Unassigned'}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -213,7 +213,7 @@ export const ExpiryDetailDrawer: React.FC<ExpiryDetailDrawerProps> = ({
                 <MapPin className="w-4 h-4 text-sky-600 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-500 block">Shelf Display</span>
-                  <span className="font-bold text-slate-900">{batch.shelfCode || 'Floor'} ({batch.shelfQuantity} units)</span>
+                  <span className="font-bold text-slate-900">{batch.shelfCode || 'Unassigned'} ({batch.shelfQuantity} units)</span>
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">

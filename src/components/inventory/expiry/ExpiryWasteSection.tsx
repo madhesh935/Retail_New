@@ -430,7 +430,7 @@ export const ExpiryWasteSection: React.FC = () => {
                       {/* Location */}
                       <td className="py-3 px-3">
                         <span className="font-mono text-slate-900 font-bold bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
-                          {batch.shelfCode || 'C2'}
+                          {batch.shelfCode || 'Unassigned'}
                         </span>
                         <span className="text-[10px] text-slate-400 ml-1">({batch.storageLocationId})</span>
                       </td>

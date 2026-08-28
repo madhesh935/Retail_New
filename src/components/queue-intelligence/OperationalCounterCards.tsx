@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { WhyDialogData } from '@/components/command-center/WhyRecommendationDialog'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/useAppStore'
+import { isYoloActive } from '@/lib/yoloLaneRegistry'
 
 export interface OperationalLaneData {
   id: string
@@ -35,6 +36,8 @@ export interface OperationalLaneData {
   aiRecommendation?: string
   cameraCode: string
   whyData?: WhyDialogData
+  /** True only while this lane is actively receiving live camera detections. */
+  hasLiveFeed: boolean
 }
 
 interface OperationalCounterCardsProps {
@@ -56,31 +59,52 @@ export const getOperationalLanes = (
   const q3 = getQueue(3)
   const q4 = getQueue(4)
 
-  const q1Len = q1 ? q1.currentQueueLength : 4
-  const q1Wait = q1 ? Number((q1.currentWaitTimeSeconds / 60).toFixed(1)) : 1.5
-  const q1Arrival = Number((q1Len * 0.25 + 0.8).toFixed(1))
-  const q1Service = Number(Math.max(0.6, 1.8 - q1Len * 0.04).toFixed(1))
-  const q1F3 = Math.round(q1Len * 1.3)
-  const q1F5 = Math.round(q1Len * 1.6)
-  const q1Cong = Math.min(100, Math.max(0, q1Len * 12))
-  const q1Status = q1Len >= 5 ? 'CRITICAL' : 'HEALTHY'
+  // A lane only reflects real numbers while a camera is actively streaming
+  // detections to it (see BackgroundCameraProcessor / LiveQueueVisionCard).
+  // Without that, there's no live signal — show 0/idle instead of the
+  // database's seeded demo value or a fabricated fallback.
+  const c1Live = isYoloActive('lane-1')
+  const c2Live = isYoloActive('lane-2')
+  const c3Live = isYoloActive('lane-3')
+  const c4Live = isYoloActive('lane-4')
 
-  const q2Len = q2 ? q2.currentQueueLength : (ipCameraUrls['C2'] ? 0 : 2)
-  const q2Wait = q2 ? Number((q2.currentWaitTimeSeconds / 60).toFixed(1)) : 0.8
-  const q2Arrival = Number((q2Len * 0.2 + 0.6).toFixed(1))
-  const q2Service = 1.8
-  const q2F3 = Math.round(q2Len * 1.1)
-  const q2F5 = Math.round(q2Len * 1.2)
-  const q2Cong = Math.min(100, q2Len * 10)
-  const q2Status = q2 ? (q2.status === 'CONGESTED' ? 'CRITICAL' : q2.status === 'CLOSED' ? 'CLOSED' : 'HEALTHY') : 'HEALTHY'
+  const q1Len = c1Live && q1 ? q1.currentQueueLength : 0
+  const q1Wait = c1Live && q1 ? Number((q1.currentWaitTimeSeconds / 60).toFixed(1)) : 0
+  const q1Arrival = c1Live ? Number((q1Len * 0.25 + 0.8).toFixed(1)) : 0
+  const q1Service = c1Live ? Number(Math.max(0.6, 1.8 - q1Len * 0.04).toFixed(1)) : 0
+  const q1F3 = c1Live ? Math.round(q1Len * 1.3) : 0
+  const q1F5 = c1Live ? Math.round(q1Len * 1.6) : 0
+  const q1Cong = c1Live ? Math.min(100, Math.max(0, q1Len * 12)) : 0
+  const q1Status = c1Live && q1Len >= 5 ? 'CRITICAL' : 'HEALTHY'
 
-  const q3Len = q3 ? q3.currentQueueLength : 0
-  const q3Wait = q3 ? Number((q3.currentWaitTimeSeconds / 60).toFixed(1)) : 0
-  const q3Status = q3?.status === 'ACTIVE' || q3?.status === 'CONGESTED' ? (q3Len >= 5 ? 'CRITICAL' : 'HEALTHY') : (ipCameraUrls['C3'] ? 'HEALTHY' : 'CLOSED')
+  const q2Len = c2Live && q2 ? q2.currentQueueLength : 0
+  const q2Wait = c2Live && q2 ? Number((q2.currentWaitTimeSeconds / 60).toFixed(1)) : 0
+  const q2Arrival = c2Live ? Number((q2Len * 0.2 + 0.6).toFixed(1)) : 0
+  const q2Service = c2Live ? 1.8 : 0
+  const q2F3 = c2Live ? Math.round(q2Len * 1.1) : 0
+  const q2F5 = c2Live ? Math.round(q2Len * 1.2) : 0
+  const q2Cong = c2Live ? Math.min(100, q2Len * 10) : 0
+  const q2Status = q2?.status === 'CLOSED' ? 'CLOSED' : c2Live && q2Len >= 5 ? 'CRITICAL' : 'HEALTHY'
 
-  const q4Len = q4 ? q4.currentQueueLength : (ipCameraUrls['C4'] ? 0 : 3)
-  const q4Wait = q4 ? Number((q4.currentWaitTimeSeconds / 60).toFixed(1)) : 0.9
-  const q4Status = q4 ? (q4.status === 'CONGESTED' ? 'CRITICAL' : q4.status === 'CLOSED' ? 'CLOSED' : 'HEALTHY') : 'HEALTHY'
+  const q3Len = c3Live && q3 ? q3.currentQueueLength : 0
+  const q3Wait = c3Live && q3 ? Number((q3.currentWaitTimeSeconds / 60).toFixed(1)) : 0
+  const q3Arrival = c3Live ? Number(((q3Len * 0.25) + 0.5).toFixed(1)) : 0
+  const q3Service = c3Live ? 2.2 : 0
+  const q3F3 = c3Live ? Math.round(q3Len * 1.1) : 0
+  const q3F5 = c3Live ? Math.round(q3Len * 1.2) : 0
+  const q3Cong = c3Live ? Math.min(100, q3Len * 10) : 0
+  const q3Status = q3?.status === 'ACTIVE' || q3?.status === 'CONGESTED'
+    ? (c3Live && q3Len >= 5 ? 'CRITICAL' : 'HEALTHY')
+    : (ipCameraUrls['C3'] ? 'HEALTHY' : 'CLOSED')
+
+  const q4Len = c4Live && q4 ? q4.currentQueueLength : 0
+  const q4Wait = c4Live && q4 ? Number((q4.currentWaitTimeSeconds / 60).toFixed(1)) : 0
+  const q4Arrival = c4Live ? Number((q4Len * 0.25 + 0.8).toFixed(1)) : 0
+  const q4Service = c4Live ? 2.5 : 0
+  const q4F3 = c4Live ? Math.round(q4Len * 1.2) : 0
+  const q4F5 = c4Live ? Math.round(q4Len * 1.4) : 0
+  const q4Cong = c4Live ? Math.min(100, q4Len * 10) : 0
+  const q4Status = q4?.status === 'CLOSED' ? 'CLOSED' : c4Live && q4Len >= 5 ? 'CRITICAL' : 'HEALTHY'
 
   return [
     // 1. COUNTER C1 (Express Billing)
@@ -99,6 +123,7 @@ export const getOperationalLanes = (
       cashierName: q1?.assignedStaffName || 'Elena Rostova (EMP-401)',
       aiRecommendation: q1Len >= 5 ? 'Open Counter C3' : undefined,
       cameraCode: 'CAM-06',
+      hasLiveFeed: c1Live,
       whyData: {
         title: 'Counter C1 Congestion Prediction & Rate Breakdown',
         actionType: 'QUEUE',
@@ -135,6 +160,7 @@ export const getOperationalLanes = (
       congestionProbability: q2Cong,
       cashierName: q2?.assignedStaffName || 'Marcus Vance (EMP-402)',
       cameraCode: 'CAM-06',
+      hasLiveFeed: c2Live,
     },
     // 3. COUNTER C3 (Standby Lane)
     {
@@ -144,14 +170,15 @@ export const getOperationalLanes = (
       status: q3Status,
       queueLength: q3Len,
       estimatedWaitMinutes: q3Wait,
-      arrivalRate: q3 ? Number(((q3Len * 0.25) + 0.5).toFixed(1)) : 0,
-      serviceRate: 2.2,
-      forecast3Min: Math.round(q3Len * 1.1),
-      forecast5Min: Math.round(q3Len * 1.2),
-      congestionProbability: Math.min(100, q3Len * 10),
+      arrivalRate: q3Arrival,
+      serviceRate: q3Service,
+      forecast3Min: q3F3,
+      forecast5Min: q3F5,
+      congestionProbability: q3Cong,
       cashierName: q3?.assignedStaffName || 'Unassigned (Standby)',
       aiRecommendation: q1Len >= 5 ? 'Recommended to open to relieve Counter C1.' : 'Standby counter ready on surge.',
       cameraCode: 'CAM-06',
+      hasLiveFeed: c3Live,
     },
     // 4. COUNTER C4 (Self-Checkout Hub)
     {
@@ -161,13 +188,14 @@ export const getOperationalLanes = (
       status: q4Status,
       queueLength: q4Len,
       estimatedWaitMinutes: q4Wait,
-      arrivalRate: Number((q4Len * 0.25 + 0.8).toFixed(1)),
-      serviceRate: 2.5,
-      forecast3Min: Math.round(q4Len * 1.2),
-      forecast5Min: Math.round(q4Len * 1.4),
-      congestionProbability: Math.min(100, q4Len * 10),
+      arrivalRate: q4Arrival,
+      serviceRate: q4Service,
+      forecast3Min: q4F3,
+      forecast5Min: q4F5,
+      congestionProbability: q4Cong,
       cashierName: q4?.assignedStaffName || 'Autonomous AI Supervisor',
       cameraCode: 'CAM-06',
+      hasLiveFeed: c4Live,
     },
   ]
 }
@@ -314,8 +342,10 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
                 </div>
               )}
 
-              {/* Rate & Forecast Details for Active Counters */}
-              {!isClosed && (
+              {/* Rate & Forecast Details for Active Counters — only while a
+                  camera is actually watching this lane; otherwise these
+                  numbers would just be a formula run on a stale count. */}
+              {!isClosed && lane.hasLiveFeed && (
                 <div className="space-y-1.5 text-[10px] text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200 mb-2.5 shadow-2xs">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Arrival Rate (λ):</span>
@@ -337,6 +367,13 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
                     <span className="text-slate-500">Congestion Prob:</span>
                     <strong className={cn("font-bold", isCritical ? "text-rose-600" : "text-slate-500")}>{isCritical ? `${lane.congestionProbability}%` : '--'}</strong>
                   </div>
+                </div>
+              )}
+
+              {!isClosed && !lane.hasLiveFeed && (
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 bg-slate-50 p-2.5 rounded-lg border border-dashed border-slate-200 mb-2.5">
+                  <Camera className="h-3 w-3" />
+                  <span>No live camera feed for this counter</span>
                 </div>
               )}
 
@@ -423,7 +460,7 @@ export const OperationalCounterCards: React.FC<OperationalCounterCardsProps> = (
 
               {!isCritical && !isClosed && (
                 <div className="w-full flex items-center justify-between text-[10px] text-slate-500">
-                  <span className="font-sans">Throughput: Normal</span>
+                  <span className="font-sans">{lane.hasLiveFeed ? 'Throughput: Normal' : 'Awaiting live feed'}</span>
                   <Button
                     variant="ghost"
                     size="xs"

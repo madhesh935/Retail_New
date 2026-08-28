@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -128,6 +128,11 @@ export const QueueIntelligencePage: React.FC = () => {
 
   // Queue Recommendation Notification Logic
   const [notification, setNotification] = useState<{ message: string, timestamp: number } | null>(null)
+  // Tracks the last (congested → available) lane pair alerted on, independent
+  // of component state, so a small fluctuation in the recommended headcount
+  // (which changes the message text almost every live-camera tick) doesn't
+  // read as a "new" alert and keep re-showing the toast forever.
+  const lastAlertRef = useRef<{ pairKey: string; timestamp: number } | null>(null)
 
   useEffect(() => {
     const congestedLanes = dynamicLanes.filter(l => l.status !== 'CLOSED' && l.queueLength >= 5).sort((a, b) => b.queueLength - a.queueLength)
@@ -136,19 +141,24 @@ export const QueueIntelligencePage: React.FC = () => {
     if (congestedLanes.length > 0 && availableLanes.length > 0) {
       const congested = congestedLanes[0]
       const available = availableLanes[0]
-      
+
       if (congested.queueLength - available.queueLength >= 3) {
+        const pairKey = `${congested.code}->${available.code}`
+        const now = Date.now()
+        const last = lastAlertRef.current
+        // Same recommendation already alerted on recently — skip, even if the
+        // exact headcount in the message has ticked up or down by 1.
+        if (last && last.pairKey === pairKey && now - last.timestamp < 30000) {
+          return
+        }
+
         const moveCount = Math.floor((congested.queueLength - available.queueLength) / 2)
         const congestedName = congested.name.split(' •')[0] || congested.code
         const availableName = available.name.split(' •')[0] || available.code
         const newMessage = `Move ${moveCount} customers from ${congestedName} to ${availableName} to minimize the queue time.`
-        
-        setNotification(prev => {
-          if (prev && prev.message === newMessage && (Date.now() - prev.timestamp < 15000)) {
-            return prev
-          }
-          return { message: newMessage, timestamp: Date.now() }
-        })
+
+        lastAlertRef.current = { pairKey, timestamp: now }
+        setNotification({ message: newMessage, timestamp: now })
       }
     }
   }, [dynamicLanes])
@@ -216,8 +226,6 @@ export const QueueIntelligencePage: React.FC = () => {
           <LiveQueueVisionCard
             laneCode={activeLane.code}
             laneName={activeLane.name}
-            queueCount={activeLane.queueLength}
-            waitTime={`${activeLane.estimatedWaitMinutes} min`}
           />
         </div>
 

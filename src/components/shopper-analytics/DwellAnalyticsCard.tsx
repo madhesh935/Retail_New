@@ -5,6 +5,20 @@ import {
 } from 'lucide-react'
 import { CanonicalZoneAnalytics } from './shopperData'
 
+// Keyed by the real backend zone id (see backend/app/db/seed_data.py) — the
+// zone objects flowing into this card come from the live `zonesToAnalytics()`
+// adapter, whose ids are "zone-1".."zone-7", not the mock dataset's
+// "zone-electronics"-style ids.
+const ZONE_BAR_COLORS: Record<string, string> = {
+  'zone-1': '#94A3B8', // Main Entrance & Lobby
+  'zone-2': '#10B981', // Fresh Produce & Fruits
+  'zone-3': '#06B6D4', // Dairy, Bakery & Chilled
+  'zone-4': '#F97316', // Beverages & Snacks Aisle
+  'zone-5': '#64748B', // Household & Personal Care
+  'zone-6': '#A855F7', // Electronics & Gadgets
+  'zone-7': '#0EA5E9', // Checkout Lanes & Express
+}
+
 interface DwellAnalyticsCardProps {
   shoppingZones?: CanonicalZoneAnalytics[]
   checkoutZone?: CanonicalZoneAnalytics | null
@@ -63,16 +77,7 @@ export const DwellAnalyticsCard: React.FC<DwellAnalyticsCardProps> = ({
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${widthPct}%`,
-                    backgroundColor:
-                      zone.id === 'zone-electronics'
-                        ? '#A855F7'
-                        : zone.id === 'zone-produce'
-                        ? '#10B981'
-                        : zone.id === 'zone-dairy'
-                        ? '#06B6D4'
-                        : zone.id === 'zone-household'
-                        ? '#64748B'
-                        : '#F59E0B',
+                    backgroundColor: ZONE_BAR_COLORS[zone.id] ?? '#F59E0B',
                   }}
                 />
               </div>

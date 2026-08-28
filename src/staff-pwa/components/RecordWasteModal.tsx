@@ -78,6 +78,11 @@ export const RecordWasteModal: React.FC<RecordWasteModalProps> = ({
       setSubmitError(`Quantity must be between 1 and ${quantityCap}.`)
       return
     }
+    if (!authenticatedStaff?.id) {
+      // Never attribute a waste record to a fabricated staff id.
+      setSubmitError('Unable to identify the logged-in staff member. Please sign in again.')
+      return
+    }
     setIsSubmitting(true)
     setSubmitError(null)
 
@@ -90,8 +95,8 @@ export const RecordWasteModal: React.FC<RecordWasteModalProps> = ({
       batchNumber,
       quantity,
       reason,
-      recordedByStaffId: authenticatedStaff?.id || 'STAFF-03',
-      recordedByStaffName: authenticatedStaff?.name || 'Staff',
+      recordedByStaffId: authenticatedStaff.id,
+      recordedByStaffName: authenticatedStaff.name || 'Staff',
       locationId: shelfCode,
       locationName: `Shelf ${shelfCode}`,
       unitCost,

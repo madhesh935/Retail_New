@@ -12,9 +12,11 @@ import {
   PackageCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CanonicalZoneAnalytics, CANONICAL_ZONE_ANALYTICS } from './shopperData'
+import { CanonicalZoneAnalytics } from './shopperData'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
+import { zonesToAnalytics } from '@/services/api/livePageAdapters'
 
 interface ZoneCameraDrawerProps {
   zone?: CanonicalZoneAnalytics | null
@@ -33,9 +35,26 @@ export const ZoneCameraDrawer: React.FC<ZoneCameraDrawerProps> = ({
 }) => {
   const navigate = useNavigate()
 
+  // Real zone/camera associations from the store — the previous static mock
+  // mapping (CANONICAL_ZONE_ANALYTICS) had camera codes wired to different
+  // zones than the live backend, so a real camera code could resolve to a
+  // completely unrelated zone's fabricated stats.
+  const storeZones = useAppStore((s) => s.zones)
+  const shelfItems = useAppStore((s) => s.shelfItems)
+  const storeCameras = useAppStore((s) => s.cameras)
+  const liveZoneAnalytics = React.useMemo(
+    () =>
+      zonesToAnalytics(
+        storeZones,
+        shelfItems,
+        storeCameras.map((c) => ({ code: c.code, zoneId: c.zoneId }))
+      ),
+    [storeZones, shelfItems, storeCameras]
+  )
+
   const activeZone =
     propZone ||
-    CANONICAL_ZONE_ANALYTICS.find(
+    liveZoneAnalytics.find(
       (z) =>
         (cameraCode && z.cameraCode.toLowerCase() === cameraCode.toLowerCase()) ||
         (zoneName && z.name.toLowerCase().includes(zoneName.toLowerCase()))

@@ -21,8 +21,6 @@ export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
   const { customerRequests, syncTaskStatus, authenticatedStaff } = useAppStore()
   const [activeFilter, setActiveFilter] = useState<'NEW' | 'HELPING' | 'DONE'>('NEW')
 
-  const staffId = authenticatedStaff?.id || 'STAFF-03'
-
   const newRequests = customerRequests.filter((r) => r.status === 'REQUESTED')
   const helpingRequests = customerRequests.filter(
     (r) => r.status === 'ACCEPTED' || r.status === 'ASSIGNED' || r.status === 'ASSISTING'
@@ -34,7 +32,10 @@ export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
 
   const handleQuickAccept = (e: React.MouseEvent, reqId: string) => {
     e.stopPropagation()
-    void syncTaskStatus(reqId, 'IN_PROGRESS', staffId)
+    // Never attribute an accepted request to a fabricated staff id — if the
+    // real logged-in associate isn't known yet, don't accept on their behalf.
+    if (!authenticatedStaff?.id) return
+    void syncTaskStatus(reqId, 'IN_PROGRESS', authenticatedStaff.id)
   }
 
   return (

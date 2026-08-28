@@ -47,7 +47,7 @@ export const StaffMorePage: React.FC<StaffMorePageProps> = ({
   const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false)
 
   const staffName = authenticatedStaff?.name || 'Madhesh'
-  const employeeId = authenticatedStaff?.employeeId || 'EMP-404'
+  const employeeId = authenticatedStaff?.employeeId || 'EMP-403'
   const role = authenticatedStaff?.role || 'Inventory Restocker'
   const shift = authenticatedStaff?.shift || 'Shift B'
   const storeName = authenticatedStaff?.storeName || 'Chennai Central'

@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 import ReactECharts from 'echarts-for-react'
-import { useAppStore } from '@/store/useAppStore'
 import { OperationalLaneData } from './OperationalCounterCards'
 
 interface QueueForecastChartProps {
@@ -12,16 +11,11 @@ export const QueueForecastChart: React.FC<QueueForecastChartProps> = ({
   threshold = 10,
   activeLane,
 }) => {
-  // Subscribe directly to the raw queue store so we get live Zustand updates
-  const queues = useAppStore((s) => s.queues)
-
-  // Resolve the active lane's live queue data from store (most up-to-date)
   const laneCode = activeLane?.code ?? 'C1'
-  const laneNum = parseInt(laneCode.replace('C', '')) || 1
-  const liveQ = queues.find((q) => q.laneNumber === laneNum)
-
-  // Prefer live store value over prop (prop may be 1 render stale)
-  const currentQ = liveQ ? liveQ.currentQueueLength : (activeLane?.queueLength ?? 4)
+  // Trust the already-gated value from OperationalCounterCards (0 unless this
+  // lane has a live camera feed) — reading the raw store here independently
+  // used to show a stale seeded queue count even when the card above read 0.
+  const currentQ = activeLane?.queueLength ?? 0
 
   const f3 = Math.round(currentQ * 1.3)
   const f5 = Math.round(currentQ * 1.6)
@@ -134,10 +128,9 @@ export const QueueForecastChart: React.FC<QueueForecastChartProps> = ({
   return (
     <div className="w-full h-56">
       <ReactECharts
-        key={`${laneCode}-${currentQ}`}
         option={option}
-        notMerge={true}
-        lazyUpdate={false}
+        notMerge={false}
+        lazyUpdate={true}
         style={{ height: '100%', width: '100%' }}
         opts={{ renderer: 'canvas' }}
       />

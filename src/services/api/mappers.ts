@@ -304,7 +304,10 @@ export function mapCustomerAssistTask(raw: any): CustomerHelpRequest | null {
     typeLabel: String(raw.title || 'Customer Assist'),
     productName: data.product_name,
     shelfCode: data.shelf_code,
-    zoneId: data.location_zone || 'zone-1',
+    // No fabricated zone fallback — 'zone-1' is the real entrance zone, and
+    // defaulting to it would falsely pin every unlocated request there on the
+    // digital twin. An unrecognized id resolves to "no position" instead.
+    zoneId: data.location_zone || 'zone-unknown',
     zoneName: data.location_zone || String(raw.targetLocation || 'Store Floor'),
     message: String(raw.description || data.customer_notes || ''),
     receivedAt: formatRelativeTime(raw.createdAt || raw.created_at),

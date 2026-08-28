@@ -571,7 +571,9 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
   ]
 
   const liveShelves = useMemo(() => {
-    const liveById = new Map(shelfItems.map((item) => [item.shelfId, item]))
+    // item.id carries the "shelf-a1" DB id matching this layout's static ids;
+    // item.shelfId is the short display code ("A1") and never matches here.
+    const liveById = new Map(shelfItems.map((item) => [item.id, item]))
     return shelves.map((shelf) => {
       const live = liveById.get(shelf.id)
       if (!live) return shelf

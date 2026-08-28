@@ -16,20 +16,16 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store/useAppStore'
 import { CameraRoi } from '@/store/slices/settingsSlice'
 import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
-import { markYoloActive } from '@/lib/yoloLaneRegistry'
+import { markYoloActive, isYoloActive } from '@/lib/yoloLaneRegistry'
 
 interface LiveQueueVisionCardProps {
   laneCode?: string
   laneName?: string
-  queueCount?: number
-  waitTime?: string
 }
 
 export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
   laneCode = 'C1',
   laneName = 'Counter C1 (Assisted)',
-  queueCount: initialQueueCount = 8,
-  waitTime: initialWaitTime = '5.4 min',
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -43,21 +39,25 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
   // Subscribe directly to the queue store — this updates every 4s from the polling loop
   const queues = useAppStore((s) => s.queues)
   const laneNum = parseInt(laneCode.replace('C', '')) || 1
+  const laneId = `lane-${laneNum}`
   const liveStoreQ = queues.find((q) => q.laneNumber === laneNum)
-  
+  // Only trust the store's queue value while this lane has actually received
+  // a live detection recently — otherwise it's just the database's seeded
+  // demo row, which would show a stale count/wait right after switching lanes.
+  const isLive = isYoloActive(laneId)
+
   // Local WebSocket state (updated when YOLO camera is connected)
   const [wsQueueCount, setWsQueueCount] = React.useState<number | null>(null)
   const [wsWaitTime, setWsWaitTime] = React.useState<string | null>(null)
 
-  // Display: prefer YOLO WebSocket if connected, fall back to live store value, then prop
+  // Display: prefer YOLO WebSocket if connected, fall back to live store value
+  // (only when confirmed live), otherwise 0 — never a fabricated/stale number.
   const liveQueueCount = wsQueueCount !== null
     ? wsQueueCount
-    : (liveStoreQ?.currentQueueLength ?? initialQueueCount)
+    : (isLive && liveStoreQ ? liveStoreQ.currentQueueLength : 0)
   const liveWaitTime = wsWaitTime !== null
     ? wsWaitTime
-    : liveStoreQ
-      ? `${(liveStoreQ.currentWaitTimeSeconds / 60).toFixed(1)} min`
-      : initialWaitTime
+    : (isLive && liveStoreQ ? `${(liveStoreQ.currentWaitTimeSeconds / 60).toFixed(1)} min` : '0 min')
 
   const [, setIsStreaming] = useState(false)
   const [, setDetectedShoppers] = useState<{trackId: string, conf: string, position: string}[]>([])
@@ -129,10 +129,13 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
     setIsEditingRoi(false)
   }
 
-  // Initialize camera and WebSocket
+  // Acquire the camera source (local webcam or IP camera). Deliberately does
+  // NOT depend on `laneCode` — switching which lane is active shouldn't tear
+  // down and reacquire the video stream when the underlying camera hasn't
+  // changed; that's what caused the visible reload/flicker on every click.
   useEffect(() => {
-    let intervalId: number;
     let mediaStream: MediaStream | null = null;
+    let cancelled = false;
 
     const startCamera = async () => {
       try {
@@ -140,40 +143,16 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
           const { stream } = await openPreferredCameraStream({
             preferredLabel: preferredCameraLabel,
           });
+          if (cancelled) {
+            stopMediaStream(stream);
+            return;
+          }
           mediaStream = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
           }
         }
         setIsStreaming(true);
-
-        // Connect to per-lane FastAPI WebSocket
-        const laneNum = parseInt(laneCode.replace('C', '')) || 1
-        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream/lane-${laneNum}`;
-        wsRef.current = new WebSocket(wsUrl);
-
-        wsRef.current.onopen = () => {
-          console.log("WebSocket Connected");
-          // Start capturing and sending frames every 500ms
-          intervalId = window.setInterval(captureAndSendFrame, 500);
-        };
-
-        wsRef.current.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          setWsQueueCount(data.people_count);
-          setWsWaitTime(`${(data.average_wait_time_seconds / 60).toFixed(1)} min`);
-          if (data.detections) {
-            setDetectedShoppers(data.detections);
-          }
-
-          // Mark this lane as YOLO-active so the polling loop won't overwrite the count
-          const laneNum = parseInt(laneCode.replace('C', '')) || 1;
-          const laneId = `lane-${laneNum}`;
-          markYoloActive(laneId);
-
-          // Push YOLO count directly into the store so Counter Cards also update
-          useAppStore.getState().updateLaneQueue(laneId, data.people_count, data.average_wait_time_seconds);
-        };
       } catch (err) {
         console.error("Error accessing camera:", err);
       }
@@ -182,12 +161,55 @@ export const LiveQueueVisionCard: React.FC<LiveQueueVisionCardProps> = ({
     startCamera();
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
-      if (wsRef.current) wsRef.current.close();
+      cancelled = true;
       stopMediaStream(mediaStream);
       if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [currentIpCameraUrl, laneCode, preferredCameraLabel]);
+  }, [currentIpCameraUrl, preferredCameraLabel]);
+
+  // Connect this lane's own detection WebSocket and stream frames to it.
+  // Reconnects when the lane (or its camera source) changes — independent of
+  // the camera-acquisition effect above, so the video feed itself never blips.
+  useEffect(() => {
+    let intervalId: number;
+
+    const laneNum = parseInt(laneCode.replace('C', '')) || 1;
+    const laneId = `lane-${laneNum}`;
+    const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream/${laneId}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("WebSocket Connected");
+      // Start capturing and sending frames every 500ms
+      intervalId = window.setInterval(captureAndSendFrame, 500);
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setWsQueueCount(data.people_count);
+      setWsWaitTime(`${(data.average_wait_time_seconds / 60).toFixed(1)} min`);
+      if (data.detections) {
+        setDetectedShoppers(data.detections);
+      }
+
+      // Mark this lane as YOLO-active so the polling loop won't overwrite the count
+      markYoloActive(laneId);
+
+      // Push YOLO count directly into the store so Counter Cards also update
+      useAppStore.getState().updateLaneQueue(laneId, data.people_count, data.average_wait_time_seconds);
+    };
+
+    ws.onerror = (err) => {
+      console.error("Queue detection WebSocket error:", err);
+    };
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      ws.close();
+      if (wsRef.current === ws) wsRef.current = null;
+    };
+  }, [laneCode, currentIpCameraUrl]);
 
   const captureAndSendFrame = () => {
     if (!canvasRef.current || !wsRef.current) return;

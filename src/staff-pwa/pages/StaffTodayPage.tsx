@@ -76,7 +76,7 @@ export const StaffTodayPage: React.FC<StaffTodayPageProps> = ({
             <span>Present • Checked In {attendanceState.checkInAt || '13:57'}</span>
           </div>
           <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-md font-mono">
-            {authenticatedStaff?.employeeId || 'EMP-404'}
+            {authenticatedStaff?.employeeId || 'EMP-403'}
           </span>
         </div>
       </div>

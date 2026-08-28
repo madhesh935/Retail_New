@@ -21,18 +21,36 @@ export const StoreIncidentMap: React.FC<StoreIncidentMapProps> = ({
   const criticalCount = activeIncidents.filter((i) => i.severity === 'CRITICAL').length
   const highCount = activeIncidents.filter((i) => i.severity === 'HIGH').length
 
-  const findIncidentByZone = (zoneKeyword: string) => {
-    return activeIncidents.find((i) =>
-      i.zone.toLowerCase().includes(zoneKeyword.toLowerCase())
+  // Live incidents carry the real backend zone id ("zone-2".."zone-7", see
+  // backend/app/db/seed_data.py); the legacy mock dataset used a different
+  // convention ("zone-produce" etc). Match on zoneId first — falling back to
+  // the free-text zone name only for older records without one — instead of
+  // matching purely on display text, which drifts from the real zone ids.
+  const findIncidentByZone = (zoneKeyword: string, zoneIds: string[] = []) => {
+    return activeIncidents.find(
+      (i) =>
+        (i.zoneId && zoneIds.includes(i.zoneId)) ||
+        i.zone.toLowerCase().includes(zoneKeyword.toLowerCase())
     )
   }
 
-  const produceInc = findIncidentByZone('Produce')
-  const beverageInc = findIncidentByZone('Beverage') || findIncidentByZone('B4')
-  const checkoutInc = findIncidentByZone('Checkout') || findIncidentByZone('C1') || findIncidentByZone('C2')
-  const dairyInc = findIncidentByZone('Dairy')
-  const aisleInc = findIncidentByZone('Aisle 3') || findIncidentByZone('Snacks')
-  const camInc = findIncidentByZone('Cam')
+  const produceInc = findIncidentByZone('Produce', ['zone-produce', 'zone-2'])
+  const dairyInc = findIncidentByZone('Dairy', ['zone-dairy', 'zone-3'])
+  // Beverages and the Aisle 3 snacks bay share a single real backend zone
+  // (zone-4), so they're split by keyword within that zone rather than by id.
+  const beverageInc =
+    activeIncidents.find(
+      (i) => (i.zoneId === 'zone-4' || i.zoneId === 'zone-beverages') && /beverage|b4/i.test(i.zone)
+    ) || findIncidentByZone('Beverage') || findIncidentByZone('B4')
+  const aisleInc =
+    activeIncidents.find(
+      (i) => (i.zoneId === 'zone-4' || i.zoneId === 'zone-household') && /aisle|snack/i.test(i.zone)
+    ) || findIncidentByZone('Aisle 3') || findIncidentByZone('Snacks')
+  const checkoutInc = findIncidentByZone('Checkout', ['zone-checkout', 'zone-7']) || findIncidentByZone('C1') || findIncidentByZone('C2')
+  // This tile surfaces camera-system health issues, not an "Electronics zone"
+  // — match by the incident's real category instead of a zone-text keyword
+  // that never appears in any live incident's zone field.
+  const camInc = activeIncidents.find((i) => i.category === 'CAMERA_SYSTEM') || findIncidentByZone('Cam')
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[380px] font-sans">

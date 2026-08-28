@@ -27,6 +27,20 @@ class QueueMonitor:
             self.model = YOLO(self.model_path)
             logger.info("YOLO model loaded.")
 
+    def reset(self):
+        """Clear tracking state for a fresh viewing session.
+
+        Monitors are singletons kept alive for the life of the process (see
+        get_monitor), so without this a lane's stale tracked-person start
+        times (from a WebSocket that disconnected without that person ever
+        "leaving" frame) linger indefinitely. Reconnecting later would then
+        report an average wait of "now minus that ancient timestamp" —
+        producing wildly wrong, seemingly random wait times on reconnect.
+        """
+        self.current_people_count = 0
+        self.tracked_people = {}
+        self.completed_wait_times = []
+
     def process_frame(self, image_bytes: bytes):
         if self.model is None:
             self.initialize_model()

@@ -73,8 +73,11 @@ async def websocket_endpoint(websocket: WebSocket):
     from the frontend, processes them through YOLO for lane-1 (C1), and returns metrics.
     """
     await websocket.accept()
+    # Fresh viewing session — clear any stale tracked-person state left over
+    # from a previous connection that disconnected mid-track.
+    queue_monitor.reset()
     queue_monitor.initialize_model()
-    
+
     try:
         while True:
             image_bytes = await websocket.receive_bytes()
@@ -95,6 +98,10 @@ async def websocket_lane_endpoint(websocket: WebSocket, lane_id: str):
     """
     await websocket.accept()
     monitor = get_monitor(lane_id)
+    # Fresh viewing session — clear any stale tracked-person state left over
+    # from a previous connection that disconnected mid-track (see
+    # QueueMonitor.reset for why this matters).
+    monitor.reset()
     monitor.initialize_model()
     
     try:
