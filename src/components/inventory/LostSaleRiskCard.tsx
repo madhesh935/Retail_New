@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   TrendingDown,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAppStore } from '@/store/useAppStore'
 
 export interface LostSaleItem {
   id: string
@@ -19,39 +20,60 @@ export interface LostSaleItem {
 
 export const LostSaleRiskCard: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(true)
+  const shelfItems = useAppStore((s) => s.shelfItems)
 
-  const risks: LostSaleItem[] = [
-    {
-      id: 'risk-01',
-      category: 'Cold Beverages (Aisle B)',
-      riskLevel: 'HIGH',
-      traffic: 'High traffic density',
-      shelfAvailability: '17% (Shelf B4)',
-      backroomStock: '14 units available',
-      likelyIssue: 'Replenishment gap',
-      recommendation: 'Replenish immediately',
-    },
-    {
-      id: 'risk-02',
-      category: 'Dairy & Chilled (Cooler Wall)',
-      riskLevel: 'HIGH',
-      traffic: 'High traffic density',
-      shelfAvailability: '0% (Shelf C2 Whole Milk)',
-      backroomStock: '24 units available',
-      likelyIssue: 'Floor stockout',
-      recommendation: 'Restock milk chiller wall',
-    },
-    {
-      id: 'risk-03',
-      category: 'Snacks & Confectionery (Aisle D)',
-      riskLevel: 'MEDIUM',
-      traffic: 'Moderate traffic',
-      shelfAvailability: '24% (Shelf D2)',
-      backroomStock: '18 units available',
-      likelyIssue: 'Fast evening depletion',
-      recommendation: 'Queue for next cycle',
-    },
-  ]
+  const risks: LostSaleItem[] = useMemo(() => {
+    const atRiskShelves = shelfItems.filter(
+      (item) => item.status === 'LOW' || item.status === 'CRITICAL' || item.status === 'OUT_OF_STOCK'
+    )
+
+    const byZone = new Map<string, typeof atRiskShelves>()
+    atRiskShelves.forEach((item) => {
+      const key = item.zoneName || item.category
+      const group = byZone.get(key)
+      if (group) {
+        group.push(item)
+      } else {
+        byZone.set(key, [item])
+      }
+    })
+
+    return Array.from(byZone.entries()).map(([zone, items]) => {
+      const hasOutOfStock = items.some((i) => i.status === 'OUT_OF_STOCK')
+      const hasCritical = items.some((i) => i.status === 'CRITICAL')
+      const riskLevel: 'HIGH' | 'MEDIUM' = hasOutOfStock || hasCritical ? 'HIGH' : 'MEDIUM'
+
+      const worst = items.reduce((a, b) => {
+        const aAvail = a.capacityCount > 0 ? a.currentCount / a.capacityCount : 0
+        const bAvail = b.capacityCount > 0 ? b.currentCount / b.capacityCount : 0
+        return bAvail < aAvail ? b : a
+      })
+      const worstAvailability = worst.capacityCount > 0
+        ? Math.round((worst.currentCount / worst.capacityCount) * 100)
+        : 0
+      const totalBackroom = items.reduce((sum, i) => sum + (i.backroomUnits || 0), 0)
+
+      const likelyIssue = hasOutOfStock
+        ? 'Floor stockout'
+        : hasCritical
+        ? 'Replenishment gap'
+        : 'Fast depletion'
+      const recommendation = hasOutOfStock || hasCritical
+        ? 'Replenish immediately'
+        : 'Queue for next cycle'
+
+      return {
+        id: `risk-${worst.zoneId || zone}`,
+        category: `${zone} (${items.length} shelf${items.length > 1 ? 's' : ''} at risk)`,
+        riskLevel,
+        traffic: `${items.length} at-risk shelf${items.length > 1 ? 's' : ''}`,
+        shelfAvailability: `${worstAvailability}% (Shelf ${worst.shelfId})`,
+        backroomStock: `${totalBackroom} units available`,
+        likelyIssue,
+        recommendation,
+      }
+    })
+  }, [shelfItems])
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">
@@ -65,7 +87,7 @@ export const LostSaleRiskCard: React.FC = () => {
             <h3 className="text-xs font-bold text-slate-900 tracking-wide flex items-center gap-2">
               <span>Sales Opportunity Risk</span>
               <span className="text-amber-800 font-bold text-xs bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">
-                2 High-Risk Zones
+                {risks.length} High-Risk Zone{risks.length === 1 ? '' : 's'}
               </span>
             </h3>
             <span className="text-[11px] text-slate-500">
@@ -86,7 +108,13 @@ export const LostSaleRiskCard: React.FC = () => {
       </div>
 
       {/* Expanded Risk Items */}
-      {isExpanded && (
+      {isExpanded && risks.length === 0 && (
+        <div className="mt-3 pt-3 border-t border-slate-100 text-center py-4">
+          <span className="text-xs font-semibold text-slate-500">No high-risk zones right now</span>
+        </div>
+      )}
+
+      {isExpanded && risks.length > 0 && (
         <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
           {risks.map((item) => {
             const isHigh = item.riskLevel === 'HIGH'

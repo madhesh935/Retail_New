@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { LiveQueueVisionCard } from '@/components/queue-intelligence/LiveQueueVisionCard'
 import { useAppStore } from '@/store/useAppStore'
+import { openPreferredCameraStream, stopMediaStream } from '@/lib/preferredCamera'
 
 interface CameraFeed {
   id: string
@@ -29,7 +30,8 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
   const videoRef = React.useRef<HTMLVideoElement>(null)
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const wsRef = React.useRef<WebSocket | null>(null)
-  const currentOccupancy = useAppStore((s) => s.storeInfo?.currentOccupancy || 142)
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
+  const [deviceLabel, setDeviceLabel] = React.useState('Camera')
 
   const [totalEntered, setTotalEntered] = React.useState(0)
   const [totalExited, setTotalExited] = React.useState(0)
@@ -37,14 +39,22 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
 
   React.useEffect(() => {
     let intervalId: number
+    let mediaStream: MediaStream | null = null
+
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        const { stream, deviceLabel: label } = await openPreferredCameraStream({
+          preferredLabel: preferredCameraLabel,
+        })
+        mediaStream = stream
+        setDeviceLabel(label)
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
 
-        const wsUrl = `ws://127.0.0.1:8000/api/v1/entrance/stream`
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const host = import.meta.env.VITE_WS_HOST || window.location.host || '127.0.0.1:8000'
+        const wsUrl = `${protocol}//${host}/api/v1/entrance/stream`
         wsRef.current = new WebSocket(wsUrl)
 
         wsRef.current.onopen = () => {
@@ -52,15 +62,18 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
         }
 
         wsRef.current.onmessage = (event) => {
-          const data = JSON.parse(event.data)
-          if (data.total_entered !== undefined) {
-            setTotalEntered(data.total_entered)
-            setTotalExited(data.total_exited)
-            setInFrameCount(data.in_frame_count)
-            // Optional: update global store occupancy based on backend occupancy
-            if (data.current_occupancy !== undefined) {
-               useAppStore.getState().updateOccupancy(data.current_occupancy, 0, 0)
+          try {
+            const data = JSON.parse(event.data)
+            if (data.total_entered !== undefined) {
+              setTotalEntered(data.total_entered)
+              setTotalExited(data.total_exited)
+              setInFrameCount(data.in_frame_count)
+              if (data.current_occupancy !== undefined) {
+                useAppStore.getState().updateOccupancy(data.current_occupancy, 0, 0)
+              }
             }
+          } catch {
+            // ignore non-json frames
           }
         }
       } catch (err) {
@@ -73,12 +86,10 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
     return () => {
       if (intervalId) clearInterval(intervalId)
       if (wsRef.current) wsRef.current.close()
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
-        tracks.forEach((t) => t.stop())
-      }
+      stopMediaStream(mediaStream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
-  }, [])
+  }, [preferredCameraLabel])
 
   const captureAndSendFrame = () => {
     if (!canvasRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
@@ -100,6 +111,8 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
       }, 'image/jpeg', 0.6)
     }
   }
+
+  const isDroidCam = /droidcam|iriun|phone|android|iphone/i.test(deviceLabel)
 
   return (
     <div className="space-y-3 font-mono">
@@ -125,7 +138,8 @@ const LiveEntranceModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-cyan-300 z-10">
           <span className="flex items-center gap-2 font-bold">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>RTSP STREAM • CAM-01 (Main Entrance)</span>
+            <span>LIVE • {isDroidCam ? 'DROIDCAM' : 'WEBCAM'} • CAM-01 (Main Entrance)</span>
+            <span className="text-[10px] text-slate-400 font-normal truncate max-w-[200px]">({deviceLabel})</span>
           </span>
           <div className="flex items-center gap-2">
             <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded-md border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1.5 shadow-sm">
@@ -161,33 +175,75 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
   const videoRef = React.useRef<HTMLVideoElement>(null)
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const wsRef = React.useRef<WebSocket | null>(null)
-  const [liveQueueCount, setLiveQueueCount] = React.useState(8)
-  const [liveWaitTime, setLiveWaitTime] = React.useState('5.4 min')
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
+  const [deviceLabel, setDeviceLabel] = React.useState('Camera')
+
+  const [liveQueueCount, setLiveQueueCount] = React.useState<number | null>(null)
+  const [liveWaitTime, setLiveWaitTime] = React.useState<string | null>(null)
+  const [isConnected, setIsConnected] = React.useState(false)
   const currentRoi = useAppStore((s) => s.cameraRois['C1'] || { x: 0, y: 0, width: 1, height: 1 })
 
   React.useEffect(() => {
     let intervalId: number
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-        }
+    let reconnectTimer: number | null = null
+    let mediaStream: MediaStream | null = null
+    let cancelled = false
 
-        const wsUrl = `ws://127.0.0.1:8000/api/v1/queue/stream`
-        wsRef.current = new WebSocket(wsUrl)
+    const connectSocket = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = import.meta.env.VITE_WS_HOST || window.location.host || '127.0.0.1:8000'
+      const wsUrl = `${protocol}//${host}/api/v1/queue/stream`
+      const ws = new WebSocket(wsUrl)
+      wsRef.current = ws
 
-        wsRef.current.onopen = () => {
-          intervalId = window.setInterval(captureAndSendFrame, 500)
-        }
+      ws.onopen = () => {
+        if (cancelled) return
+        setIsConnected(true)
+        intervalId = window.setInterval(captureAndSendFrame, 500)
+      }
 
-        wsRef.current.onmessage = (event) => {
+      ws.onmessage = (event) => {
+        try {
           const data = JSON.parse(event.data)
           if (data.people_count !== undefined) {
             setLiveQueueCount(data.people_count)
             setLiveWaitTime(`${(data.average_wait_time_seconds / 60).toFixed(1)} min`)
           }
+        } catch {
+          // ignore
         }
+      }
+
+      ws.onclose = () => {
+        if (intervalId) clearInterval(intervalId)
+        setIsConnected(false)
+        // A dropped connection (e.g. a backend restart) shouldn't strand this
+        // view on stale numbers forever — retry until the component unmounts.
+        if (!cancelled) {
+          reconnectTimer = window.setTimeout(connectSocket, 2000)
+        }
+      }
+
+      ws.onerror = () => {
+        ws.close()
+      }
+    }
+
+    const startCamera = async () => {
+      try {
+        const { stream, deviceLabel: label } = await openPreferredCameraStream({
+          preferredLabel: preferredCameraLabel,
+        })
+        if (cancelled) {
+          stopMediaStream(stream)
+          return
+        }
+        mediaStream = stream
+        setDeviceLabel(label)
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+        connectSocket()
       } catch (err) {
         console.error('Error accessing checkout camera:', err)
       }
@@ -196,14 +252,14 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
     startCamera()
 
     return () => {
+      cancelled = true
       if (intervalId) clearInterval(intervalId)
+      if (reconnectTimer) clearTimeout(reconnectTimer)
       if (wsRef.current) wsRef.current.close()
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
-        tracks.forEach((t) => t.stop())
-      }
+      stopMediaStream(mediaStream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
-  }, [])
+  }, [preferredCameraLabel])
 
   const captureAndSendFrame = () => {
     if (!canvasRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
@@ -225,6 +281,8 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
       }, 'image/jpeg', 0.6)
     }
   }
+
+  const isDroidCam = /droidcam|iriun|phone|android|iphone/i.test(deviceLabel)
 
   return (
     <div className="space-y-3 font-mono">
@@ -258,12 +316,15 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
         {/* Top HUD */}
         <div className="flex items-center justify-between text-xs text-cyan-300 z-10">
           <span className="flex items-center gap-2 font-bold">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>RTSP STREAM • CAM-06 (Overhead Checkout C1)</span>
+            <span className={cn('h-2 w-2 rounded-full', isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400')} />
+            <span>{isConnected ? 'LIVE' : 'RECONNECTING…'} • {isDroidCam ? 'DROIDCAM' : 'WEBCAM'} • CAM-06 (Overhead Queue C1)</span>
+            <span className="text-[10px] text-slate-400 font-normal truncate max-w-[200px]">({deviceLabel})</span>
           </span>
           <span className="bg-[#0F172A]/90 px-2.5 py-1 rounded-md border border-rose-500/40 text-rose-300 font-bold flex items-center gap-1.5 shadow-sm">
-            <span>Detected Queue:</span>
-            <span className="text-white">{liveQueueCount} Shoppers ({liveWaitTime})</span>
+            <span>Queue:</span>
+            <span className="text-white">
+              {liveQueueCount !== null ? `${liveQueueCount} Shoppers (${liveWaitTime})` : 'Awaiting detection…'}
+            </span>
           </span>
         </div>
 
@@ -291,20 +352,24 @@ const LiveCheckoutModalStream: React.FC<{ feed: CameraFeed }> = ({ feed }) => {
 // Mini Live Stream for Entrance Camera Card
 const LiveEntranceMiniStream: React.FC = () => {
   const videoRef = React.useRef<HTMLVideoElement>(null)
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
 
   React.useEffect(() => {
     let stream: MediaStream | null = null
-    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
-      stream = s
-      if (videoRef.current) {
-        videoRef.current.srcObject = s
-      }
-    }).catch(console.warn)
+    openPreferredCameraStream({ preferredLabel: preferredCameraLabel })
+      .then(({ stream: s }) => {
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = s
+        }
+      })
+      .catch(console.warn)
 
     return () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop())
+      stopMediaStream(stream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
-  }, [])
+  }, [preferredCameraLabel])
 
   return (
     <div className="relative w-full h-full bg-[#050810] overflow-hidden">
@@ -329,20 +394,24 @@ const LiveEntranceMiniStream: React.FC = () => {
 const LiveCheckoutMiniStream: React.FC = () => {
   const videoRef = React.useRef<HTMLVideoElement>(null)
   const currentRoi = useAppStore((s) => s.cameraRois['C1'] || { x: 0.08, y: 0.08, width: 0.84, height: 0.84 })
+  const preferredCameraLabel = useAppStore((s) => s.preferredCameraLabel)
 
   React.useEffect(() => {
     let stream: MediaStream | null = null
-    navigator.mediaDevices.getUserMedia({ video: true }).then((s) => {
-      stream = s
-      if (videoRef.current) {
-        videoRef.current.srcObject = s
-      }
-    }).catch(console.warn)
+    openPreferredCameraStream({ preferredLabel: preferredCameraLabel })
+      .then(({ stream: s }) => {
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = s
+        }
+      })
+      .catch(console.warn)
 
     return () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop())
+      stopMediaStream(stream)
+      if (videoRef.current) videoRef.current.srcObject = null
     }
-  }, [])
+  }, [preferredCameraLabel])
 
   return (
     <div className="relative w-full h-full bg-[#050810] overflow-hidden">
@@ -424,6 +493,15 @@ export const LiveCameraStrip: React.FC = () => {
   const navigate = useNavigate()
   const [selectedCamera, setSelectedCamera] = useState<CameraFeed | null>(null)
 
+  // C05's card watches Register C1 specifically — reflect its real live status
+  // instead of a fixed placeholder count.
+  const queues = useAppStore((s) => s.queues)
+  const c1Lane = queues.find((q) => q.id === 'C1' || q.laneNumber === 1)
+  const isC1Congested = c1Lane?.status === 'CONGESTED'
+  const checkoutSummary = c1Lane
+    ? `C1 ${c1Lane.status === 'CONGESTED' ? 'Congested' : c1Lane.status === 'CLOSED' ? 'Closed' : 'Active'} (${c1Lane.currentQueueLength} in queue)`
+    : 'Connecting to live queue…'
+
   const feeds: CameraFeed[] = [
     {
       id: 'cam-01',
@@ -460,10 +538,10 @@ export const LiveCameraStrip: React.FC = () => {
     },
     {
       id: 'cam-05',
-      name: 'Checkout',
+      name: 'Queue',
       code: 'C05',
-      summary: 'C1 Congested (8 in queue)',
-      status: 'CRITICAL',
+      summary: checkoutSummary,
+      status: isC1Congested ? 'CRITICAL' : 'NOMINAL',
       type: 'queue',
       resolution: '1080p @ 30fps',
       fps: 30,

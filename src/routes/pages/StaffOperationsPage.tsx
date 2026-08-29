@@ -100,6 +100,14 @@ export const StaffOperationsPage: React.FC = () => {
     if (task) setSelectedTask(task)
   }
 
+  const handleAssignTaskToStaff = (staffMember: StaffMember) => {
+    const match = recommendations.find((r) => r.recommendedStaffId === staffMember.id)
+    if (match) {
+      setSelectedStaff(null)
+      setPendingAssignRec(match)
+    }
+  }
+
   return (
     <div className="space-y-4 select-none pb-6">
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
@@ -147,7 +155,7 @@ export const StaffOperationsPage: React.FC = () => {
           />
         </div>
         <div className="xl:col-span-4">
-          <WorkloadDistributionCard staff={liveStaff} />
+          <WorkloadDistributionCard staff={liveStaff} onFocusRecommendation={(s) => setSelectedStaff(s)} />
         </div>
       </div>
 
@@ -158,6 +166,8 @@ export const StaffOperationsPage: React.FC = () => {
       <StaffDetailDrawer
         staff={selectedStaff}
         onClose={() => setSelectedStaff(null)}
+        onAssignTask={handleAssignTaskToStaff}
+        canAssignTask={!!selectedStaff && recommendations.some((r) => r.recommendedStaffId === selectedStaff.id)}
       />
       <StaffRouteModal
         allocation={selectedRouteAllocation}

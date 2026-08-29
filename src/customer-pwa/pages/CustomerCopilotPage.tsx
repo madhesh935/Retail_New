@@ -31,6 +31,7 @@ import { HandHelping } from 'lucide-react'
 export const CustomerCopilotPage: React.FC = () => {
   const {
     storeName,
+    catalogLoading,
     copilotMessages,
     sendCopilotMessage,
     copilotIsTyping,
@@ -81,10 +82,12 @@ export const CustomerCopilotPage: React.FC = () => {
             <div>
               <h1 className="flex items-center gap-1.5 text-sm font-extrabold tracking-tight text-slate-900">
                 <span>Shopping Copilot</span>
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                {!catalogLoading && (
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                )}
               </h1>
               <p className="text-[11px] font-medium text-slate-500">
-                {storeName} • Live Store Availability
+                {storeName} • {catalogLoading ? 'Loading store availability…' : 'Live Store Availability'}
               </p>
             </div>
           </div>

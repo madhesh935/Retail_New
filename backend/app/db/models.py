@@ -14,7 +14,7 @@ class StoreModel(Base):
     current_occupancy = Column(Integer, default=142)
     max_capacity = Column(Integer, default=350)
     todays_total_footfall = Column(Integer, default=1840)
-    peak_occupancy_today = Column(Integer, default=288)
+    peak_occupancy_today = Column(Integer, default=200)
     occupancy_rate = Column(Float, default=40.6)
     average_dwell_time_minutes = Column(Integer, default=24)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
@@ -214,6 +214,7 @@ class StaffTaskModel(Base):
     customer_request_data = Column(JSON, nullable=True)
     details = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    assigned_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
 class IncidentModel(Base):

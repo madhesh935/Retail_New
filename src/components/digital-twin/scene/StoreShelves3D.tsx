@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { TooltipData } from '../controls/TwinTooltip'
 import { RetailPalette } from '../theme/retailPalette'
+import { ZONE_ANCHORS } from '../layout/storeLayout'
 import type { StockStatus } from '@/types/inventory.types'
 
 export interface Shelf3DData {
@@ -20,6 +21,7 @@ export interface Shelf3DData {
   planogramScore: number
   sku: string
   camera: string
+  lastRestocked: string
 }
 
 const LIVE_STATUS_MAP: Record<StockStatus, Shelf3DData['status']> = {
@@ -39,8 +41,78 @@ const PRODUCT_COLORS = {
   grocery: ['#B85C4A', '#5A8A7A', '#C4A04A', '#7A6B5A', '#8B7355'],
   bakery: ['#C4A06A', '#8B6914', '#D4B896', '#A67C52'],
   deli: ['#C4A04A', '#B85C4A', '#D4B896', '#A86B5A'],
-  endcap: ['#C4A04A', '#B85C4A'],
 } as const
+
+type RenderCategory = 'produce' | 'beverage' | 'dairy' | 'frozen' | 'bakery' | 'deli' | 'grocery' | 'electronics' | 'stockroom'
+
+/** Real backend shelf `category` strings mapped to the closest 3D display type. */
+function toRenderCategory(realCategory: string): RenderCategory {
+  const c = realCategory.toLowerCase()
+  if (c.includes('produce') || c.includes('fruit') || c.includes('veg')) return 'produce'
+  if (c.includes('beverage') || c.includes('drink')) return 'beverage'
+  if (c.includes('frozen') || c.includes('meat') || c.includes('chilled')) return 'frozen'
+  if (c.includes('dairy')) return 'dairy'
+  if (c.includes('bakery') || c.includes('bread')) return 'bakery'
+  if (c.includes('deli') || c.includes('ready-to-eat') || c.includes('ready to eat')) return 'deli'
+  if (c.includes('electronic') || c.includes('gadget')) return 'electronics'
+  if (c.includes('stock') || c.includes('backroom') || c.includes('warehouse')) return 'stockroom'
+  // Snacks, breakfast, personal care, household, staples, etc. — generic packaged-goods gondola.
+  return 'grocery'
+}
+
+/** Natural (uncompressed) footprint per display type: [width, height, depth]. */
+const DEFAULT_DIMENSIONS: Record<RenderCategory, [number, number, number]> = {
+  produce: [4.0, 1.3, 1.8],
+  beverage: [3.4, 1.9, 1.3],
+  dairy: [3.6, 2.3, 1.2],
+  frozen: [3.6, 2.3, 1.2],
+  bakery: [3.4, 1.9, 1.3],
+  deli: [3.4, 1.7, 1.3],
+  grocery: [3.6, 1.9, 1.4],
+  electronics: [4.0, 1.2, 1.8],
+  stockroom: [5.0, 2.8, 1.4],
+}
+
+interface LaidOutShelf {
+  position: [number, number, number]
+  dimensions: [number, number, number]
+}
+
+/**
+ * Arranges `count` shelves in a centered grid inside a zone's real footprint
+ * (its Digital Twin anchor position + bounds), shrinking each shelf's
+ * footprint only as needed to avoid overlap when a zone holds many shelves.
+ */
+function layoutZoneGrid(
+  anchor: { position: [number, number, number]; bounds: [number, number] },
+  count: number,
+  natural: [number, number, number]
+): LaidOutShelf[] {
+  if (count <= 0) return []
+  const usableW = anchor.bounds[0] * 0.75
+  const usableD = anchor.bounds[1] * 0.75
+  const aspect = usableW / Math.max(usableD, 1)
+  const cols = Math.max(1, Math.min(count, Math.round(Math.sqrt(count * aspect))))
+  const rows = Math.max(1, Math.ceil(count / cols))
+
+  const cellW = cols > 1 ? usableW / cols : usableW
+  const cellD = rows > 1 ? usableD / rows : usableD
+  const scale = Math.max(0.4, Math.min(1, (cellW * 0.86) / natural[0], (cellD * 0.86) / natural[2]))
+  const dimensions: [number, number, number] = [natural[0] * scale, natural[1], natural[2] * scale]
+
+  const colGap = cols > 1 ? usableW / (cols - 1) : 0
+  const rowGap = rows > 1 ? usableD / (rows - 1) : 0
+
+  const out: LaidOutShelf[] = []
+  for (let i = 0; i < count; i++) {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    const x = anchor.position[0] - usableW / 2 + (cols > 1 ? col * colGap : usableW / 2)
+    const z = anchor.position[2] - usableD / 2 + (rows > 1 ? row * rowGap : usableD / 2)
+    out.push({ position: [x, dimensions[1] / 2, z], dimensions })
+  }
+  return out
+}
 
 interface StoreShelves3DProps {
   showShelfHealth: boolean
@@ -56,540 +128,72 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
   const [hoveredShelfId, setHoveredShelfId] = useState<string | null>(null)
   const shelfItems = useAppStore((s) => s.shelfItems)
 
-  const shelves: (Shelf3DData & {
-    position: [number, number, number]
-    dimensions: [number, number, number]
-    category: 'produce' | 'beverage' | 'dairy' | 'frozen' | 'bakery' | 'deli' | 'grocery' | 'electronics' | 'stockroom' | 'endcap' | 'dumpbin'
-  })[] = [
-    // =======================================================
-    // 1. FRESH PRODUCE DEPARTMENT (West-South)
-    // =======================================================
-    {
-      id: 'shelf-a1',
-      code: 'A1',
-      name: 'Produce Table A1',
-      zone: 'Fresh Produce',
-      status: 'HEALTHY',
-      availability: 92,
-      visibleUnits: 38,
-      capacity: 42,
-      posInventory: 80,
-      demand: 'High',
-      stockoutPrediction: '4.5 hrs',
-      replenishmentPriority: 15,
-      planogramScore: 94,
-      sku: 'Royal Gala Apples & Pears',
-      camera: 'CAM-02 (Produce)',
-      category: 'produce',
-      position: [-8, 0.65, -4.5],
-      dimensions: [4.2, 1.3, 1.8],
-    },
-    {
-      id: 'shelf-a2',
-      code: 'A2',
-      name: 'Produce Table A2',
-      zone: 'Fresh Produce',
-      status: 'LOW',
-      availability: 58,
-      visibleUnits: 14,
-      capacity: 24,
-      posInventory: 40,
-      demand: 'Moderate',
-      stockoutPrediction: '48 min',
-      replenishmentPriority: 62,
-      planogramScore: 89,
-      sku: 'Valencia Oranges & Greens',
-      camera: 'CAM-02 (Produce)',
-      category: 'produce',
-      position: [-8, 0.65, -7.5],
-      dimensions: [4.2, 1.3, 1.8],
-    },
-    {
-      id: 'shelf-a3',
-      code: 'A3',
-      name: 'Tropical Fruit Island A3',
-      zone: 'Fresh Produce',
-      status: 'HEALTHY',
-      availability: 88,
-      visibleUnits: 32,
-      capacity: 36,
-      posInventory: 65,
-      demand: 'Moderate',
-      stockoutPrediction: '> 5 hrs',
-      replenishmentPriority: 18,
-      planogramScore: 95,
-      sku: 'Bananas, Pineapples & Melons',
-      camera: 'CAM-02 (Produce)',
-      category: 'produce',
-      position: [-13.5, 0.65, -4.5],
-      dimensions: [3.8, 1.3, 1.8],
-    },
-    {
-      id: 'shelf-a4',
-      code: 'A4',
-      name: 'Organic Salad Chilled Wall A4',
-      zone: 'Fresh Produce',
-      status: 'HEALTHY',
-      availability: 94,
-      visibleUnits: 28,
-      capacity: 30,
-      posInventory: 50,
-      demand: 'High',
-      stockoutPrediction: '6 hrs',
-      replenishmentPriority: 12,
-      planogramScore: 97,
-      sku: 'Packaged Organic Greens & Berries',
-      camera: 'CAM-02 (Produce)',
-      category: 'produce',
-      position: [-13.5, 0.65, -7.5],
-      dimensions: [3.8, 1.3, 1.8],
-    },
-    {
-      id: 'shelf-db1',
-      code: 'DB1',
-      name: 'Promo Dump Bin DB1',
-      zone: 'Fresh Produce',
-      status: 'HEALTHY',
-      availability: 95,
-      visibleUnits: 50,
-      capacity: 52,
-      posInventory: 90,
-      demand: 'Moderate',
-      stockoutPrediction: '> 5 hrs',
-      replenishmentPriority: 10,
-      planogramScore: 95,
-      sku: 'Seasonal Citrus & Watermelons',
-      camera: 'CAM-02 (Produce)',
-      category: 'dumpbin',
-      position: [-3.5, 0.45, -5.5],
-      dimensions: [1.3, 0.9, 1.3],
-    },
-
-    // =======================================================
-    // 2. ARTISAN BAKERY & GOURMET DELI (West-North)
-    // =======================================================
-    {
-      id: 'shelf-d1',
-      code: 'D1',
-      name: 'Artisan Bakery Wall D1',
-      zone: 'Dairy & Bakery',
-      status: 'HEALTHY',
-      availability: 85,
-      visibleUnits: 22,
-      capacity: 26,
-      posInventory: 30,
-      demand: 'Moderate',
-      stockoutPrediction: '2.5 hrs',
-      replenishmentPriority: 30,
-      planogramScore: 91,
-      sku: 'Artisan Sourdough & Baguettes',
-      camera: 'CAM-02 (Produce)',
-      category: 'bakery',
-      position: [-16, 0.95, -1.0],
-      dimensions: [3.4, 1.9, 1.3],
-    },
-    {
-      id: 'shelf-d2',
-      code: 'D2',
-      name: 'Gourmet Pastry Showcase D2',
-      zone: 'Dairy & Bakery',
-      status: 'HEALTHY',
-      availability: 90,
-      visibleUnits: 24,
-      capacity: 28,
-      posInventory: 45,
-      demand: 'High',
-      stockoutPrediction: '3.5 hrs',
-      replenishmentPriority: 22,
-      planogramScore: 96,
-      sku: 'Croissants, Tarts & Specialty Cakes',
-      camera: 'CAM-02 (Produce)',
-      category: 'deli',
-      position: [-16, 0.85, 2.5],
-      dimensions: [3.4, 1.7, 1.3],
-    },
-    {
-      id: 'shelf-d3',
-      code: 'D3',
-      name: 'Artisan Deli & Cheese Counter D3',
-      zone: 'Dairy & Bakery',
-      status: 'HEALTHY',
-      availability: 88,
-      visibleUnits: 26,
-      capacity: 30,
-      posInventory: 55,
-      demand: 'Moderate',
-      stockoutPrediction: '> 4 hrs',
-      replenishmentPriority: 20,
-      planogramScore: 93,
-      sku: 'Cold Cuts & Imported Cheeses',
-      camera: 'CAM-02 (Produce)',
-      category: 'deli',
-      position: [-11, 0.85, 2.5],
-      dimensions: [3.4, 1.7, 1.3],
-    },
-
-    // =======================================================
-    // 3. CENTRAL GROCERY GONDOLA AISLES (Center)
-    // =======================================================
-    {
-      id: 'shelf-g1',
-      code: 'G1',
-      name: 'Grocery Aisle G1 (Cereal & Coffee)',
-      zone: 'Grocery & Dry Goods',
-      status: 'HEALTHY',
-      availability: 91,
-      visibleUnits: 44,
-      capacity: 48,
-      posInventory: 110,
-      demand: 'High',
-      stockoutPrediction: '> 6 hrs',
-      replenishmentPriority: 15,
-      planogramScore: 96,
-      sku: 'Whole Grain Cereals, Teas & Roast Coffee',
-      camera: 'CAM-04 (Personal Care)',
-      category: 'grocery',
-      position: [-3.5, 0.95, -1.5],
-      dimensions: [3.6, 1.9, 1.4],
-    },
-    {
-      id: 'shelf-g2',
-      code: 'G2',
-      name: 'Grocery Aisle G2 (Pasta & Sauces)',
-      zone: 'Grocery & Dry Goods',
-      status: 'HEALTHY',
-      availability: 86,
-      visibleUnits: 38,
-      capacity: 44,
-      posInventory: 95,
-      demand: 'Moderate',
-      stockoutPrediction: '4 hrs',
-      replenishmentPriority: 20,
-      planogramScore: 94,
-      sku: 'Italian Pasta, Olive Oils & Marinara',
-      camera: 'CAM-04 (Personal Care)',
-      category: 'grocery',
-      position: [2.5, 0.95, -1.5],
-      dimensions: [3.6, 1.9, 1.4],
-    },
-    {
-      id: 'shelf-g3',
-      code: 'G3',
-      name: 'Grocery Aisle G3 (Soups & Snacks)',
-      zone: 'Grocery & Dry Goods',
-      status: 'HEALTHY',
-      availability: 93,
-      visibleUnits: 42,
-      capacity: 46,
-      posInventory: 120,
-      demand: 'Moderate',
-      stockoutPrediction: '> 5 hrs',
-      replenishmentPriority: 12,
-      planogramScore: 98,
-      sku: 'Organic Soups, Canned Beans & Crackers',
-      camera: 'CAM-04 (Personal Care)',
-      category: 'grocery',
-      position: [8.5, 0.95, -1.5],
-      dimensions: [3.6, 1.9, 1.4],
-    },
-
-    // =======================================================
-    // 4. DAIRY & FROZEN COOLERS (North-Center)
-    // =======================================================
-    {
-      id: 'shelf-c1',
-      code: 'C1',
-      name: 'Dairy Cooler C1',
-      zone: 'Dairy & Bakery',
-      status: 'HEALTHY',
-      availability: 94,
-      visibleUnits: 32,
-      capacity: 34,
-      posInventory: 55,
-      demand: 'Moderate',
-      stockoutPrediction: '> 4 hrs',
-      replenishmentPriority: 10,
-      planogramScore: 97,
-      sku: 'Greek Yogurt, Butter & Plant Milk',
-      camera: 'CAM-03 (Beverages)',
-      category: 'dairy',
-      position: [2, 1.15, -4.5],
-      dimensions: [3.6, 2.3, 1.2],
-    },
-    {
-      id: 'shelf-c2',
-      code: 'C2',
-      name: 'Dairy Cooler C2 (Stockout Demo)',
-      zone: 'Dairy & Bakery',
-      status: 'OUT_OF_STOCK',
-      availability: 0,
-      visibleUnits: 0,
-      capacity: 18,
-      posInventory: 12,
-      demand: 'High',
-      stockoutPrediction: 'Empty (Now)',
-      replenishmentPriority: 98,
-      planogramScore: 85,
-      sku: 'Organic Whole Milk 1 Gal',
-      camera: 'CAM-03 (Beverages)',
-      category: 'dairy',
-      position: [2, 1.15, -7.5],
-      dimensions: [3.6, 2.3, 1.2],
-    },
-    {
-      id: 'shelf-c3',
-      code: 'C3',
-      name: 'Frozen Foods Cooler C3',
-      zone: 'Dairy & Bakery',
-      status: 'HEALTHY',
-      availability: 89,
-      visibleUnits: 28,
-      capacity: 32,
-      posInventory: 70,
-      demand: 'Moderate',
-      stockoutPrediction: '> 5 hrs',
-      replenishmentPriority: 16,
-      planogramScore: 95,
-      sku: 'Artisan Frozen Pizzas & Gelato',
-      camera: 'CAM-03 (Beverages)',
-      category: 'frozen',
-      position: [-3.5, 1.15, -7.5],
-      dimensions: [3.6, 2.3, 1.2],
-    },
-
-    // =======================================================
-    // 5. COLD BEVERAGES & PROMOTIONAL ENDCAPS (East)
-    // =======================================================
-    {
-      id: 'shelf-b4',
-      code: 'B4',
-      name: 'Beverage Shelf B4 (Critical Stockout)',
-      zone: 'Beverages',
-      status: 'CRITICAL',
-      availability: 17,
-      visibleUnits: 3,
-      capacity: 24,
-      posInventory: 14,
-      demand: 'High',
-      stockoutPrediction: '9 min',
-      replenishmentPriority: 94,
-      planogramScore: 92,
-      sku: 'Zero Sugar Cola 12-Packs',
-      camera: 'CAM-03 (Beverages)',
-      category: 'beverage',
-      position: [14, 0.95, -4.5],
-      dimensions: [3.4, 1.9, 1.3],
-    },
-    {
-      id: 'shelf-b3',
-      code: 'B3',
-      name: 'Snacks & Soda B3',
-      zone: 'Beverages',
-      status: 'HEALTHY',
-      availability: 88,
-      visibleUnits: 28,
-      capacity: 32,
-      posInventory: 60,
-      demand: 'Moderate',
-      stockoutPrediction: '> 3 hrs',
-      replenishmentPriority: 25,
-      planogramScore: 96,
-      sku: 'Sparkling Mineral Water & Seltzers',
-      camera: 'CAM-03 (Beverages)',
-      category: 'beverage',
-      position: [14, 0.95, -7.5],
-      dimensions: [3.4, 1.9, 1.3],
-    },
-    {
-      id: 'shelf-b2',
-      code: 'B2',
-      name: 'Cold Pressed Juices B2',
-      zone: 'Beverages',
-      status: 'HEALTHY',
-      availability: 92,
-      visibleUnits: 26,
-      capacity: 28,
-      posInventory: 50,
-      demand: 'Moderate',
-      stockoutPrediction: '4 hrs',
-      replenishmentPriority: 18,
-      planogramScore: 97,
-      sku: 'Cold Brews, Kombucha & Smoothies',
-      camera: 'CAM-03 (Beverages)',
-      category: 'beverage',
-      position: [14, 0.95, -1.5],
-      dimensions: [3.4, 1.9, 1.3],
-    },
-    {
-      id: 'shelf-ec1',
-      code: 'EC1',
-      name: 'Promotional Endcap EC1',
-      zone: 'Beverages',
-      status: 'HEALTHY',
-      availability: 86,
-      visibleUnits: 24,
-      capacity: 28,
-      posInventory: 45,
-      demand: 'High',
-      stockoutPrediction: '3.2 hrs',
-      replenishmentPriority: 20,
-      planogramScore: 98,
-      sku: 'Tortilla Chips & Salsa Promo',
-      camera: 'CAM-03 (Beverages)',
-      category: 'endcap',
-      position: [17.5, 0.9, -6.0],
-      dimensions: [1.2, 1.8, 3.2],
-    },
-    {
-      id: 'shelf-db2',
-      code: 'DB2',
-      name: 'Inflow Pallet Shipper DB2',
-      zone: 'Beverages',
-      status: 'HEALTHY',
-      availability: 90,
-      visibleUnits: 36,
-      capacity: 40,
-      posInventory: 70,
-      demand: 'High',
-      stockoutPrediction: '4 hrs',
-      replenishmentPriority: 18,
-      planogramScore: 94,
-      sku: 'Bulk Energy Drink 24-Packs',
-      camera: 'CAM-03 (Beverages)',
-      category: 'dumpbin',
-      position: [8.5, 0.45, -5.5],
-      dimensions: [1.3, 0.9, 1.3],
-    },
-
-    // =======================================================
-    // 6. ELECTRONICS & GADGETS ISLAND (Center-South)
-    // =======================================================
-    {
-      id: 'shelf-e1',
-      code: 'E1',
-      name: 'Electronics Table E1',
-      zone: 'Electronics',
-      status: 'HEALTHY',
-      availability: 90,
-      visibleUnits: 18,
-      capacity: 20,
-      posInventory: 25,
-      demand: 'Low',
-      stockoutPrediction: '> 8 hrs',
-      replenishmentPriority: 10,
-      planogramScore: 99,
-      sku: 'Tablets, Headphones & Smart Home',
-      camera: 'CAM-04 (Personal Care)',
-      category: 'electronics',
-      position: [3.5, 0.6, 5.0],
-      dimensions: [4.2, 1.2, 1.8],
-    },
-
-    // =======================================================
-    // 7. STOCKROOM HIGH-BAY WAREHOUSE RACKS (North)
-    // =======================================================
-    {
-      id: 'shelf-s1',
-      code: 'S1',
-      name: 'Backroom Pallet Rack S1',
-      zone: 'Stockroom',
-      status: 'HEALTHY',
-      availability: 78,
-      visibleUnits: 45,
-      capacity: 58,
-      posInventory: 120,
-      demand: 'Internal',
-      stockoutPrediction: 'Nominal',
-      replenishmentPriority: 12,
-      planogramScore: 95,
-      sku: 'Overstock Dry Goods & Bulk Packs',
-      camera: 'CAM-06 (Loading Dock)',
-      category: 'stockroom',
-      position: [-13, 1.4, 12.5],
-      dimensions: [5.2, 2.8, 1.4],
-    },
-    {
-      id: 'shelf-s2',
-      code: 'S2',
-      name: 'Backroom Pallet Rack S2',
-      zone: 'Stockroom',
-      status: 'HEALTHY',
-      availability: 82,
-      visibleUnits: 60,
-      capacity: 73,
-      posInventory: 150,
-      demand: 'Internal',
-      stockoutPrediction: 'Nominal',
-      replenishmentPriority: 15,
-      planogramScore: 96,
-      sku: 'Cold Storage Buffer & Inflow Crates',
-      camera: 'CAM-06 (Loading Dock)',
-      category: 'stockroom',
-      position: [-5, 1.4, 12.5],
-      dimensions: [5.2, 2.8, 1.4],
-    },
-    {
-      id: 'shelf-s3',
-      code: 'S3',
-      name: 'Backroom Pallet Rack S3',
-      zone: 'Stockroom',
-      status: 'HEALTHY',
-      availability: 88,
-      visibleUnits: 55,
-      capacity: 65,
-      posInventory: 135,
-      demand: 'Internal',
-      stockoutPrediction: 'Nominal',
-      replenishmentPriority: 10,
-      planogramScore: 97,
-      sku: 'Beverage Reserves & Liquid Inflow',
-      camera: 'CAM-06 (Loading Dock)',
-      category: 'stockroom',
-      position: [5, 1.4, 12.5],
-      dimensions: [5.2, 2.8, 1.4],
-    },
-    {
-      id: 'shelf-s4',
-      code: 'S4',
-      name: 'Backroom Pallet Rack S4',
-      zone: 'Stockroom',
-      status: 'HEALTHY',
-      availability: 85,
-      visibleUnits: 50,
-      capacity: 60,
-      posInventory: 140,
-      demand: 'Internal',
-      stockoutPrediction: 'Nominal',
-      replenishmentPriority: 14,
-      planogramScore: 94,
-      sku: 'Paper Goods & Cleaning Supply Skids',
-      camera: 'CAM-06 (Loading Dock)',
-      category: 'stockroom',
-      position: [13, 1.4, 12.5],
-      dimensions: [5.2, 2.8, 1.4],
-    },
-  ]
-
   const liveShelves = useMemo(() => {
-    // item.id carries the "shelf-a1" DB id matching this layout's static ids;
-    // item.shelfId is the short display code ("A1") and never matches here.
-    const liveById = new Map(shelfItems.map((item) => [item.id, item]))
-    return shelves.map((shelf) => {
-      const live = liveById.get(shelf.id)
-      if (!live) return shelf
-      const availability =
-        live.capacityCount > 0
-          ? Math.round((live.currentCount / live.capacityCount) * 100)
-          : shelf.availability
-      return {
-        ...shelf,
-        status: LIVE_STATUS_MAP[live.status] ?? shelf.status,
-        availability,
-        visibleUnits: live.currentCount,
-        sku: live.productName || live.sku || shelf.sku,
-      }
+    // Group real shelves by their real zone, then lay each zone's shelves
+    // out programmatically within that zone's twin footprint — so the scene
+    // always reflects exactly which shelves the store actually has, not a
+    // hand-picked subset with hardcoded coordinates.
+    const byZone = new Map<string, typeof shelfItems>()
+    for (const item of shelfItems) {
+      const list = byZone.get(item.zoneId)
+      if (list) list.push(item)
+      else byZone.set(item.zoneId, [item])
+    }
+
+    const out: (Shelf3DData & { position: [number, number, number]; dimensions: [number, number, number]; category: RenderCategory })[] = []
+
+    byZone.forEach((items, zoneId) => {
+      const anchor = ZONE_ANCHORS[zoneId]
+      if (!anchor) return // zone has no mapped 3D footprint (e.g. unrecognized id)
+
+      // Stable order so layout doesn't reshuffle between renders.
+      const sorted = [...items].sort((a, b) => a.shelfId.localeCompare(b.shelfId))
+      const dominantCategory = toRenderCategory(sorted[0]?.category || '')
+      const positions = layoutZoneGrid(anchor, sorted.length, DEFAULT_DIMENSIONS[dominantCategory])
+
+      sorted.forEach((item, i) => {
+        const category = toRenderCategory(item.category)
+        const laid = positions[i]
+        const availability =
+          item.capacityCount > 0 ? Math.round((item.currentCount / item.capacityCount) * 100) : 0
+        const depletionRate =
+          typeof item.depletionRatePerHour === 'number' ? item.depletionRatePerHour : null
+        const demand =
+          depletionRate === null ? 'Steady' : depletionRate >= 8 ? 'High' : depletionRate >= 3 ? 'Moderate' : 'Low'
+        const stockoutPrediction =
+          item.status === 'OUT_OF_STOCK'
+            ? 'Empty (Now)'
+            : typeof item.minutesUntilStockout === 'number' && item.minutesUntilStockout >= 0
+              ? item.minutesUntilStockout < 60
+                ? `~${Math.round(item.minutesUntilStockout)} min`
+                : `${(item.minutesUntilStockout / 60).toFixed(1)} hrs`
+              : 'Nominal'
+
+        out.push({
+          id: item.id,
+          code: item.shelfId,
+          name: item.shelfName,
+          zone: item.zoneName,
+          status: LIVE_STATUS_MAP[item.status] ?? 'HEALTHY',
+          availability,
+          visibleUnits: item.currentCount,
+          capacity: item.capacityCount,
+          posInventory: item.backroomUnits ?? 0,
+          demand,
+          stockoutPrediction,
+          replenishmentPriority: Math.round(Math.max(0, Math.min(100, 100 - availability))),
+          planogramScore: Math.round(item.planogramComplianceScore ?? 0),
+          sku: item.productName || item.sku,
+          camera: item.cameraSourceId || 'CAM-01',
+          lastRestocked: item.lastRestocked || '',
+          category,
+          position: laid.position,
+          dimensions: laid.dimensions,
+        })
+      })
     })
-    // shelves is a static fixture layout; live metrics come from shelfItems
+
+    return out
   }, [shelfItems])
 
   const handlePointerOver = (shelf: (typeof liveShelves)[0], e: any) => {
@@ -625,7 +229,7 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
 
   return (
     <group>
-      {liveShelves.map((shelf) => {
+      {liveShelves.map((shelf, shelfIndex) => {
         const isHovered = hoveredShelfId === shelf.id
         const isCritical = shelf.status === 'CRITICAL' || shelf.status === 'OUT_OF_STOCK'
         const isLow = shelf.status === 'LOW'
@@ -1005,60 +609,6 @@ export const StoreShelves3D: React.FC<StoreShelves3DProps> = ({
                     ))}
                   </group>
                 ))}
-              </group>
-            )}
-
-            {/* ======================================================= */}
-            {/* 9. PROMOTIONAL ENDCAPS & DUMP BINS                       */}
-            {/* ======================================================= */}
-            {shelf.category === 'endcap' && (
-              <group>
-                <mesh castShadow receiveShadow>
-                  <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color={RetailPalette.shelfFrame} roughness={0.55} metalness={0.15} />
-                </mesh>
-                {/* Muted red promo header — no strong emissive */}
-                <mesh position={[0, shelf.dimensions[1] * 0.48, 0]}>
-                  <boxGeometry args={[shelf.dimensions[0] * 1.05, 0.2, shelf.dimensions[2] * 0.95]} />
-                  <meshStandardMaterial color="#B85C4A" roughness={0.55} emissive="#B85C4A" emissiveIntensity={0.08} />
-                </mesh>
-                {[-0.55, -0.2, 0.15, 0.5].map((yOffset, idx) => (
-                  <group key={idx} position={[0, yOffset, 0]}>
-                    <mesh position={[0, -0.04, 0]}>
-                      <boxGeometry args={[shelf.dimensions[0] * 0.92, 0.04, shelf.dimensions[2] * 0.92]} />
-                      <meshStandardMaterial color={RetailPalette.shelfBoard} roughness={0.5} />
-                    </mesh>
-                    {[-1.0, -0.35, 0.35, 1.0].map((itemZ, itemIdx) => (
-                      <mesh key={itemIdx} position={[0, 0.14, itemZ]} castShadow>
-                        <boxGeometry args={[0.65, 0.28, 0.32]} />
-                        <meshStandardMaterial
-                          color={PRODUCT_COLORS.endcap[itemIdx % PRODUCT_COLORS.endcap.length]}
-                          roughness={0.5}
-                        />
-                      </mesh>
-                    ))}
-                  </group>
-                ))}
-              </group>
-            )}
-
-            {shelf.category === 'dumpbin' && (
-              <group>
-                <mesh castShadow receiveShadow>
-                  <boxGeometry args={[shelf.dimensions[0], shelf.dimensions[1], shelf.dimensions[2]]} />
-                  <meshStandardMaterial color={RetailPalette.woodDark} roughness={0.7} />
-                </mesh>
-                <mesh position={[0, 0, shelf.dimensions[2] * 0.51]}>
-                  <planeGeometry args={[shelf.dimensions[0] * 0.8, shelf.dimensions[1] * 0.5]} />
-                  <meshBasicMaterial color="#B85C4A" />
-                </mesh>
-                <mesh position={[0, shelf.dimensions[1] * 0.42, 0]} castShadow>
-                  <sphereGeometry args={[shelf.dimensions[0] * 0.44, 12, 10]} />
-                  <meshStandardMaterial
-                    color={shelf.id === 'shelf-db1' ? '#6B9B5A' : '#5B8FA8'}
-                    roughness={0.55}
-                  />
-                </mesh>
               </group>
             )}
 

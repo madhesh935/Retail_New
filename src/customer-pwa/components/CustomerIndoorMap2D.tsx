@@ -44,7 +44,26 @@ export const CustomerIndoorMap2D: React.FC = () => {
     targetCheckoutCounter,
     shoppingList,
     addToShoppingList,
+    checkoutLanes,
   } = useCustomerShopping()
+
+  const laneDisplay = (code: string) => {
+    const lane = checkoutLanes.find((l) => l.code === code)
+    if (!lane) return { text: 'Connecting…', busy: false, closed: false }
+    const waitMin = lane.waitSeconds / 60
+    const waitLabel = waitMin < 1 ? '<1m wait' : `~${waitMin.toFixed(1)}m wait`
+    return {
+      text: `${lane.queueLength} in queue · ${waitLabel}`,
+      busy: lane.status === 'CONGESTED',
+      closed: lane.status === 'CLOSED',
+    }
+  }
+  const c1Stat = laneDisplay('C1')
+  const c2Stat = laneDisplay('C2')
+  const c3Stat = laneDisplay('C3')
+  const bestOpenLaneCode = checkoutLanes
+    .filter((l) => l.status !== 'CLOSED')
+    .sort((a, b) => a.waitSeconds - b.waitSeconds)[0]?.code
 
   const [selectedPin, setSelectedPin] = useState<CustomerProduct | null>(null)
   const [zoomLevel, setZoomLevel] = useState<number>(1.18)
@@ -552,32 +571,52 @@ export const CustomerIndoorMap2D: React.FC = () => {
             <text x="57.5" y="16" fill="#FFFFFF" fontSize="8.5" fontWeight="800" textAnchor="middle">CHECKOUT LANES</text>
 
             {/* Counter C1 */}
-            <rect x="10" y="32" width="95" height="42" rx="6" fill="#FFF1F2" stroke="#FDA4AF" strokeWidth="1.5" />
-            <text x="18" y="48" fill="#E11D48" fontSize="8" fontWeight="800">Counter C1 (Express)</text>
-            <text x="18" y="60" fill="#9F1239" fontSize="7">8 in queue · ~5.4m wait</text>
-            <rect x="74" y="38" width="24" height="12" rx="3" fill="#E11D48" />
-            <text x="86" y="47" fill="#FFFFFF" fontSize="6.5" fontWeight="bold" textAnchor="middle">BUSY</text>
-
-            {/* Counter C2 - TARGET RECOMMENDED */}
             <rect
-              x="10"
-              y="82"
-              width="95"
-              height="48"
-              rx="6"
-              fill="#ECFDF5"
-              stroke="#059669"
+              x="10" y="32" width="95" height="42" rx="6"
+              fill={bestOpenLaneCode === 'C1' ? '#ECFDF5' : c1Stat.busy ? '#FFF1F2' : '#F8FAFC'}
+              stroke={bestOpenLaneCode === 'C1' ? '#059669' : c1Stat.busy ? '#FDA4AF' : '#CBD5E1'}
+              strokeWidth={targetCheckoutCounter === 'C1' ? '2.5' : '1.5'}
+            />
+            <text x="18" y="48" fill={bestOpenLaneCode === 'C1' ? '#047857' : c1Stat.busy ? '#E11D48' : '#334155'} fontSize="8" fontWeight="800">
+              Counter C1{bestOpenLaneCode === 'C1' ? ' ★' : ''}
+            </text>
+            <text x="18" y="60" fill={bestOpenLaneCode === 'C1' ? '#065F46' : c1Stat.busy ? '#9F1239' : '#475569'} fontSize="7">{c1Stat.text}</text>
+            {c1Stat.busy && (
+              <>
+                <rect x="74" y="38" width="24" height="12" rx="3" fill="#E11D48" />
+                <text x="86" y="47" fill="#FFFFFF" fontSize="6.5" fontWeight="bold" textAnchor="middle">BUSY</text>
+              </>
+            )}
+
+            {/* Counter C2 */}
+            <rect
+              x="10" y="82" width="95" height="48" rx="6"
+              fill={bestOpenLaneCode === 'C2' ? '#ECFDF5' : c2Stat.busy ? '#FFF1F2' : '#F8FAFC'}
+              stroke={bestOpenLaneCode === 'C2' ? '#059669' : c2Stat.busy ? '#FDA4AF' : '#CBD5E1'}
               strokeWidth={targetCheckoutCounter === 'C2' ? '2.5' : '1.5'}
             />
-            <rect x="10" y="82" width="95" height="12" rx="4" fill="#059669" />
-            <text x="57.5" y="91" fill="#FFFFFF" fontSize="6.5" fontWeight="bold" textAnchor="middle">FASTEST BILLING</text>
-            <text x="18" y="108" fill="#047857" fontSize="8" fontWeight="800">Counter C2 ★</text>
-            <text x="18" y="121" fill="#065F46" fontSize="7">2 in queue · ~1.8m wait</text>
+            {bestOpenLaneCode === 'C2' && (
+              <>
+                <rect x="10" y="82" width="95" height="12" rx="4" fill="#059669" />
+                <text x="57.5" y="91" fill="#FFFFFF" fontSize="6.5" fontWeight="bold" textAnchor="middle">FASTEST BILLING</text>
+              </>
+            )}
+            <text x="18" y={bestOpenLaneCode === 'C2' ? '108' : '96'} fill={bestOpenLaneCode === 'C2' ? '#047857' : c2Stat.busy ? '#E11D48' : '#334155'} fontSize="8" fontWeight="800">
+              Counter C2{bestOpenLaneCode === 'C2' ? ' ★' : ''}
+            </text>
+            <text x="18" y={bestOpenLaneCode === 'C2' ? '121' : '109'} fill={bestOpenLaneCode === 'C2' ? '#065F46' : c2Stat.busy ? '#9F1239' : '#475569'} fontSize="7">{c2Stat.text}</text>
 
             {/* Counter C3 */}
-            <rect x="10" y="138" width="95" height="42" rx="6" fill="#FEF3C7" stroke="#FCD34D" strokeWidth="1" />
-            <text x="18" y="154" fill="#B45309" fontSize="8" fontWeight="800">Counter C3 (Standard)</text>
-            <text x="18" y="166" fill="#92400E" fontSize="7">3 in queue · ~3.1m wait</text>
+            <rect
+              x="10" y="138" width="95" height="42" rx="6"
+              fill={bestOpenLaneCode === 'C3' ? '#ECFDF5' : c3Stat.busy ? '#FFF1F2' : '#FEF3C7'}
+              stroke={bestOpenLaneCode === 'C3' ? '#059669' : c3Stat.busy ? '#FDA4AF' : '#FCD34D'}
+              strokeWidth={targetCheckoutCounter === 'C3' ? '2.5' : '1'}
+            />
+            <text x="18" y="154" fill={bestOpenLaneCode === 'C3' ? '#047857' : c3Stat.busy ? '#E11D48' : '#B45309'} fontSize="8" fontWeight="800">
+              Counter C3{bestOpenLaneCode === 'C3' ? ' ★' : ''}
+            </text>
+            <text x="18" y="166" fill={bestOpenLaneCode === 'C3' ? '#065F46' : c3Stat.busy ? '#9F1239' : '#92400E'} fontSize="7">{c3Stat.text}</text>
           </g>
 
           {/* ========================================================================= */}

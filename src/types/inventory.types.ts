@@ -23,6 +23,9 @@ export interface ShelfItem {
   confidenceScore: number // Edge model confidence
   cameraSourceId: string
   backroomUnits?: number
+  aisle?: string
+  minutesUntilStockout?: number | null
+  depletionRatePerHour?: number | null
 }
 
 export interface ShelfSection {

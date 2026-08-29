@@ -18,7 +18,8 @@ import {
   Filter,
 } from 'lucide-react'
 import { InventoryKpiRow } from '@/components/inventory/InventoryKpiRow'
-import { SHELF_MATRIX_ITEMS, ShelfMatrixItem, ShelfHealthMatrix } from '@/components/inventory/ShelfHealthMatrix'
+import { ShelfMatrixItem, ShelfHealthMatrix } from '@/components/inventory/ShelfHealthMatrix'
+import { toShelfMatrixItems } from '@/services/api/livePageAdapters'
 import { PhysicalVsDigitalTable } from '@/components/inventory/PhysicalVsDigitalTable'
 import { StockDepletionCard } from '@/components/inventory/StockDepletionCard'
 import { LiveShelfVisionCard } from '@/components/inventory/LiveShelfVisionCard'
@@ -42,6 +43,13 @@ export type InventoryTab =
   | 'EXPIRY_WASTE'
   | 'PLANOGRAM'
 
+const SHELF_URGENCY_RANK: Record<ShelfMatrixItem['status'], number> = {
+  OUT_OF_STOCK: 0,
+  CRITICAL: 1,
+  LOW: 2,
+  HEALTHY: 3,
+}
+
 export const InventoryPage: React.FC = () => {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<InventoryTab>('OVERVIEW')
@@ -51,10 +59,38 @@ export const InventoryPage: React.FC = () => {
   // Expiry risk stats for badge
   const expirySummary = useAppStore((s) => s.expiryAnalyticsSummary)
   const pendingTasks = useAppStore((s) => s.pendingTasks)
+  const shelfItems = useAppStore((s) => s.shelfItems)
+  const staffMembers = useAppStore((s) => s.staffMembers)
+  const inventoryAnalytics = useAppStore((s) => s.inventoryAnalytics)
+  const dispatchRealTask = useAppStore((s) => s.dispatchRealTask)
+  const [dispatchedShelfIds, setDispatchedShelfIds] = useState<Record<string, boolean>>({})
+
+  const shelfMatrixItems = React.useMemo(() => toShelfMatrixItems(shelfItems), [shelfItems])
+
+  const handleDispatchRefill = (shelf: ShelfMatrixItem) => {
+    setDispatchedShelfIds((prev) => ({ ...prev, [shelf.id]: true }))
+    const availableStaff = staffMembers.find((s) => s.status === 'ON_DUTY_AVAILABLE')
+    dispatchRealTask({
+      title: `Restock ${shelf.code} — ${shelf.sku}`,
+      type: 'RESTOCK',
+      priority: shelf.status === 'OUT_OF_STOCK' || shelf.status === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
+      target_location: `Shelf ${shelf.code}`,
+      description: `${shelf.availability}% availability, ${shelf.visibleUnits} visible units.`,
+      assigned_staff_id: availableStaff?.id,
+    })
+  }
 
   const urgentRestocksCount = pendingTasks.filter(
     (t) => (t.category === 'RESTOCK' || t.category === 'STOCK_ROTATION') && t.status !== 'COMPLETED'
   ).length
+
+  const healthyShelfPercent = shelfMatrixItems.length > 0
+    ? Math.round(
+        (shelfMatrixItems.filter((s) => s.status === 'HEALTHY').length / shelfMatrixItems.length) * 100
+      )
+    : 0
+
+  const shelfDiscrepanciesCount = shelfItems.filter((s) => s.status !== 'OPTIMAL').length
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -67,35 +103,40 @@ export const InventoryPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Currently selected shelf for deep inspection (defaults to Beverage B4)
-  const [selectedShelf, setSelectedShelf] = useState<ShelfMatrixItem>(
-    SHELF_MATRIX_ITEMS.find((s) => s.id === 'shelf-b4') || SHELF_MATRIX_ITEMS[7]
+  // Currently selected shelf for deep inspection (defaults to the most urgent live shelf)
+  const [selectedShelfId, setSelectedShelfId] = useState<string | null>(null)
+
+  const shelvesByUrgency = React.useMemo(
+    () => [...shelfMatrixItems].sort((a, b) => SHELF_URGENCY_RANK[a.status] - SHELF_URGENCY_RANK[b.status]),
+    [shelfMatrixItems]
   )
+
+  useEffect(() => {
+    if (!selectedShelfId && shelvesByUrgency.length > 0) {
+      setSelectedShelfId(shelvesByUrgency[0].id)
+    }
+  }, [selectedShelfId, shelvesByUrgency])
+
+  const selectedShelf = shelfMatrixItems.find((s) => s.id === selectedShelfId) || null
 
   // Explainability "Why?" dialog state
   const [whyDialogData, setWhyDialogData] = useState<WhyDialogData | null>(null)
   const [isWhyDialogOpen, setIsWhyDialogOpen] = useState(false)
 
   const handleSelectShelfById = (shelfIdOrCode: string) => {
-    const found = SHELF_MATRIX_ITEMS.find(
+    const found = shelfMatrixItems.find(
       (s) =>
         s.id.toLowerCase() === shelfIdOrCode.toLowerCase() ||
         s.code.toLowerCase() === shelfIdOrCode.toLowerCase()
     )
-    if (found) setSelectedShelf(found)
+    if (found) setSelectedShelfId(found.id)
   }
 
-  // Quick selectable shelves for immediate manager inspection
-  const quickShelves = [
-    SHELF_MATRIX_ITEMS.find((s) => s.code === 'B4')!,
-    SHELF_MATRIX_ITEMS.find((s) => s.code === 'B2')!,
-    SHELF_MATRIX_ITEMS.find((s) => s.code === 'C2')!,
-    SHELF_MATRIX_ITEMS.find((s) => s.code === 'D2')!,
-    SHELF_MATRIX_ITEMS.find((s) => s.code === 'A3')!,
-  ].filter(Boolean)
+  // Quick selectable shelves for immediate manager inspection: the 5 most urgent live shelves
+  const quickShelves = shelvesByUrgency.slice(0, 5)
 
   const isCriticalShelf =
-    selectedShelf.status === 'CRITICAL' || selectedShelf.status === 'OUT_OF_STOCK'
+    selectedShelf?.status === 'CRITICAL' || selectedShelf?.status === 'OUT_OF_STOCK'
 
   const TABS_CONFIG = [
     {
@@ -109,7 +150,7 @@ export const InventoryPage: React.FC = () => {
       label: 'Shelf Health',
       description: 'Real-time on-shelf stock levels and depletion velocities',
       icon: Eye,
-      badge: '94% OK',
+      badge: `${healthyShelfPercent}% OK`,
       badgeVariant: 'emerald' as const,
     },
     {
@@ -117,7 +158,7 @@ export const InventoryPage: React.FC = () => {
       label: 'Replenishment',
       description: 'Algorithmic refill queue with backroom bay routing',
       icon: RefreshCw,
-      badge: urgentRestocksCount > 0 ? `${urgentRestocksCount} urgent` : '3 urgent',
+      badge: `${urgentRestocksCount} urgent`,
       badgeVariant: 'rose' as const,
     },
     {
@@ -125,7 +166,7 @@ export const InventoryPage: React.FC = () => {
       label: 'Shelf vs System',
       description: 'Camera detection vs POS inventory reconciliation audit',
       icon: Table,
-      badge: '2 Discrepancies',
+      badge: `${shelfDiscrepanciesCount} Discrepanc${shelfDiscrepanciesCount === 1 ? 'y' : 'ies'}`,
       badgeVariant: 'amber' as const,
     },
     {
@@ -133,7 +174,7 @@ export const InventoryPage: React.FC = () => {
       label: 'Expiry & Waste',
       description: 'Batch-level expiry tracking, FEFO rotation & governed markdowns',
       icon: CalendarClock,
-      badge: expirySummary?.atRiskUnitsTotal ? `${expirySummary.atRiskUnitsTotal} at risk` : '38 at risk',
+      badge: `${expirySummary?.atRiskUnitsTotal ?? 0} at risk`,
       badgeVariant: 'amber' as const,
     },
     {
@@ -141,7 +182,7 @@ export const InventoryPage: React.FC = () => {
       label: 'Planogram',
       description: 'Visual facing compliance, misplacement & void detection',
       icon: Layers,
-      badge: '93% Compliant',
+      badge: `${Math.round(inventoryAnalytics.overallPlanogramCompliance)}% Compliant`,
       badgeVariant: 'sky' as const,
     },
   ]
@@ -299,23 +340,29 @@ export const InventoryPage: React.FC = () => {
             <div className="rounded-xl bg-white border border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-sans">
                 <span className="text-slate-500 font-medium">Selected Shelf:</span>
-                <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-xs border border-slate-200">
-                  {selectedShelf.code}
-                </span>
-                <span className="text-slate-800 font-semibold">{selectedShelf.sku}</span>
-                <span className="text-slate-300">·</span>
-                <span
-                  className={cn(
-                    'font-medium text-[11px] px-2 py-0.5 rounded-md border',
-                    isCriticalShelf
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : selectedShelf.status === 'LOW'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  )}
-                >
-                  {selectedShelf.status} · {selectedShelf.availability}% available
-                </span>
+                {selectedShelf ? (
+                  <>
+                    <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-xs border border-slate-200">
+                      {selectedShelf.code}
+                    </span>
+                    <span className="text-slate-800 font-semibold">{selectedShelf.sku}</span>
+                    <span className="text-slate-300">·</span>
+                    <span
+                      className={cn(
+                        'font-medium text-[11px] px-2 py-0.5 rounded-md border',
+                        isCriticalShelf
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : selectedShelf.status === 'LOW'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      )}
+                    >
+                      {selectedShelf.status} · {selectedShelf.availability}% available
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-slate-400 text-[11px]">Loading shelf data…</span>
+                )}
               </div>
 
               <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
@@ -323,7 +370,8 @@ export const InventoryPage: React.FC = () => {
                   variant="outline"
                   size="xs"
                   className="h-7 text-[11px] gap-1 border-slate-200"
-                  onClick={() => navigate(`/digital-twin?shelf=${selectedShelf.id}`)}
+                  disabled={!selectedShelf}
+                  onClick={() => selectedShelf && navigate(`/digital-twin?shelf=${selectedShelf.id}`)}
                 >
                   <Compass className="h-3 w-3 text-teal-700" />
                   Show on Twin
@@ -332,10 +380,10 @@ export const InventoryPage: React.FC = () => {
                 {quickShelves.map((sh) => (
                   <button
                     key={sh.id}
-                    onClick={() => setSelectedShelf(sh)}
+                    onClick={() => setSelectedShelfId(sh.id)}
                     className={cn(
                       'px-2.5 py-0.5 rounded-md font-mono text-[11px] transition-all cursor-pointer border',
-                      selectedShelf.id === sh.id
+                      selectedShelf?.id === sh.id
                         ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-2xs'
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
                     )}
@@ -346,36 +394,29 @@ export const InventoryPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-              <StockDepletionCard
-                shelfName={selectedShelf.name}
-                skuName={selectedShelf.sku}
-                availability={selectedShelf.availability}
-                consumptionRate={
-                  selectedShelf.availability < 40 ? '20.4 units/hr' : '8.2 units/hr'
-                }
-                predictedStockout={selectedShelf.predictedDepletion}
-                replenishmentDeadline={
-                  selectedShelf.availability < 40 ? 'within 5 min' : 'within 45 min'
-                }
-              />
-              <LiveShelfVisionCard
-                shelfCode={selectedShelf.code}
-                shelfName={selectedShelf.name}
-                cameraCode={
-                  selectedShelf.code.startsWith('B')
-                    ? 'C04'
-                    : selectedShelf.code.startsWith('A')
-                    ? 'C02'
-                    : 'C03'
-                }
-                skuName={selectedShelf.sku}
-                availability={selectedShelf.availability}
-                visibleUnits={selectedShelf.visibleUnits}
-                confidence="94.2%"
-                latencyMs={14.8}
-              />
-            </div>
+            {selectedShelf && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
+                <StockDepletionCard
+                  shelfName={selectedShelf.name}
+                  skuName={selectedShelf.sku}
+                  availability={selectedShelf.availability}
+                  consumptionRate={selectedShelf.consumptionRateLabel}
+                  predictedStockout={selectedShelf.predictedDepletion}
+                  replenishmentDeadline={selectedShelf.replenishmentDeadline}
+                  onDispatchRefill={() => handleDispatchRefill(selectedShelf)}
+                  isDispatched={!!dispatchedShelfIds[selectedShelf.id]}
+                />
+                <LiveShelfVisionCard
+                  shelfCode={selectedShelf.code}
+                  shelfName={selectedShelf.name}
+                  cameraCode={selectedShelf.cameraCode}
+                  skuName={selectedShelf.sku}
+                  availability={selectedShelf.availability}
+                  visibleUnits={selectedShelf.visibleUnits}
+                  confidence={`${(selectedShelf.confidenceScore * 100).toFixed(1)}%`}
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
@@ -391,20 +432,24 @@ export const InventoryPage: React.FC = () => {
       {activeTab === 'SHELF_HEALTH' && (
         <div className="space-y-4">
           <ShelfHealthMatrix
-            selectedShelfId={selectedShelf.id}
-            onSelectShelf={setSelectedShelf}
+            items={shelfMatrixItems}
+            selectedShelfId={selectedShelf?.id || ''}
+            onSelectShelf={(sh) => setSelectedShelfId(sh.id)}
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <LiveShelfVisionCard
-              shelfCode={selectedShelf.code}
-              shelfName={selectedShelf.name}
-              cameraCode="C04"
-              skuName={selectedShelf.sku}
-              availability={selectedShelf.availability}
-              visibleUnits={selectedShelf.visibleUnits}
-            />
-            <LostSaleRiskCard />
-          </div>
+          {selectedShelf && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <LiveShelfVisionCard
+                shelfCode={selectedShelf.code}
+                shelfName={selectedShelf.name}
+                cameraCode={selectedShelf.cameraCode}
+                skuName={selectedShelf.sku}
+                availability={selectedShelf.availability}
+                visibleUnits={selectedShelf.visibleUnits}
+                confidence={`${(selectedShelf.confidenceScore * 100).toFixed(1)}%`}
+              />
+              <LostSaleRiskCard />
+            </div>
+          )}
         </div>
       )}
 
@@ -418,14 +463,18 @@ export const InventoryPage: React.FC = () => {
               setIsWhyDialogOpen(true)
             }}
           />
-          <StockDepletionCard
-            shelfName={selectedShelf.name}
-            skuName={selectedShelf.sku}
-            availability={selectedShelf.availability}
-            consumptionRate="18.5 units/hr"
-            predictedStockout="in 22 mins"
-            replenishmentDeadline="within 10 mins"
-          />
+          {selectedShelf && (
+            <StockDepletionCard
+              shelfName={selectedShelf.name}
+              skuName={selectedShelf.sku}
+              availability={selectedShelf.availability}
+              consumptionRate={selectedShelf.consumptionRateLabel}
+              predictedStockout={selectedShelf.predictedDepletion}
+              replenishmentDeadline={selectedShelf.replenishmentDeadline}
+              onDispatchRefill={() => handleDispatchRefill(selectedShelf)}
+              isDispatched={!!dispatchedShelfIds[selectedShelf.id]}
+            />
+          )}
         </div>
       )}
 

@@ -1,14 +1,11 @@
 import React from 'react'
-import { RefreshCw, WifiOff, AlertTriangle } from 'lucide-react'
+import { RefreshCw, WifiOff } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
-import { Button } from '@/components/ui/button'
 
 export const WebSocketStatusBanner: React.FC = () => {
   const connectionState = useAppStore((s) => s.connectionState)
-  const isDemoMode = useAppStore((s) => s.isDemoMode)
-  const setDemoMode = useAppStore((s) => s.setDemoMode)
 
-  if (isDemoMode || connectionState === 'CONNECTED') return null
+  if (connectionState === 'CONNECTED') return null
 
   const isReconnecting = connectionState === 'RECONNECTING' || connectionState === 'CONNECTING'
 
@@ -28,17 +25,6 @@ export const WebSocketStatusBanner: React.FC = () => {
             ? '— Attempting WebSocket handshake with local edge gateway'
             : '— Edge server is currently offline or unreachable'}
         </span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="xs"
-          onClick={() => setDemoMode(true)}
-          className="border-rose-300 text-rose-700 bg-white hover:bg-rose-100/60 text-[10px] font-semibold h-5.5 px-2 shadow-2xs"
-        >
-          Scenario Sandbox Mode
-        </Button>
       </div>
     </div>
   )

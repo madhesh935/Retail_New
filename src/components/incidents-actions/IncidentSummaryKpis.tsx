@@ -6,17 +6,19 @@ interface IncidentSummaryKpisProps {
   highCount?: number
   activeCount?: number
   resolvedTodayCount?: number
+  resolutionRatePct?: number | null
   latestCriticalMessage?: string
   latestHighMessage?: string
 }
 
 export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
-  criticalCount = 2,
-  highCount = 4,
-  activeCount = 7,
-  resolvedTodayCount = 18,
-  latestCriticalMessage = 'C1 Congestion · Express C2',
-  latestHighMessage = 'B4 Depletion · Floor Spill',
+  criticalCount = 0,
+  highCount = 0,
+  activeCount = 0,
+  resolvedTodayCount = 0,
+  resolutionRatePct = null,
+  latestCriticalMessage = 'No critical incidents',
+  latestHighMessage = 'No high severity incidents',
 }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 select-none font-sans">
@@ -100,7 +102,7 @@ export const IncidentSummaryKpis: React.FC<IncidentSummaryKpisProps> = ({
           </div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-emerald-700 font-semibold">
-          100% resolution rate
+          {resolutionRatePct !== null ? `${resolutionRatePct}% resolution rate` : 'No incidents yet'}
         </div>
       </div>
     </div>

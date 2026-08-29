@@ -59,29 +59,53 @@ export const ZoneCameraDrawer: React.FC<ZoneCameraDrawerProps> = ({
         (cameraCode && z.cameraCode.toLowerCase() === cameraCode.toLowerCase()) ||
         (zoneName && z.name.toLowerCase().includes(zoneName.toLowerCase()))
     ) ||
-    (cameraCode
-      ? {
-          id: 'custom-cam',
-          code: 'ZONE',
-          name: zoneName || `Camera ${cameraCode}`,
-          aisle: 'Store Zone',
-          visitors: 280,
-          currentOccupancy: 12,
-          avgDwellMinutes: 2.5,
-          avgDwellLabel: '2.5 min',
-          trafficLevel: 'Medium' as const,
-          engagementSignal: 'High' as const,
-          shelfAvailability: 85,
-          opportunityRisk: 'NORMAL' as const,
-          cameraCode: cameraCode || 'CAM-01',
-          description: 'Live spatial camera feed with anonymous occupancy tracking for this zone.',
-          interestScore: 70,
-        }
-      : null)
+    null
 
   if (!isOpen) return null
   if (!propZone && !cameraCode) return null
-  if (!activeZone) return null
+
+  if (!activeZone) {
+    return (
+      <div className="fixed inset-0 z-50 flex justify-end select-none font-sans">
+        <div
+          className="fixed inset-0 bg-slate-900/35 backdrop-blur-[2px] transition-opacity animate-in fade-in-0"
+          onClick={onClose}
+        />
+        <div className="relative w-full max-w-md h-full bg-white border-l border-slate-200/90 z-10 flex flex-col shadow-[-12px_0_40px_-12px_rgb(15_23_42/0.18)] animate-in slide-in-from-right duration-200">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/60">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
+                <Camera className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
+                  {zoneName || cameraCode || 'Unknown Camera'}
+                </h3>
+                <span className="text-[11px] text-slate-500 font-medium">No live data for this camera</span>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-900 rounded-lg shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 p-6">
+            <div className="p-2.5 rounded-full bg-slate-50 border border-slate-200 text-slate-400">
+              <Camera className="h-5 w-5" />
+            </div>
+            <h4 className="text-xs font-bold text-slate-700">No live data for this camera</h4>
+            <p className="text-[11px] text-slate-500 max-w-xs">
+              This camera code doesn&apos;t match a zone currently reporting live occupancy data from the store backend.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const shelfHealthy = activeZone.shelfAvailability >= 80
 

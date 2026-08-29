@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react'
+import { UserCheck } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { resolveZonePosition, SHELF_FOCUS, CHECKOUT_FOCUS } from '../layout/storeLayout'
 import { RetailPalette } from '../theme/retailPalette'
 import { TooltipData } from '../controls/TwinTooltip'
+import { TwinIconBadge } from './TwinIconBadge'
 
 export interface TwinTaskMarker {
   id: string
@@ -99,14 +101,14 @@ export const TaskMarkers3D: React.FC<TaskMarkers3DProps> = ({
               onHoverTask?.(null)
             }}
           >
-            <mesh position={[0, hovered ? 1.35 : 1.2, 0]}>
-              <sphereGeometry args={[0.12, 12, 12]} />
-              <meshStandardMaterial
-                color={color}
-                emissive={color}
-                emissiveIntensity={hovered ? 0.45 : 0.2}
-              />
-            </mesh>
+            <group position={[0, 1.5, 0]}>
+              {/* Invisible hit-sphere — the badge itself is a non-interactive HTML overlay */}
+              <mesh>
+                <sphereGeometry args={[0.3, 8, 8]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+              <TwinIconBadge icon={UserCheck} color={color} hovered={hovered} />
+            </group>
             <mesh position={[0, hovered ? 0.95 : 0.85, 0]}>
               <cylinderGeometry args={[0.02, 0.02, 0.7, 6]} />
               <meshStandardMaterial color="#64748B" />

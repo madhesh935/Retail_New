@@ -22,6 +22,7 @@ interface IncidentDetailDrawerProps {
   onClose: () => void
   onAssignStaff?: (incident: OperationalIncident) => void
   onViewCamera?: (camCode: string, title: string) => void
+  onResolve?: (incident: OperationalIncident) => void
 }
 
 export const IncidentDetailDrawer: React.FC<IncidentDetailDrawerProps> = ({
@@ -29,6 +30,7 @@ export const IncidentDetailDrawer: React.FC<IncidentDetailDrawerProps> = ({
   onClose,
   onAssignStaff,
   onViewCamera,
+  onResolve,
 }) => {
   const navigate = useNavigate()
   const [showAiOverlay, setShowAiOverlay] = useState(true)
@@ -39,18 +41,21 @@ export const IncidentDetailDrawer: React.FC<IncidentDetailDrawerProps> = ({
   const isHigh = incident.severity === 'HIGH'
   const isResolved = incident.status === 'RESOLVED'
 
+  // Only the detection step has a real recorded timestamp on the incident;
+  // the later lifecycle stages aren't individually timestamped, so we show
+  // their state without inventing a specific clock time for them.
   const timelineEvents = [
     { time: incident.detectedTime, label: 'Incident Detected on Floor Sensor', status: 'COMPLETED' },
-    { time: '18:42:20', label: 'Recommended Action Created', status: 'COMPLETED' },
+    { time: null, label: 'Recommended Action Created', status: 'COMPLETED' },
     {
-      time: '18:43:10',
+      time: null,
       label: incident.assignedStaffName
         ? `Assigned to ${incident.assignedStaffName}`
         : 'Awaiting Staff Assignment',
       status: incident.assignedStaffName ? 'COMPLETED' : 'PENDING',
     },
     {
-      time: '18:45:00',
+      time: isResolved ? incident.durationText || null : null,
       label: isResolved ? 'Resolution Confirmed' : 'Resolution in Progress',
       status: isResolved ? 'COMPLETED' : 'PENDING',
     },
@@ -121,7 +126,14 @@ export const IncidentDetailDrawer: React.FC<IncidentDetailDrawerProps> = ({
                 >
                   Overlay {showAiOverlay ? 'ON' : 'OFF'}
                 </button>
-                <span className="text-emerald-700 font-bold text-[10px]">● Live</span>
+                {onViewCamera && (
+                  <button
+                    onClick={() => onViewCamera(incident.cameraCode, incident.zone)}
+                    className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-sky-200 bg-sky-50 text-sky-700 cursor-pointer"
+                  >
+                    View Live Feed
+                  </button>
+                )}
               </div>
             </div>
 
@@ -193,9 +205,32 @@ export const IncidentDetailDrawer: React.FC<IncidentDetailDrawerProps> = ({
               <div>
                 <span className="text-[10px] text-slate-500 block">Suggested Match:</span>
                 <strong className="text-sky-700 font-bold">
-                  {incident.suggestedStaffName || 'S02 Marcus Vance'}
+                  {incident.suggestedStaffName || '—'}
                 </strong>
               </div>
+            </div>
+
+            <div className="flex gap-2">
+              {onAssignStaff && (
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => onAssignStaff(incident)}
+                  className="flex-1 h-7 text-[11px] font-semibold text-sky-700 border-sky-200 bg-white hover:bg-sky-50 shadow-2xs"
+                >
+                  {incident.assignedStaffName ? 'Reassign Staff' : 'Assign Staff'}
+                </Button>
+              )}
+              {onResolve && !isResolved && (
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => onResolve(incident)}
+                  className="flex-1 h-7 text-[11px] font-semibold text-emerald-700 border-emerald-200 bg-white hover:bg-emerald-50 shadow-2xs"
+                >
+                  Mark Resolved
+                </Button>
+              )}
             </div>
           </div>
 

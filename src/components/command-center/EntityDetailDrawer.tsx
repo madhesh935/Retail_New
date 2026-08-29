@@ -144,20 +144,26 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                     <span className="text-[11px] text-slate-500 block font-medium">Visible Units</span>
                     <span className={cn('text-lg font-bold font-mono', entity.data.status === 'CRITICAL' ? 'text-rose-600' : 'text-emerald-700')}>
-                      {entity.data.visibleUnits !== undefined ? entity.data.visibleUnits : (entity.data.stock ?? 3)} units
+                      {entity.data.visibleUnits !== undefined
+                        ? `${entity.data.visibleUnits} units`
+                        : entity.data.stock !== undefined
+                          ? `${entity.data.stock} units`
+                          : '—'}
                     </span>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                     <span className="text-[11px] text-slate-500 block font-medium">Backroom Stock</span>
                     <span className="text-lg font-bold text-slate-900 font-mono">
-                      {entity.data.backroomStock || entity.data.backroom || entity.data.posStock || 14} units
+                      {(entity.data.backroomStock ?? entity.data.backroom ?? entity.data.posStock) !== undefined
+                        ? `${entity.data.backroomStock ?? entity.data.backroom ?? entity.data.posStock} units`
+                        : '—'}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-200/60">
                   <span>Demand: <strong className="text-amber-800">{entity.data.demand || 'High velocity'}</strong></span>
-                  <span>Updated: <strong className="text-slate-500 font-mono">2s ago</strong></span>
+                  <span>Status: <strong className="text-slate-500 font-mono">Live</strong></span>
                 </div>
 
                 {entity.data.predictedStockout && (
@@ -243,7 +249,9 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                 {entity.data.predictedIn5m && (
                   <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center justify-between shadow-2xs">
                     <span className="font-semibold">Forecast in +5 min:</span>
-                    <strong className="text-rose-700 font-bold font-mono">{entity.data.predictedIn5m} shoppers (Risk: 92%)</strong>
+                    <strong className="text-rose-700 font-bold font-mono">
+                      {entity.data.predictedIn5m} shoppers{entity.data.risk ? ` (Risk: ${entity.data.risk})` : ''}
+                    </strong>
                   </div>
                 )}
 
@@ -286,15 +294,28 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                     type="button"
                     onClick={() => {
                       if (onOpenWhy) {
+                        const queueLen = entity.data.queueLength ?? 0
+                        const congestionPct = Math.min(99, Math.max(15, queueLen * 12))
+                        const isCongested = entity.data.status === 'CONGESTED' || entity.data.status === 'CRITICAL'
                         onOpenWhy({
-                          title: 'Why Open Standby Counter C3?',
-                          recommendation: 'Open Standby Counter C3 & Reallocate Marcus Vance',
-                          confidenceScore: 92,
-                          arrivalRate: '4.2 shoppers/min (Rising)',
-                          serviceRate: '1.8 transactions/min (Counter C1)',
-                          predictedWaitIn5Min: '8.5 minutes (Threshold SLA: 4.0 min)',
-                          impactSummary: 'Reduces peak queue from 13 to 4 shoppers in 3.5 minutes.',
-                          alternativeAction: 'Keep Counter C1 single-lane: wait climbs to 9.2 min by 18:07.',
+                          title: `Why Recommendation for ${entity.name}?`,
+                          actionType: 'QUEUE',
+                          targetEntity: entity.name,
+                          signals: [
+                            { label: 'Current Queue', value: `${queueLen} shoppers`, highlight: true },
+                            { label: 'Estimated Wait', value: entity.data.waitTime || '—' },
+                            ...(entity.data.predictedIn5m !== undefined
+                              ? [{ label: 'Predicted +5min', value: `${entity.data.predictedIn5m} shoppers`, highlight: true }]
+                              : []),
+                            { label: 'Assigned Cashier', value: entity.data.staffName || 'Unassigned' },
+                            { label: 'Lane Status', value: entity.data.status || 'ACTIVE' },
+                          ],
+                          threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
+                          confidence: entity.data.risk || `${congestionPct}%`,
+                          conclusion: isCongested
+                            ? `Opening a standby counter or reallocating staff to ${entity.name} is recommended to reduce wait times.`
+                            : `${entity.name} is currently within normal operating range.`,
+                          edgeModel: 'Queue Inference Engine (YOLO)',
                         })
                       }
                     }}
@@ -323,13 +344,13 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                     <span className="text-[11px] text-slate-500 block font-medium">Current Shoppers</span>
                     <span className="text-lg font-bold text-blue-700 font-mono">
-                      {entity.data.occupancy || 18}
+                      {entity.data.occupancy ?? '—'}
                     </span>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                     <span className="text-[11px] text-slate-500 block font-medium">Avg Dwell</span>
                     <span className="text-lg font-bold text-slate-900 font-mono">
-                      {entity.data.avgDwell || '2m 14s'}
+                      {entity.data.avgDwell || '—'}
                     </span>
                   </div>
                 </div>
@@ -337,7 +358,7 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                 {entity.data.shelfHealth && (
                   <div className="flex items-center justify-between text-xs text-slate-700 pt-1 border-t border-slate-200/60">
                     <span>Shelf Health: <strong className="text-emerald-700">{entity.data.shelfHealth}</strong></span>
-                    <span>Traffic: <strong className="text-blue-700">{entity.data.traffic || 'High'}</strong></span>
+                    <span>Traffic: <strong className="text-blue-700">{entity.data.traffic || '—'}</strong></span>
                   </div>
                 )}
 
@@ -349,11 +370,13 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                     </div>
                     <div className="text-slate-600 flex justify-between">
                       <span>Predicted Stock-Out:</span>
-                      <strong className="text-amber-700 font-bold font-mono">{entity.data.predictedStockout || '9 min'}</strong>
+                      <strong className="text-amber-700 font-bold font-mono">{entity.data.predictedStockout || '—'}</strong>
                     </div>
                     <div className="text-slate-600 flex justify-between">
                       <span>Backroom Buffer:</span>
-                      <strong className="text-slate-900 font-bold font-mono">{entity.data.backroom || 14} units</strong>
+                      <strong className="text-slate-900 font-bold font-mono">
+                        {entity.data.backroom !== undefined ? `${entity.data.backroom} units` : '—'}
+                      </strong>
                     </div>
                   </div>
                 )}
@@ -418,7 +441,7 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                     <span className="text-slate-500 font-medium">Location</span>
                     <strong className="text-slate-900 font-semibold flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{entity.data.location || 'Cooler 2 Floor'}</span>
+                      <span>{entity.data.zoneName || entity.data.location || '—'}</span>
                     </strong>
                   </div>
 
@@ -426,16 +449,18 @@ export const EntityDetailDrawer: React.FC<EntityDetailDrawerProps> = ({
                     <span className="text-slate-500 font-medium">Assigned Associate</span>
                     <strong className="text-blue-700 font-semibold flex items-center gap-1">
                       <User className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{entity.data.assignedTo || 'Sarah Jenkins'}</span>
+                      <span>{entity.data.assignedToStaffName || entity.data.assignedTo || 'Unassigned'}</span>
                     </strong>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">Mitigation Status</span>
-                    <strong className="text-amber-700 font-semibold">
-                      Caution Cone Deployed · Cleaning
-                    </strong>
-                  </div>
+                  {(entity.data.mitigationStatus || entity.data.status) && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Mitigation Status</span>
+                      <strong className="text-amber-700 font-semibold">
+                        {entity.data.mitigationStatus || entity.data.status}
+                      </strong>
+                    </div>
+                  )}
                 </div>
               </div>
 

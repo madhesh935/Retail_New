@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.models import ProductModel, StaffTaskModel
+from app.services.broadcast import broadcast_change
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
@@ -79,12 +80,12 @@ def submit_customer_assist(payload: CustomerAssistRequest, db: Session = Depends
     db.add(task)
     db.commit()
     db.refresh(task)
+    broadcast_change("staff_tasks", task_id=task.id)
 
     return {
         "status": "success",
         "request_id": task.id,
         "assigned_staff_name": None,
-        "estimated_arrival_minutes": 3,
     }
 
 
@@ -135,6 +136,7 @@ def add_customer_assist_message(
     data["messages"] = messages[-100:]
     task.customer_request_data = data
     db.commit()
+    broadcast_change("staff_tasks", task_id=task.id)
     return message
 
 
@@ -153,4 +155,5 @@ def update_customer_assist_details(
     data.update(updates)
     task.customer_request_data = data
     db.commit()
+    broadcast_change("staff_tasks", task_id=task.id)
     return {"status": "success", "request_id": request_id, "details": updates}

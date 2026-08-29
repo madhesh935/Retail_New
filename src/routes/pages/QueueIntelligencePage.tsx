@@ -76,7 +76,7 @@ export const QueueIntelligencePage: React.FC = () => {
 
     const fetchAndUpdate = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/v1/queue/lanes', {
+        const res = await fetch('/api/v1/queue/lanes', {
           signal: AbortSignal.timeout(2000),
         })
         if (!res.ok) throw new Error('queue fetch failed')

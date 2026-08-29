@@ -1,32 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   X,
-  Bot,
   Send,
-  Sparkles,
   RotateCcw,
   Compass,
-  Layers,
-  Camera,
-  UserCheck,
-  CheckCircle2,
   Cpu,
   Maximize2,
-  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CopilotSuggestedChips } from './CopilotSuggestedChips'
 import { CopilotMessageBubble, ChatMessage } from './CopilotMessageBubble'
-import {
-  CopilotAction,
-  CopilotContext,
-} from './CopilotToolEngine'
-import { StaffDispatchConfirmDialog } from './StaffDispatchConfirmDialog'
-import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { sendCopilotChat } from '@/services/api/chat.service'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
-import { sendCopilotChat } from '@/services/api/chat.service'
+
+interface CopilotContext {
+  page: string
+  selectedEntity?: string
+  activeStore: string
+}
 
 interface StoreAiCopilotDrawerProps {
   isOpen: boolean
@@ -39,7 +31,8 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
 }) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const activeStoreId = useAppStore((s) => s.activeStoreId)
+  const connectionState = useAppStore((s) => s.connectionState)
+  const isConnected = connectionState === 'CONNECTED'
 
   // Current page context
   const currentPath = location.pathname.replace('/', '') || 'command-center'
@@ -94,37 +87,13 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
       id: 'msg-welcome',
       sender: 'COPILOT',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      structured: {
-        toolCalled: 'get_store_status',
-        observation: `Connected to Edge Node (NVIDIA Jetson Orin NX). Store 01 is active with 126 shoppers and 3 operational alerts.`,
-        prediction: `Afternoon rush is currently elevating Counter C1 queue depth and Beverage Aisle B4 depletion velocity.`,
-        action: `Review recommended staff reallocations to prevent queue bottlenecks and stockouts.`,
-        reason: `Deterministic rate tracking indicates arrival rate λ = 2.8/min exceeds single-register capacity.`,
-        actions: [
-          { type: 'NAVIGATE', label: 'View Command Center', payload: '/command-center' },
-          { type: 'VIEW_TWIN', label: 'Open Digital Twin', payload: '/digital-twin' },
-        ],
-      },
+      text: 'Ask me about current store operations — queues, inventory, staff, or incidents.',
     },
   ]
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [inputValue, setInputValue] = useState('')
   const [isThinking, setIsThinking] = useState(false)
-
-  // Confirmation dialog state for staff dispatch actions
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean
-    staffId: string
-    taskTitle: string
-  }>({ isOpen: false, staffId: '', taskTitle: '' })
-
-  // Camera preview drawer state
-  const [cameraDrawer, setCameraDrawer] = useState<{
-    isOpen: boolean
-    cameraCode: string
-    zoneName: string
-  }>({ isOpen: false, cameraCode: '', zoneName: '' })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -155,7 +124,7 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
 
     const apiMessages = [...messages, userMsg].map((m) => ({
       role: (m.sender === 'USER' ? 'user' : 'assistant') as 'user' | 'assistant',
-      content: m.text || (m.structured ? m.structured.observation : '') || '',
+      content: m.text || '',
     }))
 
     sendCopilotChat({
@@ -191,38 +160,6 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
       .finally(() => {
         setIsThinking(false)
       })
-  }
-
-  const handleTriggerAction = (action: CopilotAction) => {
-    if (action.type === 'NAVIGATE') {
-      navigate(action.payload)
-    } else if (action.type === 'VIEW_TWIN') {
-      navigate('/digital-twin')
-    } else if (action.type === 'VIEW_CAMERA') {
-      setCameraDrawer({
-        isOpen: true,
-        cameraCode: action.payload?.cameraCode || 'CAM-06',
-        zoneName: action.payload?.zoneName || 'Monitored Zone',
-      })
-    } else if (action.type === 'ASSIGN_STAFF') {
-      // Safety confirmation modal trigger
-      setConfirmDialog({
-        isOpen: true,
-        staffId: action.payload?.staffId || 'S02',
-        taskTitle: action.payload?.task || 'Operational Task Allocation',
-      })
-    }
-  }
-
-  const handleConfirmDispatch = () => {
-    const confirmMsg: ChatMessage = {
-      id: `system-${Date.now()}`,
-      sender: 'COPILOT',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: `✓ Confirmed: Dispatch notification sent to Associate ${confirmDialog.staffId} for "${confirmDialog.taskTitle}". Status transitioned to IN_PROGRESS.`,
-    }
-    setMessages((prev) => [...prev, confirmMsg])
-    setConfirmDialog({ isOpen: false, staffId: '', taskTitle: '' })
   }
 
   const handleResetChat = () => {
@@ -272,8 +209,15 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
               <div>
                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                   <span>Store AI Copilot</span>
-                  <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200 font-bold">
-                    Edge Active
+                  <span
+                    className={cn(
+                      'text-[9px] px-1.5 py-0.5 rounded-md border font-bold',
+                      isConnected
+                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                        : 'text-slate-500 bg-slate-50 border-slate-200'
+                    )}
+                  >
+                    {isConnected ? 'Edge Active' : 'Edge Offline'}
                   </span>
                 </h3>
                 <span className="text-[10px] text-slate-500 font-sans">
@@ -329,14 +273,13 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
             <CopilotMessageBubble
               key={msg.id}
               message={msg}
-              onTriggerAction={handleTriggerAction}
             />
           ))}
 
           {isThinking && (
             <div className="flex items-center gap-2 text-sky-700 text-xs py-2 font-semibold">
               <Cpu className="h-3.5 w-3.5 animate-spin" />
-              <span className="text-[10px]">Running edge tool query & rate equations...</span>
+              <span className="text-[10px]">Asking Store AI...</span>
             </div>
           )}
 
@@ -385,22 +328,6 @@ export const StoreAiCopilotDrawer: React.FC<StoreAiCopilotDrawerProps> = ({
           </form>
         </div>
       </div>
-
-      {/* Safety Confirmation Modal */}
-      <StaffDispatchConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        staffId={confirmDialog.staffId}
-        taskTitle={confirmDialog.taskTitle}
-        onConfirm={handleConfirmDispatch}
-        onCancel={() => setConfirmDialog({ isOpen: false, staffId: '', taskTitle: '' })}
-      />
-
-      {/* Embedded Live Camera Inspection Drawer */}
-      <ZoneCameraDrawer
-        cameraCode={cameraDrawer.isOpen ? cameraDrawer.cameraCode : null}
-        zoneName={cameraDrawer.isOpen ? cameraDrawer.zoneName : null}
-        onClose={() => setCameraDrawer({ isOpen: false, cameraCode: '', zoneName: '' })}
-      />
     </div>
   )
 }

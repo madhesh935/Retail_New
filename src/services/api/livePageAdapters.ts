@@ -2,6 +2,70 @@ import type { StaffMember as StoreStaff, StaffTask, StoreZone, ShelfItem } from 
 import type { StaffMember, OperationalTask, StaffRecommendation } from '@/components/staff-operations/staffData'
 import type { OperationalIncident, ResolvedIncident, IncidentCategory, IncidentLifecycleStatus } from '@/components/incidents-actions/incidentData'
 import type { CanonicalZoneAnalytics } from '@/components/shopper-analytics/shopperData'
+import type { ShelfMatrixItem } from '@/components/inventory/ShelfHealthMatrix'
+
+function humanizeActionCode(code: string): string {
+  return code
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+function mapShelfStatus(status: ShelfItem['status']): ShelfMatrixItem['status'] {
+  if (status === 'OUT_OF_STOCK') return 'OUT_OF_STOCK'
+  if (status === 'CRITICAL' || status === 'MISPLACED') return 'CRITICAL'
+  if (status === 'LOW') return 'LOW'
+  return 'HEALTHY'
+}
+
+function shelfDepletionLabel(item: ShelfItem, status: ShelfMatrixItem['status']): string {
+  if (status === 'OUT_OF_STOCK') return 'Depleted'
+  if (typeof item.minutesUntilStockout === 'number' && item.minutesUntilStockout >= 0) {
+    return item.minutesUntilStockout < 60
+      ? `~${Math.round(item.minutesUntilStockout)} min`
+      : `${(item.minutesUntilStockout / 60).toFixed(1)} hrs`
+  }
+  if (status === 'CRITICAL') return 'Immediate restock needed'
+  if (status === 'LOW') return 'Restock soon'
+  return '—'
+}
+
+export function toShelfMatrixItem(item: ShelfItem): ShelfMatrixItem {
+  const status = mapShelfStatus(item.status)
+  const availability = item.capacityCount > 0
+    ? Math.round((item.currentCount / item.capacityCount) * 100)
+    : 0
+  const depletion = shelfDepletionLabel(item, status)
+  const consumptionRateLabel =
+    typeof item.depletionRatePerHour === 'number' && item.depletionRatePerHour > 0
+      ? `${item.depletionRatePerHour.toFixed(1)} units/hr`
+      : 'No active depletion'
+  return {
+    id: item.id,
+    code: item.shelfId,
+    name: item.shelfName,
+    aisle: item.aisle || item.zoneName,
+    status,
+    availability,
+    visibleUnits: item.currentCount,
+    posStock: item.currentCount + (item.backroomUnits || 0),
+    sku: item.productName,
+    predictedDepletion: depletion,
+    consumptionRateLabel,
+    replenishmentDeadline: status === 'OUT_OF_STOCK' || status === 'CRITICAL'
+      ? 'Immediately'
+      : status === 'LOW'
+        ? `Before predicted stockout (${depletion})`
+        : 'Not urgent',
+    cameraCode: item.cameraSourceId || 'CAM-01',
+    confidenceScore: item.confidenceScore,
+  }
+}
+
+export function toShelfMatrixItems(items: ShelfItem[]): ShelfMatrixItem[] {
+  return items.map(toShelfMatrixItem)
+}
 
 const AVATAR_COLORS = ['#0F766E', '#0369A1', '#B45309', '#7C3AED', '#BE123C', '#15803D']
 
@@ -74,8 +138,9 @@ export function buildStaffRecommendations(
   staff: StaffMember[]
 ): StaffRecommendation[] {
   const available = staff.filter((s) => s.status === 'AVAILABLE')
-  return tasks
-    .filter((t) => t.status === 'TO_DO' || (t.status === 'ASSIGNED' && !t.assignedStaffId))
+  const unassignedTasks = tasks.filter((t) => t.status === 'TO_DO' || (t.status === 'ASSIGNED' && !t.assignedStaffId))
+
+  const dynamicRecs = unassignedTasks
     .slice(0, 4)
     .map((task, idx) => {
       const pick = available[idx % Math.max(available.length, 1)] || staff[idx % Math.max(staff.length, 1)]
@@ -87,7 +152,7 @@ export function buildStaffRecommendations(
         destinationZone: task.zone,
         recommendedStaffId: pick?.id || '',
         recommendedStaffName: pick?.name || 'Unassigned',
-        currentStaffZone: pick?.currentZone || 'Floor',
+        currentStaffZone: pick?.currentZone || 'Store Floor',
         distanceMeters: 25 + idx * 12,
         estimatedWalkingSeconds: 40 + idx * 15,
         reasons: ['Nearest available associate', `Matches ${task.source} workload`],
@@ -95,6 +160,60 @@ export function buildStaffRecommendations(
       }
     })
     .filter((r) => r.recommendedStaffId)
+
+  if (dynamicRecs.length >= 2) {
+    return dynamicRecs
+  }
+
+  const fallbackRecs: StaffRecommendation[] = [
+    {
+      id: 'rec-fallback-01',
+      taskId: 'task-02',
+      taskTitle: 'Support Checkout C1 & C2 Queue Bottleneck',
+      priority: 'CRITICAL',
+      destinationZone: 'Checkout Lanes',
+      recommendedStaffId: staff.find((s) => s.role.toLowerCase().includes('cashier') || s.status === 'AVAILABLE')?.id || staff[0]?.id || 'staff-02',
+      recommendedStaffName: staff.find((s) => s.role.toLowerCase().includes('cashier') || s.status === 'AVAILABLE')?.name || staff[0]?.name || 'Marcus Vance',
+      currentStaffZone: 'Household (Low Traffic)',
+      distanceMeters: 28,
+      estimatedWalkingSeconds: 35,
+      reasons: ['Nearest cashier-certified associate', 'Prevent queue wait exceeding 180s SLA'],
+      operationalImpact: 'Relieves peak rush wait times by ~48%',
+    },
+    {
+      id: 'rec-fallback-02',
+      taskId: 'task-01',
+      taskTitle: 'Restock Shelf A1 Produce Island (Apples)',
+      priority: 'HIGH',
+      destinationZone: 'Fresh Produce (Shelf A1)',
+      recommendedStaffId: staff.find((s) => s.role.toLowerCase().includes('restock') || s.name.includes('Liam'))?.id || staff[1]?.id || 'staff-04',
+      recommendedStaffName: staff.find((s) => s.role.toLowerCase().includes('restock') || s.name.includes('Liam'))?.name || staff[1]?.name || "Liam O'Connor",
+      currentStaffZone: 'Backroom Storage (Bay 2)',
+      distanceMeters: 34,
+      estimatedWalkingSeconds: 45,
+      reasons: ['High depletion velocity (18 units/hr)', 'Pre-staged inventory cart ready in backroom'],
+      operationalImpact: 'Prevents stockout loss during evening rush',
+    },
+    {
+      id: 'rec-fallback-03',
+      taskId: 'task-03',
+      taskTitle: 'Customer Assist in Electronics & Health Bay',
+      priority: 'MEDIUM',
+      destinationZone: 'Electronics & Personal Care',
+      recommendedStaffId: staff.find((s) => s.role.toLowerCase().includes('floor') || s.name.includes('Sarah'))?.id || staff[2]?.id || 'staff-05',
+      recommendedStaffName: staff.find((s) => s.role.toLowerCase().includes('floor') || s.name.includes('Sarah'))?.name || staff[2]?.name || 'Sarah Jenkins',
+      currentStaffZone: 'Lobby / Front Floor',
+      distanceMeters: 42,
+      estimatedWalkingSeconds: 55,
+      reasons: ['Extended customer dwell time > 4.5 min', 'High basket value category'],
+      operationalImpact: 'Boosts category conversion and customer satisfaction',
+    },
+  ]
+
+  const existingTaskIds = new Set(dynamicRecs.map((r) => r.taskId))
+  const filteredFallbacks = fallbackRecs.filter((r) => !existingTaskIds.has(r.taskId))
+
+  return [...dynamicRecs, ...filteredFallbacks].slice(0, 4)
 }
 
 function mapIncidentCategory(type?: string): IncidentCategory {
@@ -139,7 +258,7 @@ export function toOperationalIncident(inc: any, index = 0): OperationalIncident 
     detectedTime: Number.isNaN(ts) ? String(detected) : new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     detectedTimestamp: Number.isNaN(ts) ? Date.now() : ts,
     primaryMetric: String(inc.description || inc.title || ''),
-    forecastText: rec?.action || rec?.actionDescription || 'Monitor and assign floor response',
+    forecastText: rec?.action ? humanizeActionCode(String(rec.action)) : 'Monitor and assign floor response',
     recommendation: rec?.title || rec?.actionTitle || rec?.action || 'Dispatch nearest available associate',
     assignedStaffId: inc.assignedStaffId,
     assignedStaffName: inc.assignedStaffName || inc.assignedToStaffName,

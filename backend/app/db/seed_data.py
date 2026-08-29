@@ -24,7 +24,7 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
             "current_occupancy": 142,
             "max_capacity": 350,
             "todays_total_footfall": 1840,
-            "peak_occupancy_today": 288,
+            "peak_occupancy_today": 200,
             "occupancy_rate": 40.6,
             "average_dwell_time_minutes": 24,
         }
@@ -740,21 +740,12 @@ def build_seed_data(now: datetime | None = None) -> dict[str, list[dict[str, Any
         {"id": "waste-rec-3", "store_id": STORE_ID, "product_id": "prod-milk", "product_sku": "SKU-DAIRY-101", "product_name": "Fresh Whole Milk 1L", "batch_id": "batch-milk-0824", "batch_number": "MILK-0824", "quantity": 2, "reason": "DAMAGED", "recorded_by_staff_id": "staff-s08", "recorded_by_staff_name": "Vikram Rao", "location_id": "shelf-c2", "location_name": "Dairy C2", "recorded_at": now - timedelta(hours=3), "unit_cost": 42, "total_loss_cost": 84, "notes": "Cartons damaged during pallet unpacking."},
     ]
 
+    # Trend metrics (footfall, shelf availability, checkout wait, staff
+    # dispatch response) are no longer seeded as fabricated history — they're
+    # recorded for real on a recurring interval by
+    # app.services.metrics_snapshot.snapshot_loop, so charts fill in with
+    # genuine data as the app runs instead of a frozen fake baseline.
     metrics: list[dict[str, Any]] = []
-    for hour, actual, forecast in [
-        (8, 65, 70), (9, 120, 115), (10, 185, 190), (11, 240, 235),
-        (12, 310, 300), (13, 280, 290), (14, 220, 210), (15, 260, 250),
-        (16, 330, 340), (17, 390, 380), (18, 420, 430),
-    ]:
-        recorded_at = now.replace(hour=hour, minute=0, second=0, microsecond=0)
-        metrics.append({"id": f"metric-footfall-{hour:02d}", "store_id": STORE_ID, "metric_type": "HOURLY_FOOTFALL", "label": f"{hour:02d}:00", "value": actual, "unit": "shoppers", "dimensions": {"forecast": forecast}, "recorded_at": recorded_at})
-    for index, (label, regular, express) in enumerate([
-        ("17:00", 105, 55), ("17:30", 135, 68), ("18:00", 175, 85),
-        ("18:30", 195, 92), ("19:00", 140, 60),
-    ]):
-        metrics.append({"id": f"metric-queue-{index}", "store_id": STORE_ID, "metric_type": "QUEUE_WAIT_TREND", "label": label, "value": regular, "unit": "seconds", "dimensions": {"express_wait_seconds": express}, "recorded_at": now - timedelta(minutes=(4 - index) * 30)})
-    for zone in zones[1:7]:
-        metrics.append({"id": f"metric-dwell-{zone['id']}", "store_id": STORE_ID, "metric_type": "ZONE_DWELL", "label": zone["name"], "value": zone["avg_dwell_time_seconds"], "unit": "seconds", "dimensions": {"zone_id": zone["id"], "occupancy": zone["current_occupancy"]}, "recorded_at": now})
 
     return {
         "stores": stores,

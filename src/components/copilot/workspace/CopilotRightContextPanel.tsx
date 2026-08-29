@@ -7,30 +7,29 @@ import {
   UserCheck,
   Activity,
   ChevronRight,
-  TrendingDown,
-  TrendingUp,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { useAppStore } from '@/store/useAppStore'
+import { useLiveManagerContext } from './useLiveManagerContext'
 
 export const CopilotRightContextPanel: React.FC = () => {
   const navigate = useNavigate()
-  const currentOccupancy = useAppStore((s) => s.currentOccupancy) || 142
+  const ctx = useLiveManagerContext()
 
   const contextItems = [
-    { label: 'Live Occupancy', value: `${currentOccupancy}`, subtext: '41% capacity', icon: Users, path: '/shopper-analytics', color: 'text-slate-900' },
-    { label: 'Shelf Health', value: '86%', subtext: '3 critical shelves', icon: PackageCheck, path: '/inventory', color: 'text-emerald-700' },
-    { label: 'Average Wait', value: '2.8 min', subtext: 'Target <5.0 min', icon: Clock, path: '/queues', color: 'text-amber-800' },
-    { label: 'Critical Alerts', value: '2', subtext: 'Immediate action', icon: ShieldAlert, path: '/incidents-actions', color: 'text-rose-700' },
-    { label: 'Available Staff', value: '3', subtext: 'S02, S03, S06', icon: UserCheck, path: '/staff-operations', color: 'text-emerald-700' },
-    { label: 'Store Health', value: '91/100', subtext: 'Optimal condition', icon: Activity, path: '/command-center', color: 'text-emerald-700' },
-  ]
-
-  const recentChanges = [
-    { text: 'Shelf B4 dropped to 17%', delta: '↓ 31% → 17%', icon: TrendingDown, color: 'text-rose-700' },
-    { text: 'Checkout C1 surge', delta: '↑ Queue 4 → 8', icon: TrendingUp, color: 'text-amber-800' },
-    { text: 'S03 assigned to B4', delta: 'Active Task', icon: UserCheck, color: 'text-sky-700' },
+    { label: 'Live Occupancy', value: `${ctx.currentOccupancy}`, subtext: `${ctx.occupancyPct}% capacity`, icon: Users, path: '/shopper-analytics', color: 'text-slate-900' },
+    { label: 'Shelf Health', value: `${ctx.shelfHealthPct}%`, subtext: `${ctx.criticalShelvesCount} critical shelves`, icon: PackageCheck, path: '/inventory', color: 'text-emerald-700' },
+    { label: 'Average Wait', value: `${ctx.avgWaitMinutes} min`, subtext: 'Target <5.0 min', icon: Clock, path: '/queues', color: 'text-amber-800' },
+    { label: 'Critical Alerts', value: `${ctx.criticalIncidentsCount}`, subtext: 'Immediate action', icon: ShieldAlert, path: '/incidents-actions', color: 'text-rose-700' },
+    {
+      label: 'Available Staff',
+      value: `${ctx.availableStaffCount}`,
+      subtext: ctx.availableStaffCodes.length > 0 ? ctx.availableStaffCodes.join(', ') : 'None available',
+      icon: UserCheck,
+      path: '/staff-operations',
+      color: 'text-emerald-700',
+    },
+    { label: 'Store Health', value: `${ctx.storeHealthScore}/100`, subtext: ctx.storeHealthLabel, icon: Activity, path: '/command-center', color: 'text-emerald-700' },
   ]
 
   return (
@@ -85,30 +84,16 @@ export const CopilotRightContextPanel: React.FC = () => {
         })}
       </div>
 
-      {/* What Changed (Last 15 min) */}
-      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 shadow-2xs">
-        <div className="flex items-center justify-between text-[11px] font-bold text-slate-900 border-b border-slate-200/60 pb-1">
-          <span>What Changed</span>
-          <span className="text-[10px] text-slate-400 font-normal">Last 15 min</span>
-        </div>
-        <div className="space-y-1 text-[10px]">
-          {recentChanges.map((c, i) => (
-            <div key={i} className="flex items-center justify-between text-slate-700 font-sans">
-              <span className="truncate max-w-[150px]">{c.text}</span>
-              <span className={cn('font-bold font-mono', c.color)}>{c.delta}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Footer Edge Connection Status */}
       <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-500 flex items-center justify-between font-sans">
-        <span className="flex items-center gap-1 text-emerald-700 font-bold">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span>Store Data Live</span>
+        <span className={cn('flex items-center gap-1 font-bold', ctx.isEdgeConnected ? 'text-emerald-700' : 'text-rose-700')}>
+          <span className={cn('h-1.5 w-1.5 rounded-full', ctx.isEdgeConnected ? 'bg-emerald-500' : 'bg-rose-500')} />
+          <span>{ctx.isEdgeConnected ? 'Store Data Live' : 'Reconnecting…'}</span>
         </span>
-        <span>6/6 Cameras</span>
-        <span className="text-sky-700 font-bold">Edge Connected</span>
+        <span>{ctx.camerasOnline}/{ctx.camerasTotal} Cameras</span>
+        <span className={cn('font-bold', ctx.isEdgeConnected ? 'text-sky-700' : 'text-rose-700')}>
+          {ctx.isEdgeConnected ? 'Edge Connected' : 'Edge Offline'}
+        </span>
       </div>
     </div>
   )

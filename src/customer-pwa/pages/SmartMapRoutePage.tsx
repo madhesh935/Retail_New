@@ -7,13 +7,11 @@ import {
   AlertTriangle,
   ArrowRight,
   ArrowDown,
-  Sparkles,
   ShoppingBag,
   RotateCcw,
   Check,
   ChevronLeft,
   MapPin,
-  X,
   CreditCard,
 } from 'lucide-react'
 import { useCustomerShopping, CustomerProduct } from '../context/CustomerShoppingContext'
@@ -38,19 +36,26 @@ export const SmartMapRoutePage: React.FC = () => {
     isNavigating,
     setIsNavigating,
     targetCheckoutCounter,
-    setTargetCheckoutCounter,
     isNavigatingToCheckout,
     setIsNavigatingToCheckout,
     showToast,
     setActiveTab,
     routeFocusProductIds,
     setRouteFocusProductIds,
+    checkoutLanes,
   } = useCustomerShopping()
   const { openHelpSheet } = useCustomerAssist()
 
   const [foundFeedback, setFoundFeedback] = useState<string | null>(null)
-  const [showOtherCountersModal, setShowOtherCountersModal] = useState(false)
   const [reachedCheckoutConfirmation, setReachedCheckoutConfirmation] = useState(false)
+
+  const targetLane = checkoutLanes.find((lane) => lane.code === targetCheckoutCounter)
+  const targetWaitLabel = (() => {
+    const seconds = targetLane?.waitSeconds ?? 0
+    if (!Number.isFinite(seconds) || seconds <= 0) return 'No wait'
+    const mins = seconds / 60
+    return mins < 1 ? '<1 min' : `~${mins.toFixed(1)} min`
+  })()
 
   const focusMode = Boolean(routeFocusProductIds?.length)
   const itemsOnly = optimizedRoute.filter((step) => step.item)
@@ -61,10 +66,10 @@ export const SmartMapRoutePage: React.FC = () => {
   const progressPercent = totalItemsCount > 0 ? Math.round((completedCount / totalItemsCount) * 100) : 0
   const routeDistanceLabel = navigationPlan
     ? `${Math.round(navigationPlan.totalDistanceMeters)} m`
-    : useCrowdAlternativeRoute ? '146 m' : '182 m'
+    : 'Calculating…'
   const routeTimeLabel = navigationPlan
     ? `${navigationPlan.estimatedMinutes} min`
-    : useCrowdAlternativeRoute ? '8 min' : '11 min'
+    : 'Calculating…'
 
   // Current active step (find first uncompleted, unskipped item)
   const currentStep =
@@ -244,7 +249,7 @@ export const SmartMapRoutePage: React.FC = () => {
                 </div>
                 <div>
                   <span className="font-bold text-slate-900">Checkout {targetCheckoutCounter}</span>
-                  <span className="text-[10px] text-emerald-700 block font-medium">Fastest checkout • ~1.8 min wait</span>
+                  <span className="text-[10px] text-emerald-700 block font-medium">Fastest checkout • {targetWaitLabel}</span>
                 </div>
               </div>
             </div>
@@ -409,9 +414,6 @@ export const SmartMapRoutePage: React.FC = () => {
             <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
               NEXT STOP
             </span>
-            <span className="text-xs font-bold text-slate-500">
-              ~35 m away
-            </span>
           </div>
 
           <div>
@@ -421,7 +423,7 @@ export const SmartMapRoutePage: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-slate-600 font-medium mt-1">
               <CreditCard className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
               <span>
-                Estimated Wait: {targetCheckoutCounter === 'C1' ? '~5.4 min' : targetCheckoutCounter === 'C3' ? '~3.1 min' : '~1.8 min'}
+                Estimated Wait: {targetWaitLabel}
               </span>
             </div>
           </div>
@@ -444,19 +446,15 @@ export const SmartMapRoutePage: React.FC = () => {
                 {currentSequenceNumber}
               </span>
             </span>
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-              <Footprints className="h-3.5 w-3.5 text-cyan-600" />
-              <span>42 m away • ~1 min</span>
-            </span>
           </div>
 
           <div>
             <h3 className="text-sm font-extrabold text-slate-900 leading-tight">
-              {currentStep?.title || 'Heritage Fresh Whole Milk'}
+              {currentStep?.title || 'Loading next stop…'}
             </h3>
             <div className="flex items-center gap-2 text-xs text-slate-600 font-medium mt-1">
               <MapPin className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
-              <span>{currentStep?.location || 'Aisle 2 • Shelf C2'}</span>
+              <span>{currentStep?.location || 'Locating…'}</span>
             </div>
           </div>
 
@@ -506,156 +504,12 @@ export const SmartMapRoutePage: React.FC = () => {
             )}
           </div>
 
-          {/* Dedicated Checkout Recommendation Card */}
-          <div className="rounded-3xl border border-emerald-200 bg-white p-4 shadow-sm text-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-                    Recommended Checkout
-                  </h4>
-                  <span className="text-[11px] text-slate-500">Live Queue Forecast</span>
-                </div>
-              </div>
-
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                FASTEST CHECKOUT
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center p-3 rounded-2xl bg-slate-50 border border-slate-200">
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase font-bold block">Counter</span>
-                <span className="text-sm font-extrabold text-slate-900">COUNTER {targetCheckoutCounter}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase font-bold block">Queue</span>
-                <span className="text-sm font-extrabold text-emerald-600">2 customers waiting</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase font-bold block">Estimated Wait</span>
-                <span className="text-sm font-extrabold text-cyan-800">~1.8 min</span>
-              </div>
-            </div>
-
-            {/* Primary CTA: NAVIGATE TO CHECKOUT */}
-            <button
-              onClick={() => {
-                setIsNavigatingToCheckout(true)
-                showToast(`Navigating directly to Checkout ${targetCheckoutCounter}`)
-              }}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-11 rounded-2xl font-extrabold shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 min-h-[44px]"
-            >
-              <Navigation className="h-4 w-4" />
-              <span>NAVIGATE TO CHECKOUT {targetCheckoutCounter}</span>
-            </button>
-
-            {/* Secondary: View Other Counters */}
-            <button
-              onClick={() => setShowOtherCountersModal(true)}
-              className="w-full py-2 text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer transition-colors text-center"
-            >
-              View Other Counters →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Other Checkouts Bottom Sheet Modal */}
-      {showOtherCountersModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in-0"
-            onClick={() => setShowOtherCountersModal(false)}
+          {/* Live Checkout Recommendation (real queue data, shared with the copilot card) */}
+          <CheckoutRecommendationCard
+            onNavigateToCheckout={() =>
+              showToast(`Navigating directly to Checkout ${targetCheckoutCounter}`)
+            }
           />
-
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl z-10 space-y-4 text-slate-800 animate-in slide-in-from-bottom duration-200 border border-slate-200">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">
-                Checkout Options
-              </h3>
-              <button
-                onClick={() => setShowOtherCountersModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2.5">
-              {/* C1 */}
-              <div className="p-3 rounded-2xl border border-slate-200 flex items-center justify-between bg-slate-50/50">
-                <div>
-                  <h4 className="font-bold text-xs text-slate-900">Counter C1</h4>
-                  <span className="text-[11px] text-rose-600 font-bold block">5 customers • ~5.4 min wait</span>
-                </div>
-                <button
-                  onClick={() => {
-                    setTargetCheckoutCounter('C1')
-                    setIsNavigatingToCheckout(true)
-                    setShowOtherCountersModal(false)
-                    showToast('Route set to Counter C1')
-                  }}
-                  className="text-xs font-bold bg-white border border-slate-300 hover:border-cyan-500 px-3 py-1.5 rounded-xl cursor-pointer"
-                >
-                  Navigate to C1
-                </button>
-              </div>
-
-              {/* C2 (Recommended) */}
-              <div className="p-3 rounded-2xl border-2 border-emerald-500 flex items-center justify-between bg-emerald-50/40">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="font-extrabold text-xs text-slate-900">Counter C2</h4>
-                    <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-200 px-1.5 py-0.5 rounded uppercase">
-                      RECOMMENDED
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-emerald-700 font-bold block">2 customers • ~1.8 min wait</span>
-                </div>
-                <button
-                  onClick={() => {
-                    setTargetCheckoutCounter('C2')
-                    setIsNavigatingToCheckout(true)
-                    setShowOtherCountersModal(false)
-                    showToast('Route set to Counter C2')
-                  }}
-                  className="text-xs font-bold bg-emerald-600 text-white px-3 py-1.5 rounded-xl cursor-pointer shadow-2xs"
-                >
-                  Navigate to C2
-                </button>
-              </div>
-
-              {/* C3 */}
-              <div className="p-3 rounded-2xl border border-slate-200 flex items-center justify-between bg-slate-50/50">
-                <div>
-                  <h4 className="font-bold text-xs text-slate-900">Counter C3</h4>
-                  <span className="text-[11px] text-amber-600 font-bold block">3 customers • ~3.1 min wait</span>
-                </div>
-                <button
-                  onClick={() => {
-                    setTargetCheckoutCounter('C3')
-                    setIsNavigatingToCheckout(true)
-                    setShowOtherCountersModal(false)
-                    showToast('Route set to Counter C3')
-                  }}
-                  className="text-xs font-bold bg-white border border-slate-300 hover:border-cyan-500 px-3 py-1.5 rounded-xl cursor-pointer"
-                >
-                  Navigate to C3
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowOtherCountersModal(false)}
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
-            >
-              Close
-            </button>
-          </div>
         </div>
       )}
 

@@ -1,15 +1,101 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from datetime import datetime
+import time
 
-from app.db.database import get_db
-from app.db.models import QueueModel
+from app.db.database import get_db, SessionLocal
+from app.db.models import QueueModel, IncidentModel
 from app.services.queue_intelligence import queue_monitor, get_monitor
+from app.services.broadcast import broadcast_change
 import logging
 import httpx
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Congestion thresholds for auto-created live incidents, mirrored from the
+# frontend's own CONGESTED heuristic (queue length >= 5).
+QUEUE_CONGESTION_WAIT_TRIGGER_SECONDS = 300
+QUEUE_CONGESTION_CLEAR_SECONDS = 120
+
+
+def _lane_code_from_lane_id(lane_id: str) -> str:
+    try:
+        num = int(lane_id.split("-")[1])
+    except (IndexError, ValueError):
+        num = 1
+    return f"C{num}"
+
+
+def _sync_congestion_incident(db, lane: QueueModel, wait_seconds: int) -> None:
+    existing = (
+        db.query(IncidentModel)
+        .filter(IncidentModel.type == "QUEUE_CONGESTION")
+        .filter(IncidentModel.zone == lane.name)
+        .filter(IncidentModel.status.notin_(["RESOLVED", "DISMISSED"]))
+        .first()
+    )
+
+    if lane.status == "CONGESTED" and wait_seconds >= QUEUE_CONGESTION_WAIT_TRIGGER_SECONDS:
+        if existing is None:
+            inc = IncidentModel(
+                id=f"inc-auto-{lane.lane_code.lower()}-{int(time.time())}",
+                title=f"{lane.name} Congestion",
+                description=(
+                    f"{lane.queue_length} shoppers are waiting and average wait has reached "
+                    f"{wait_seconds // 60}m {wait_seconds % 60}s, detected live from the checkout camera."
+                ),
+                severity="CRITICAL" if wait_seconds >= 480 else "HIGH",
+                type="QUEUE_CONGESTION",
+                zone=lane.name,
+                zone_id=None,
+                status="ACTIVE",
+                camera_code=lane.camera_code,
+                recommendation_title="Open a standby counter or reassign staff",
+                recommendation_action="OPEN_STANDBY_LANE",
+                details={
+                    "queue_length": lane.queue_length,
+                    "wait_seconds": wait_seconds,
+                    "source": "LIVE_VISION_DETECTION",
+                },
+            )
+            db.add(inc)
+            db.commit()
+            broadcast_change("incidents", incident_id=inc.id)
+    elif existing is not None and (existing.details or {}).get("source") == "LIVE_VISION_DETECTION":
+        if wait_seconds <= QUEUE_CONGESTION_CLEAR_SECONDS:
+            existing.status = "RESOLVED"
+            existing.resolved_at = datetime.utcnow()
+            db.commit()
+            broadcast_change("incidents", incident_id=existing.id)
+
+
+def _sync_queue_status_to_db(lane_id: str, status: dict) -> None:
+    lane_code = _lane_code_from_lane_id(lane_id)
+    people_count = status["people_count"]
+    wait_seconds = round(status["average_wait_time_seconds"])
+
+    db = SessionLocal()
+    try:
+        lane = db.query(QueueModel).filter(QueueModel.lane_code == lane_code).first()
+        if lane is None:
+            return
+
+        if lane.queue_length == people_count and lane.wait_time_seconds == wait_seconds:
+            return
+
+        lane.queue_length = people_count
+        lane.wait_time_seconds = wait_seconds
+        if lane.status != "CLOSED":
+            lane.status = "CONGESTED" if people_count >= 5 else "ACTIVE"
+
+        db.commit()
+        broadcast_change("queues", lane_code=lane_code)
+
+        _sync_congestion_incident(db, lane, wait_seconds)
+    finally:
+        db.close()
 
 
 @router.get("/lanes")
@@ -82,8 +168,9 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             image_bytes = await websocket.receive_bytes()
             status = queue_monitor.process_frame(image_bytes)
+            _sync_queue_status_to_db("lane-1", status)
             await websocket.send_json(status)
-            
+
     except WebSocketDisconnect:
         logger.info("Client disconnected from queue streaming (default lane).")
     except Exception as e:
@@ -108,8 +195,9 @@ async def websocket_lane_endpoint(websocket: WebSocket, lane_id: str):
         while True:
             image_bytes = await websocket.receive_bytes()
             status = monitor.process_frame(image_bytes)
+            _sync_queue_status_to_db(lane_id, status)
             await websocket.send_json(status)
-            
+
     except WebSocketDisconnect:
         logger.info(f"Client disconnected from queue streaming ({lane_id}).")
     except Exception as e:

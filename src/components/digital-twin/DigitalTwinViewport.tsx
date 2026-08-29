@@ -16,6 +16,7 @@ import { CustomerRequestMarkers3D } from './scene/CustomerRequestMarkers3D'
 import { TwinLayerState } from './controls/LayerControlPanel'
 import { TwinViewMode } from './controls/TopViewportControls'
 import { TwinTooltip, TooltipData } from './controls/TwinTooltip'
+import { TwinLegend } from './controls/TwinLegend'
 import {
   RetailPalette,
   ISOMETRIC_CAMERA,
@@ -311,6 +312,7 @@ export const DigitalTwinViewport: React.FC<DigitalTwinViewportProps> = ({
       className="relative w-full h-full min-h-[580px] bg-slate-100 rounded-xl border border-slate-200 shadow-2xs overflow-hidden cursor-grab active:cursor-grabbing touch-none"
     >
       <TwinTooltip data={hoverData} containerRef={containerRef} />
+      <TwinLegend />
 
       <Canvas
         shadows

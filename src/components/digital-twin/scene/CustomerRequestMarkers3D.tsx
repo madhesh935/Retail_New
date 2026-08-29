@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react'
+import { HelpCircle } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { resolveZonePosition, SHELF_FOCUS } from '../layout/storeLayout'
 import { RetailPalette } from '../theme/retailPalette'
 import { TooltipData } from '../controls/TwinTooltip'
+import { TwinIconBadge } from './TwinIconBadge'
 import type { CustomerHelpRequest } from '@/store/slices/customerRequestSlice'
 
 interface CustomerRequestMarkers3DProps {
@@ -74,14 +76,13 @@ export const CustomerRequestMarkers3D: React.FC<CustomerRequestMarkers3DProps> =
               onHoverRequest?.(null)
             }}
           >
-            <mesh position={[0, hovered ? 1.4 : 1.25, 0]}>
-              <octahedronGeometry args={[0.14, 0]} />
-              <meshStandardMaterial
-                color={color}
-                emissive={color}
-                emissiveIntensity={hovered ? 0.4 : 0.18}
-              />
-            </mesh>
+            <group position={[0, 1.5, 0]}>
+              <mesh>
+                <sphereGeometry args={[0.3, 8, 8]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+              <TwinIconBadge icon={HelpCircle} color={color} hovered={hovered} />
+            </group>
             <mesh position={[0, 0.85, 0]}>
               <cylinderGeometry args={[0.018, 0.018, 0.75, 6]} />
               <meshStandardMaterial color="#64748B" />

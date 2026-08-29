@@ -53,7 +53,10 @@ export type AppState = StoreSlice &
     ) => Promise<void>
     resolveRealIncident: (id: string) => Promise<void>
     executeRealAction: (id: string) => Promise<void>
+    assignRealIncident: (id: string, staffId: string, staffName: string) => Promise<void>
   }
+
+let dataChangedDebounceTimer: number | null = null
 
 export const useAppStore = create<AppState>()((set, get, api) => ({
   ...createStoreSlice(set, get, api),
@@ -118,6 +121,19 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
 
       case 'STORE_STATUS_UPDATE': {
         get().setStoreInfo(payload as any)
+        break
+      }
+
+      case 'DATA_CHANGED': {
+        // A real mutation just happened on the backend (incident resolved, task
+        // updated, shelf changed, etc.) — refresh from the API in reaction to
+        // that push. This is event-driven, not a polling interval: it only runs
+        // when the server tells us something actually changed, coalescing bursts
+        // of related broadcasts (e.g. waste record → shelf + batch) into one fetch.
+        if (dataChangedDebounceTimer) window.clearTimeout(dataChangedDebounceTimer)
+        dataChangedDebounceTimer = window.setTimeout(() => {
+          get().fetchStoreData()
+        }, 250)
         break
       }
 
@@ -195,6 +211,15 @@ export const useAppStore = create<AppState>()((set, get, api) => ({
       console.warn(e)
     }
     get().resolveIncident(id)
+  },
+
+  assignRealIncident: async (id: string, staffId: string, staffName: string) => {
+    try {
+      await realStoreApi.assignIncident(id, staffId, staffName)
+    } catch (e) {
+      console.warn(e)
+    }
+    get().assignIncidentStaff(id, staffId, staffName)
   },
 
   executeRealAction: async (id: string) => {

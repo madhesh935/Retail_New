@@ -35,6 +35,10 @@ export const DwellAnalyticsCard: React.FC<DwellAnalyticsCardProps> = ({
 
   const maxDwell = Math.max(5, ...sortedShoppingZones.map((z) => z.avgDwellMinutes), checkoutZone?.avgDwellMinutes || 0)
 
+  const storeAvgDwell = shoppingZones.length > 0
+    ? shoppingZones.reduce((sum, z) => sum + z.avgDwellMinutes, 0) / shoppingZones.length
+    : null
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[380px] font-sans">
       {/* Header */}
@@ -51,7 +55,7 @@ export const DwellAnalyticsCard: React.FC<DwellAnalyticsCardProps> = ({
         </div>
 
         <span className="text-[11px] text-slate-500">
-          Store Avg: <strong className="text-slate-900">18.4 min</strong>
+          Store Avg: <strong className="text-slate-900">{storeAvgDwell !== null ? `${storeAvgDwell.toFixed(1)} min` : '—'}</strong>
         </span>
       </div>
 

@@ -31,9 +31,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
   const isCompleted = task.status === 'COMPLETED' || task.column === 'VERIFIED'
   const isCameraVerified = task.verificationType === 'CAMERA_VERIFIED' || task.cameraVerificationCode
-  const beforeVal = task.beforeAvailability ?? 17
-  const afterVal = task.afterAvailability ?? 85
-  const camCode = task.cameraVerificationCode ?? 'CAM-04'
+  const beforeVal = task.beforeAvailability ?? '—'
+  const afterVal = task.afterAvailability ?? '—'
+  const camCode = task.cameraVerificationCode ?? '—'
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end select-none font-sans">
@@ -80,7 +80,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 Task Description
               </span>
               <span className="text-[10px] text-sky-700 font-mono font-semibold">
-                Created {task.createdTime || '18:40'}
+                Created {task.createdTime || '—'}
               </span>
             </div>
             <p className="text-slate-700 text-xs leading-relaxed font-sans">
@@ -143,13 +143,13 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-2 rounded-lg bg-white border border-rose-200 shadow-2xs">
                     <span className="text-[10px] text-rose-700 font-semibold block">Before Action</span>
-                    <div className="text-lg font-bold text-rose-700 font-mono">{beforeVal}%</div>
+                    <div className="text-lg font-bold text-rose-700 font-mono">{beforeVal}{beforeVal !== '—' ? '%' : ''}</div>
                     <span className="text-[10px] text-slate-500">Low shelf stock</span>
                   </div>
 
                   <div className="p-2 rounded-lg bg-white border border-emerald-200 shadow-2xs">
                     <span className="text-[10px] text-emerald-700 font-semibold block">After Action</span>
-                    <div className="text-lg font-bold text-emerald-700 font-mono">{afterVal}%</div>
+                    <div className="text-lg font-bold text-emerald-700 font-mono">{afterVal}{afterVal !== '—' ? '%' : ''}</div>
                     <span className="text-[10px] text-emerald-600">Inventory replenished</span>
                   </div>
                 </div>

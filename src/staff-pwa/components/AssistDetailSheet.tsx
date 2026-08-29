@@ -32,6 +32,7 @@ export const AssistDetailSheet: React.FC<AssistDetailSheetProps> = ({
     sendStaffCustomerMessage,
     authenticatedStaff,
     customerRequests,
+    shelfItems,
   } = useAppStore()
 
   const [messageInput, setMessageInput] = useState('')
@@ -41,6 +42,15 @@ export const AssistDetailSheet: React.FC<AssistDetailSheetProps> = ({
     : null
 
   if (!isOpen || !request) return null
+
+  const matchedShelfItem = request.productSku
+    ? shelfItems.find((item) => item.sku === request.productSku)
+    : undefined
+  const shelfAvailabilityPercent =
+    matchedShelfItem && matchedShelfItem.capacityCount > 0
+      ? Math.round((matchedShelfItem.currentCount / matchedShelfItem.capacityCount) * 100)
+      : null
+  const backroomUnitsAvailable = matchedShelfItem?.backroomUnits
 
   const isRequested = request.status === 'REQUESTED'
   const isAccepted = request.status === 'ACCEPTED' || request.status === 'ASSIGNED'
@@ -142,12 +152,28 @@ export const AssistDetailSheet: React.FC<AssistDetailSheetProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 font-medium">Shelf Availability:</span>
-                  <span className="font-bold text-rose-600">0% (Empty)</span>
+                  <span
+                    className={`font-bold ${
+                      shelfAvailabilityPercent === null
+                        ? 'text-slate-400'
+                        : shelfAvailabilityPercent === 0
+                        ? 'text-rose-600'
+                        : 'text-emerald-700'
+                    }`}
+                  >
+                    {shelfAvailabilityPercent === null
+                      ? 'Unknown'
+                      : shelfAvailabilityPercent === 0
+                      ? '0% (Empty)'
+                      : `${shelfAvailabilityPercent}%`}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-medium">Backroom Status:</span>
-                  <span className="font-bold text-emerald-700">18 units available</span>
-                </div>
+                {typeof backroomUnitsAvailable === 'number' && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-medium">Backroom Status:</span>
+                    <span className="font-bold text-emerald-700">{backroomUnitsAvailable} units available</span>
+                  </div>
+                )}
               </div>
 
               {/* Backroom Actions */}

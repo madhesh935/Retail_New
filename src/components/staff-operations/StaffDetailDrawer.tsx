@@ -1,15 +1,5 @@
 import React from 'react'
-import {
-  X,
-  UserCheck,
-  CheckSquare,
-  Clock,
-  MapPin,
-  Sparkles,
-  ArrowRight,
-  Shield,
-  Briefcase,
-} from 'lucide-react'
+import { X, CheckSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StaffMember } from './staffData'
 
@@ -17,12 +7,14 @@ interface StaffDetailDrawerProps {
   staff: StaffMember | null
   onClose: () => void
   onAssignTask?: (staff: StaffMember) => void
+  canAssignTask?: boolean
 }
 
 export const StaffDetailDrawer: React.FC<StaffDetailDrawerProps> = ({
   staff,
   onClose,
   onAssignTask,
+  canAssignTask,
 }) => {
   if (!staff) return null
 
@@ -135,9 +127,22 @@ export const StaffDetailDrawer: React.FC<StaffDetailDrawerProps> = ({
         {/* Footer */}
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <span>{staff.code} · Shift B</span>
-          <Button variant="ghost" size="xs" onClick={onClose} className="h-7 text-[11px] text-slate-500 hover:text-slate-900">
-            Close
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAvailable && canAssignTask && onAssignTask && (
+              <Button
+                variant="action"
+                size="xs"
+                onClick={() => onAssignTask(staff)}
+                className="h-7 text-[11px] bg-sky-600 hover:bg-sky-700 text-white font-semibold gap-1"
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Assign Task
+              </Button>
+            )}
+            <Button variant="ghost" size="xs" onClick={onClose} className="h-7 text-[11px] text-slate-500 hover:text-slate-900">
+              Close
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -17,8 +17,26 @@ export const NotificationsSheet: React.FC<NotificationsSheetProps> = ({
 
   if (!isOpen) return null
 
-  const waitingHelpCount = customerRequests.filter((r) => r.status === 'REQUESTED').length
-  const urgentTasksCount = pendingTasks.filter((t) => t.priority === 'CRITICAL' || t.priority === 'URGENT').length
+  const waitingRequests = customerRequests.filter((r) => r.status === 'REQUESTED')
+  const waitingHelpCount = waitingRequests.length
+  const waitingZoneLabel = (() => {
+    const zones = Array.from(new Set(waitingRequests.map((r) => r.zoneName).filter(Boolean)))
+    if (zones.length === 0) return ''
+    if (zones.length === 1) return zones[0]
+    return `${zones.length} zones`
+  })()
+
+  const urgentTasks = pendingTasks.filter((t) => t.priority === 'CRITICAL' || t.priority === 'URGENT')
+  const urgentTasksCount = urgentTasks.length
+  const urgentLocationLabels = Array.from(
+    new Set(urgentTasks.map((t) => (t.shelfCode ? `Shelf ${t.shelfCode}` : t.zoneName)).filter(Boolean))
+  )
+  const urgentLocationLabel =
+    urgentLocationLabels.length === 0
+      ? ''
+      : urgentLocationLabels.length <= 2
+      ? urgentLocationLabels.join(' & ')
+      : `${urgentLocationLabels.slice(0, 2).join(', ')} & ${urgentLocationLabels.length - 2} more`
 
   return (
     <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
@@ -57,7 +75,10 @@ export const NotificationsSheet: React.FC<NotificationsSheetProps> = ({
                 <MessageCircle className="w-5 h-5 text-blue-600 shrink-0" />
                 <div>
                   <h4 className="text-xs font-bold text-blue-950">Customer Assistance Waiting</h4>
-                  <p className="text-[11px] text-blue-800">{waitingHelpCount} shopper requesting help in Dairy Wall</p>
+                  <p className="text-[11px] text-blue-800">
+                    {waitingHelpCount} shopper{waitingHelpCount !== 1 ? 's' : ''} requesting help
+                    {waitingZoneLabel ? ` in ${waitingZoneLabel}` : ''}
+                  </p>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-blue-700" />
@@ -77,7 +98,10 @@ export const NotificationsSheet: React.FC<NotificationsSheetProps> = ({
                 <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
                 <div>
                   <h4 className="text-xs font-bold text-rose-950">High Priority Dispatch</h4>
-                  <p className="text-[11px] text-rose-800">Checkout Counter C3 & Shelf B4 require attention</p>
+                  <p className="text-[11px] text-rose-800">
+                    {urgentLocationLabel || `${urgentTasksCount} task${urgentTasksCount !== 1 ? 's' : ''}`}{' '}
+                    {urgentTasksCount === 1 ? 'requires' : 'require'} attention
+                  </p>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-rose-700" />

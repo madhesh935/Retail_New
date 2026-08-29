@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { resolveZonePosition } from '../layout/storeLayout'
 import { RetailPalette } from '../theme/retailPalette'
 import { TooltipData } from '../controls/TwinTooltip'
+import { TwinIconBadge } from './TwinIconBadge'
 
 interface IncidentBeacons3DProps {
   showIncidents: boolean
@@ -81,11 +83,13 @@ export const IncidentBeacons3D: React.FC<IncidentBeacons3DProps> = ({
               <boxGeometry args={[0.22, 0.03, 0.22]} />
               <meshStandardMaterial color="#CA8A04" />
             </mesh>
-            {/* Compact severity pin */}
-            <mesh position={[0, hovered ? 1.15 : 1.0, 0]}>
-              <sphereGeometry args={[0.09, 10, 10]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} />
-            </mesh>
+            <group position={[0, 1.5, 0]}>
+              <mesh>
+                <sphereGeometry args={[0.3, 8, 8]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+              <TwinIconBadge icon={AlertTriangle} color={color} hovered={hovered} />
+            </group>
           </group>
         )
       })}

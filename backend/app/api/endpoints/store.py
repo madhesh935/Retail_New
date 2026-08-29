@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.models import Camera, IncidentModel, QueueModel, StaffModel, StoreModel, ZoneModel
+from app.services.broadcast import broadcast_change
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -84,4 +85,5 @@ def update_store_occupancy(payload: OccupancyUpdate, db: Session = Depends(get_d
     
     db.commit()
     db.refresh(store)
+    broadcast_change("store")
     return {"status": "success", "current_occupancy": store.current_occupancy, "occupancy_rate": store.occupancy_rate}

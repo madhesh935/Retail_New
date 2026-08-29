@@ -91,17 +91,6 @@ export interface CreateAssistRequestInput {
   accessibilityNeed?: string
 }
 
-export const CANONICAL_STORE_ZONES = [
-  { id: 'zone-produce', name: 'Fresh Produce', aisle: 'Aisle A' },
-  { id: 'zone-dairy', name: 'Dairy & Chilled', aisle: 'Aisle C' },
-  { id: 'zone-beverages', name: 'Cold Beverages', aisle: 'Aisle B' },
-  { id: 'zone-bakery', name: 'Artisan Bakery', aisle: 'Aisle B (Front)' },
-  { id: 'zone-snacks', name: 'Snacks & Pantry', aisle: 'Aisle D' },
-  { id: 'zone-care', name: 'Personal Care', aisle: 'Aisle F' },
-  { id: 'zone-checkout', name: 'Checkout Area', aisle: 'Front Counters' },
-  { id: 'zone-entrance', name: 'Entrance & Lobby', aisle: 'Main Entry' },
-]
-
 export const ASSIST_TYPE_CONFIGS: Record<CustomerAssistRequestType, CustomerAssistTypeConfig> = {
   PRODUCT_ASSISTANCE: {
     type: 'PRODUCT_ASSISTANCE',

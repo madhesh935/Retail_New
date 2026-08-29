@@ -25,11 +25,11 @@ export const StaffRouteModal: React.FC<StaffRouteModalProps> = ({
   if (!allocation) return null
 
   const staffName = allocation.recommendedStaffName || 'Staff Member'
-  const staffId = allocation.recommendedStaffId || 'S02'
+  const staffId = allocation.recommendedStaffId || '—'
   const origin = allocation.currentStaffZone || 'Current Zone'
   const destination = allocation.destinationZone || 'Destination'
-  const distance = allocation.distanceMeters || 18
-  const walkSeconds = allocation.estimatedWalkingSeconds || 24
+  const distance = allocation.distanceMeters
+  const walkSeconds = allocation.estimatedWalkingSeconds
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none font-sans">
@@ -71,11 +71,11 @@ export const StaffRouteModal: React.FC<StaffRouteModalProps> = ({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-2xs">
             <span className="text-[10px] text-slate-500 block">Transit Distance</span>
-            <div className="text-sm font-bold text-slate-900 font-mono">{distance} meters</div>
+            <div className="text-sm font-bold text-slate-900 font-mono">{distance !== undefined ? `${distance} meters` : '—'}</div>
           </div>
           <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-2xs">
             <span className="text-[10px] text-slate-500 block">Est. Walking Time</span>
-            <div className="text-sm font-bold text-sky-700 font-mono">~{walkSeconds} seconds</div>
+            <div className="text-sm font-bold text-sky-700 font-mono">{walkSeconds !== undefined ? `~${walkSeconds} seconds` : '—'}</div>
           </div>
         </div>
 
@@ -112,7 +112,7 @@ export const StaffRouteModal: React.FC<StaffRouteModalProps> = ({
             {/* Distance Pill */}
             <rect x="150" y="38" width="60" height="18" rx="4" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1" />
             <text x="180" y="50" fill="#0F766E" fontSize="8" textAnchor="middle" fontFamily="monospace" fontWeight="bold">
-              {distance}m Walk
+              {distance !== undefined ? `${distance}m Walk` : '— Walk'}
             </text>
           </svg>
 

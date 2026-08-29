@@ -94,13 +94,16 @@ function scoreProduct(product: CustomerProduct, tokens: string[], raw: string): 
   const hay = `${name} ${brand} ${category}`
   let score = 0
 
-  if (raw.includes(name) || name.includes(raw.trim())) score += 120
+  // Raw substring matching on very short strings produces meaningless hits
+  // (e.g. "hi" is a substring of "chicken") — only trust it once the query
+  // has enough characters to be a real word.
+  if (raw.length >= 3 && (raw.includes(name) || name.includes(raw.trim()))) score += 120
   for (const token of tokens) {
     if (name === token) score += 50
-    else if (name.includes(token)) score += 28
-    if (brand.includes(token)) score += 18
-    if (category.includes(token)) score += 10
-    if (hay.includes(token)) score += 4
+    else if (token.length >= 3 && name.includes(token)) score += 28
+    if (token.length >= 3 && brand.includes(token)) score += 18
+    if (token.length >= 3 && category.includes(token)) score += 10
+    if (token.length >= 3 && hay.includes(token)) score += 4
   }
   // Prefer available items when scores are close
   if (product.isAvailable) score += 3
@@ -224,6 +227,12 @@ export function buildCustomerCopilotEnrichment(
   const q = text.toLowerCase().trim()
   const find = (id: string) => catalog.find((p) => p.id === id)
 
+  // Plain greetings/small talk shouldn't be treated as a product search —
+  // let the LLM reply conversationally instead of attaching a random card.
+  if (/^(hi|hello|hey|yo|hiya|thanks|thank you|thx|ok|okay|k|yes|no|yep|nope|bye|goodbye|sup)[.! ]*$/.test(q)) {
+    return {}
+  }
+
   if (q.includes('emergency') || q.includes('fire') || q.includes('injury') || q.includes('danger') || q.includes('hurt')) {
     return { isEmergencyAlert: true }
   }
@@ -243,7 +252,7 @@ export function buildCustomerCopilotEnrichment(
 
   if (q.includes('backroom') || q.includes('stockroom') || (q.includes('bring') && q.includes('back'))) {
     const matches = findCatalogMatches(text, catalog, 1)
-    const product = matches[0] || find('prod-coke') || catalog.find((p) => p.name.toLowerCase().includes('cola'))
+    const product = matches[0] || catalog.find((p) => p.name.toLowerCase().includes('cola'))
     return {
       showStaffAssistButton: true,
       staffAssistPrefill: {

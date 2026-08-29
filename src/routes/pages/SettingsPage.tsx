@@ -13,6 +13,7 @@ export const SettingsPage: React.FC = () => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [deviceError, setDeviceError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
 
   const counters = [
     { code: 'C1', name: 'Counter C1 (Assisted)' },
@@ -186,8 +187,20 @@ export const SettingsPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end">
-            <Button className="bg-sky-600 hover:bg-sky-700 text-white shadow-2xs font-semibold">
+          <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+            {justSaved && (
+              <span className="text-xs font-semibold text-emerald-700">✓ Configuration saved</span>
+            )}
+            <Button
+              className="bg-sky-600 hover:bg-sky-700 text-white shadow-2xs font-semibold"
+              onClick={() => {
+                // Camera URLs and the preferred label are already persisted to
+                // localStorage as each field changes; this click just confirms
+                // that to the operator rather than performing a separate save.
+                setJustSaved(true)
+                window.setTimeout(() => setJustSaved(false), 2500)
+              }}
+            >
               <Save className="h-4 w-4 mr-2" />
               Save Configuration
             </Button>

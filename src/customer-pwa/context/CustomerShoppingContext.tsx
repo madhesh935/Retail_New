@@ -206,11 +206,10 @@ export const CustomerShoppingProvider: React.FC<{
 
   React.useEffect(() => {
     let cancelled = false
-    setCatalogLoading(true)
     realStoreApi
       .getCustomerCatalog()
       .then((prods) => {
-        if (cancelled || !prods) return
+        if (cancelled || !prods || prods.length === 0) return
         const mapped = prods.map(mapCustomerProduct)
         setCatalog(mapped)
         // Congestion from live shelf / stock pressure in aisle 4 category snacks
@@ -219,7 +218,9 @@ export const CustomerShoppingProvider: React.FC<{
         )
         setIsAisle4Congested(snacksLow)
       })
-      .catch(console.warn)
+      .catch((err) => {
+        console.warn('Customer catalog live fetch failed:', err)
+      })
       .finally(() => {
         if (!cancelled) setCatalogLoading(false)
       })
@@ -717,15 +718,17 @@ export const CustomerShoppingProvider: React.FC<{
     })
 
     // Final checkout counter — coords must match seed nav-checkout-* nodes
-    const waitSeconds =
-      checkoutLanes.find((lane) => lane.code === targetCheckoutCounter)?.waitSeconds ??
-      (targetCheckoutCounter === 'C1' ? 324 : targetCheckoutCounter === 'C3' ? 0 : 70)
+    const matchedLane = checkoutLanes.find((lane) => lane.code === targetCheckoutCounter)
     const checkoutWait =
-      waitSeconds <= 0 ? 'Now' : `${(waitSeconds / 60).toFixed(1)} min`
+      matchedLane == null
+        ? null
+        : matchedLane.waitSeconds <= 0
+          ? 'Now'
+          : `${(matchedLane.waitSeconds / 60).toFixed(1)} min`
     steps.push({
       stepIndex: steps.length + 1,
       title: `Checkout ${targetCheckoutCounter}`,
-      location: `Checkout Lane • ~${checkoutWait} wait`,
+      location: checkoutWait ? `Checkout Lane • ~${checkoutWait} wait` : 'Checkout Lane',
       isCompleted: false,
       mapCoord: checkoutCoord,
     })

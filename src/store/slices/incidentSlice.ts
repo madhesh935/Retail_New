@@ -1,6 +1,5 @@
 import { StateCreator } from 'zustand'
 import { RetailIncident, AiRecommendation, IncidentsAnalyticsPayload } from '@/types'
-import { MOCK_INCIDENTS } from '@/services/mock/mockData'
 
 export interface IncidentSlice {
   incidents: RetailIncident[]
@@ -13,6 +12,7 @@ export interface IncidentSlice {
 
   setIncidentsPayload: (payload: IncidentsAnalyticsPayload) => void
   addIncident: (incident: RetailIncident) => void
+  assignIncidentStaff: (incidentId: string, staffId: string, staffName: string) => void
   updateIncidentStatus: (incidentId: string, status: RetailIncident['status']) => void
   resolveIncident: (incidentId: string) => void
   executeRecommendation: (recId: string) => void
@@ -21,11 +21,11 @@ export interface IncidentSlice {
 }
 
 export const createIncidentSlice: StateCreator<IncidentSlice, [], [], IncidentSlice> = (set) => ({
-  incidents: MOCK_INCIDENTS.incidents || [],
-  recentAiRecommendations: MOCK_INCIDENTS.recentAiRecommendations || [],
-  activeIncidentsCount: MOCK_INCIDENTS.activeCount || 0,
-  criticalIncidentsCount: MOCK_INCIDENTS.criticalCount || 0,
-  highIncidentsCount: MOCK_INCIDENTS.highCount || 0,
+  incidents: [],
+  recentAiRecommendations: [],
+  activeIncidentsCount: 0,
+  criticalIncidentsCount: 0,
+  highIncidentsCount: 0,
   selectedIncidentId: null,
   isLoadingIncidents: false,
 
@@ -48,6 +48,12 @@ export const createIncidentSlice: StateCreator<IncidentSlice, [], [], IncidentSl
         highIncidentsCount: openOnes.filter((i) => i.severity === 'high').length,
       }
     }),
+  assignIncidentStaff: (incidentId, _staffId, staffName) =>
+    set((state) => ({
+      incidents: state.incidents.map((inc) =>
+        inc.id === incidentId ? { ...inc, assignedToStaffName: staffName } : inc
+      ),
+    })),
   updateIncidentStatus: (incidentId, status) =>
     set((state) => {
       const updated = state.incidents.map((inc) => (inc.id === incidentId ? { ...inc, status } : inc))

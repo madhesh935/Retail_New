@@ -14,7 +14,7 @@ import type { StaffMember } from './staffData'
 
 interface WorkloadDistributionCardProps {
   staff?: StaffMember[]
-  onFocusRecommendation?: () => void
+  onFocusRecommendation?: (staff: StaffMember) => void
 }
 
 export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> = ({
@@ -51,8 +51,8 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       name: 'Customer Support',
       percentage: Math.round((deptCounts.Support / total) * 100),
       staffCount: deptCounts.Support,
-      status: 'Live',
-      statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
+      status: deptCounts.Support >= 2 ? 'Adequate' : 'Needs Cover',
+      statusColor: deptCounts.Support >= 2 ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200',
       barColor: '#0369A1',
       icon: Headphones,
     },
@@ -60,12 +60,26 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       name: 'Operations',
       percentage: Math.round((deptCounts.Operations / total) * 100),
       staffCount: deptCounts.Operations,
-      status: 'Live',
-      statusColor: 'bg-slate-100 text-slate-700 border-slate-200',
+      status: deptCounts.Operations >= 2 ? 'Adequate' : 'Needs Cover',
+      statusColor: deptCounts.Operations >= 2 ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200',
       barColor: '#7C3AED',
       icon: ShieldCheck,
     },
   ]
+
+  // Find the most understaffed department, then a real AVAILABLE staff member
+  // from a different, adequately-staffed department who could cross-support.
+  const understaffed = categories.find((c) => c.status !== 'Adequate')
+  const crossSupportStaff = understaffed
+    ? staff.find(
+        (s) =>
+          s.status === 'AVAILABLE' &&
+          !(
+            (understaffed.name === 'Checkout & Billing' && s.department === 'Billing') ||
+            (understaffed.name === 'Inventory Replenishment' && s.department === 'Replenishment')
+          )
+      )
+    : undefined
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[400px] font-sans">
@@ -125,19 +139,35 @@ export const WorkloadDistributionCard: React.FC<WorkloadDistributionCardProps> =
       </div>
 
       {/* Overloaded Department Recommendation Box */}
-      <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs shadow-2xs">
-        <div className="flex items-center justify-between text-amber-800 font-bold text-[11px]">
-          <span className="flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-            <span>Workload Advisory</span>
-          </span>
-          <span className="text-[10px] text-slate-500 font-normal">Shift B</span>
-        </div>
+      {understaffed && (
+        <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs shadow-2xs">
+          <div className="flex items-center justify-between text-amber-800 font-bold text-[11px]">
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+              <span>Workload Advisory</span>
+            </span>
+          </div>
 
-        <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
-          Inventory replenishment workload is high. 1 flexible staff member (S06 Priya Sharma) is available for cross-support.
-        </p>
-      </div>
+          <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+            {understaffed.name} workload is high ({understaffed.staffCount} staff).{' '}
+            {crossSupportStaff
+              ? `${crossSupportStaff.name} (${crossSupportStaff.code}) is available for cross-support.`
+              : 'No available staff member found for cross-support right now.'}
+          </p>
+
+          {crossSupportStaff && onFocusRecommendation && (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => onFocusRecommendation(crossSupportStaff)}
+              className="h-7 text-[11px] gap-1 text-amber-800 border-amber-200 bg-white hover:bg-amber-50"
+            >
+              View {crossSupportStaff.name.split(' ')[0]}
+              <ArrowRight className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Camera3DData } from '../scene/CameraCoverage3D'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface TwinCameraDrawerProps {
   camera: Camera3DData | null
@@ -18,6 +19,13 @@ interface TwinCameraDrawerProps {
 
 export const TwinCameraDrawer: React.FC<TwinCameraDrawerProps> = ({ camera, onClose }) => {
   if (!camera) return null
+
+  const pipelineState =
+    camera.status === 'ONLINE'
+      ? { label: 'Nominal', className: 'text-emerald-700' }
+      : camera.status === 'WARNING'
+        ? { label: 'Degraded', className: 'text-amber-700' }
+        : { label: 'Offline', className: 'text-rose-700' }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -63,8 +71,17 @@ export const TwinCameraDrawer: React.FC<TwinCameraDrawerProps> = ({ camera, onCl
               <span className="flex items-center gap-1 font-bold">
                 <Scan className="h-3 w-3" /> DeepStream Pipeline
               </span>
-              <span className="bg-emerald-600 px-1.5 py-0.5 rounded text-white font-bold">
-                ● LIVE
+              <span
+                className={cn(
+                  'px-1.5 py-0.5 rounded text-white font-bold',
+                  camera.status === 'ONLINE'
+                    ? 'bg-emerald-600'
+                    : camera.status === 'WARNING'
+                      ? 'bg-amber-600'
+                      : 'bg-rose-600'
+                )}
+              >
+                ● {camera.status === 'ONLINE' ? 'LIVE' : camera.status}
               </span>
             </div>
 
@@ -84,8 +101,8 @@ export const TwinCameraDrawer: React.FC<TwinCameraDrawerProps> = ({ camera, onCl
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-slate-500">Edge Pipeline State</span>
-              <span className="text-emerald-700 font-bold flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Nominal
+              <span className={cn('font-bold flex items-center gap-1', pipelineState.className)}>
+                <CheckCircle2 className="h-3.5 w-3.5" /> {pipelineState.label}
               </span>
             </div>
 

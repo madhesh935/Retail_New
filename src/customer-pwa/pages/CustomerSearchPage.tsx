@@ -9,11 +9,21 @@ import {
 import { useCustomerShopping } from '../context/CustomerShoppingContext'
 import { CustomerProductCard } from '../components/CustomerProductCard'
 
+const RECENT_SEARCHES_KEY = 're_customer_recent_searches'
+
 export const CustomerSearchPage: React.FC = () => {
   const { setActiveTab, catalog, searchCatalog } = useCustomerShopping()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OFFERS'>('ALL')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(RECENT_SEARCHES_KEY)
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -22,7 +32,19 @@ export const CustomerSearchPage: React.FC = () => {
 
   const categories = ['ALL', 'Groceries', 'Dairy', 'Snacks', 'Personal Care', 'Beverages']
 
-  const recentSearches = ['Milk', 'Bread', 'Dove Shampoo', 'Cola Zero', 'Biscuits']
+  const recordRecentSearch = (term: string) => {
+    const trimmed = term.trim()
+    if (!trimmed) return
+    setRecentSearches((prev) => {
+      const next = [trimmed, ...prev.filter((t) => t.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6)
+      try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next))
+      } catch {
+        // ignore storage errors
+      }
+      return next
+    })
+  }
 
   const filteredProducts = useMemo(() => {
     let list = searchQuery.trim() ? searchCatalog(searchQuery) : catalog
@@ -60,6 +82,10 @@ export const CustomerSearchPage: React.FC = () => {
             placeholder="Search milk, shampoo, rice..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') recordRecentSearch(searchQuery)
+            }}
+            onBlur={() => recordRecentSearch(searchQuery)}
             className="w-full rounded-2xl border-2 border-slate-200 bg-white py-3 pl-10 pr-9 text-sm text-slate-900 shadow-sm transition-colors placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
           />
           {searchQuery && (
@@ -150,18 +176,25 @@ export const CustomerSearchPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            {recentSearches.map((term) => (
-              <button
-                key={term}
-                type="button"
-                onClick={() => setSearchQuery(term)}
-                className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800"
-              >
-                {term}
-              </button>
-            ))}
-          </div>
+          {recentSearches.length === 0 ? (
+            <p className="text-[11px] text-slate-400 font-medium">No recent searches yet</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {recentSearches.map((term) => (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(term)
+                    recordRecentSearch(term)
+                  }}
+                  className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

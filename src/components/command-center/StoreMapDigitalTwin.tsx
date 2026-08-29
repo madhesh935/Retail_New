@@ -57,8 +57,42 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
   const fmtLane = (q: typeof q1) => q
     ? `${q.currentQueueLength} • ${(q.currentWaitTimeSeconds / 60).toFixed(1)}m`
     : '0 • 0.0m'
-  const bestLane = [q1, q2, q4].filter(Boolean).sort((a, b) => (a!.currentWaitTimeSeconds) - (b!.currentWaitTimeSeconds))[0]
-  const bestLaneStr = bestLane ? `C${bestLane.laneNumber} (~${(bestLane.currentWaitTimeSeconds / 60).toFixed(1)} min wait)` : 'C2 (~1.4m wait)'
+  const bestLane = [q1, q2, q3, q4].filter(Boolean).sort((a, b) => (a!.currentWaitTimeSeconds) - (b!.currentWaitTimeSeconds))[0]
+  const bestLaneStr = bestLane ? `C${bestLane.laneNumber} (~${(bestLane.currentWaitTimeSeconds / 60).toFixed(1)} min wait)` : 'No lanes reporting'
+
+  // Real zone/shelf/staff/incident data — replaces the fixed placeholder
+  // numbers this map used to show regardless of actual store state.
+  const zones = useAppStore((s) => s.zones)
+  const shelfItems = useAppStore((s) => s.shelfItems)
+  const staffMembers = useAppStore((s) => s.staffMembers)
+  const incidents = useAppStore((s) => s.incidents)
+
+  const findZone = (namePart: string) => zones.find((z) => z.name.toLowerCase().includes(namePart.toLowerCase()))
+  const shelvesInZone = (zoneName: string) => shelfItems.filter((sh) => sh.zoneName === zoneName)
+  const STATUS_RANK: Record<string, number> = { OUT_OF_STOCK: 0, CRITICAL: 1, LOW: 2, MISPLACED: 3, OPTIMAL: 4 }
+  const worstShelfIn = (zoneName: string) =>
+    [...shelvesInZone(zoneName)].sort((a, b) => (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9))[0]
+  const healthyPct = (zoneName: string) => {
+    const inZone = shelvesInZone(zoneName)
+    if (!inZone.length) return null
+    return Math.round((inZone.filter((sh) => sh.status === 'OPTIMAL').length / inZone.length) * 100)
+  }
+  const shelfAvailabilityPct = (sh: (typeof shelfItems)[number] | undefined) =>
+    sh && sh.capacityCount > 0 ? Math.round((sh.currentCount / sh.capacityCount) * 100) : null
+  const fmtDwell = (seconds: number) => `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`
+  const staffInZone = (namePart: string) =>
+    staffMembers.find((m) => m.currentZoneName?.toLowerCase().includes(namePart.toLowerCase()) && m.status !== 'ON_BREAK' && m.status !== 'OFF_DUTY')
+  const activeIncident = incidents.find((i) => i.status !== 'RESOLVED' && i.status !== 'DISMISSED')
+
+  const zEntrance = findZone('Entrance')
+  const zProduce = findZone('Produce')
+  const zDairy = findZone('Dairy')
+  const zBeverages = findZone('Beverages')
+  const zElectronics = findZone('Electronics')
+  const produceShelf = worstShelfIn(zProduce?.name || 'Fresh Produce & Fruits')
+  const dairyShelf = worstShelfIn(zDairy?.name || 'Dairy, Bakery & Chilled')
+  const beverageShelf = worstShelfIn(zBeverages?.name || 'Beverages & Snacks Aisle')
+  const produceStaff = staffInZone('Produce')
 
   // Layer toggles state
   const [layers, setLayers] = useState({
@@ -203,7 +237,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 id: 'zone-entrance',
                 name: 'Entrance',
                 code: 'ENTRANCE',
-                data: { occupancy: 14, inflow: 14, outflow: 9, netFlow: '+5', activeLanes: 4, camera: 'CAM-01' },
+                data: { occupancy: zEntrance?.currentOccupancy ?? 0, capacity: zEntrance?.capacity ?? 0, alertCount: zEntrance?.alertCount ?? 0, camera: 'CAM-01' },
               })
             }
             className={cn(
@@ -219,7 +253,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     code: 'C01',
                     name: 'Entrance Camera',
                     zone: 'Store Entrance',
-                    summary: '14 Inflow • 9 Outflow • Net +5',
+                    summary: `${zEntrance?.currentOccupancy ?? 0} shoppers in zone • ${zEntrance?.alertCount ?? 0} alerts`,
                     resolution: '1080p @ 30fps',
                     fps: 30,
                     latencyMs: 14,
@@ -232,18 +266,16 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               </button>
 
               <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono text-slate-600">
-                <span>In: <strong className="text-emerald-700">14</strong></span>
-                <span className="text-slate-300">/</span>
-                <span>Out: <strong className="text-slate-500">9</strong></span>
+                <span>Capacity: <strong className="text-slate-900">{zEntrance?.capacity ?? 0}</strong></span>
                 <span className="text-slate-300">|</span>
-                <span>Net: <strong className="text-sky-700">+5</strong></span>
+                <span>Alerts: <strong className={(zEntrance?.alertCount ?? 0) > 0 ? 'text-rose-700' : 'text-emerald-700'}>{zEntrance?.alertCount ?? 0}</strong></span>
               </div>
             </div>
 
             {layers.people && (
               <div className="flex items-center gap-1 text-[11px] text-sky-700 font-mono font-bold">
                 <span className="h-1.5 w-1.5 rounded-full bg-sky-600" />
-                <span>14 Shoppers</span>
+                <span>{zEntrance?.currentOccupancy ?? 0} Shoppers</span>
               </div>
             )}
           </div>
@@ -259,7 +291,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 id: 'zone-produce',
                 name: 'Produce',
                 code: 'PRODUCE',
-                data: { occupancy: 28, traffic: 'HIGH', avgDwell: '2m 14s', shelfHealth: '92%', staff: 'Liam' },
+                data: { occupancy: zProduce?.currentOccupancy ?? 0, traffic: zProduce?.currentOccupancy && zProduce.capacity ? (zProduce.currentOccupancy / zProduce.capacity > 0.6 ? 'HIGH' : zProduce.currentOccupancy / zProduce.capacity > 0.3 ? 'MEDIUM' : 'LOW') : 'LOW', avgDwell: fmtDwell(zProduce?.avgDwellTimeSeconds ?? 0), shelfHealth: healthyPct(zProduce?.name || 'Fresh Produce & Fruits'), staff: produceStaff?.name },
               })
             }
             className={cn(
@@ -270,7 +302,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
                 <span className="text-xs font-bold text-slate-900 uppercase">Produce</span>
-                <div className="text-[11px] font-mono text-sky-700 font-semibold">28 shoppers • High Traffic</div>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">{zProduce?.currentOccupancy ?? 0} shoppers</div>
               </div>
               <button
                 onClick={(e) =>
@@ -278,7 +310,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     code: 'C02',
                     name: 'Produce Camera',
                     zone: 'Produce',
-                    summary: '28 Shoppers • A1 Gala Apples 92% Healthy',
+                    summary: `${zProduce?.currentOccupancy ?? 0} Shoppers${produceShelf ? ` • ${produceShelf.shelfName || produceShelf.productName} ${shelfAvailabilityPct(produceShelf) ?? '—'}%` : ''}`,
                     resolution: '1080p @ 30fps',
                     fps: 30,
                     latencyMs: 16,
@@ -292,36 +324,36 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             </div>
 
             <div className="text-[11px] font-mono text-slate-500 flex items-center justify-between">
-              <span>Dwell: <strong className="text-slate-900">2m 14s</strong></span>
-              <span>Health: <strong className="text-emerald-700">92%</strong></span>
+              <span>Dwell: <strong className="text-slate-900">{fmtDwell(zProduce?.avgDwellTimeSeconds ?? 0)}</strong></span>
+              <span>Health: <strong className="text-emerald-700">{healthyPct(zProduce?.name || 'Fresh Produce & Fruits') ?? '—'}%</strong></span>
             </div>
 
-            {layers.shelves && (
+            {layers.shelves && produceShelf && (
               <div
                 onClick={(e) => {
                   e.stopPropagation()
                   handleFixtureClick({
                     type: 'shelf',
-                    id: 'shelf-a1',
-                    name: 'A1 Gala Apples',
-                    code: 'A1',
-                    data: { sku: 'Organic Royal Gala Apples', compliance: 92, stock: 38, status: 'OPTIMAL' },
+                    id: `shelf-${produceShelf.shelfId}`,
+                    name: produceShelf.shelfName || produceShelf.productName,
+                    code: produceShelf.shelfId,
+                    data: { sku: produceShelf.productName, compliance: produceShelf.planogramComplianceScore, stock: produceShelf.currentCount, status: produceShelf.status },
                   })
                 }}
                 className={cn(
                   'rounded-lg border bg-slate-50 p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
-                  selectedFixtureId === 'shelf-a1' ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50' : 'border-slate-200 hover:border-emerald-300'
+                  selectedFixtureId === `shelf-${produceShelf.shelfId}` ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50' : 'border-slate-200 hover:border-emerald-300'
                 )}
               >
-                <span className="font-semibold text-slate-900">A1 Gala Apples</span>
-                <span className="text-emerald-700 font-mono font-bold text-[11px]">92% In-Stock</span>
+                <span className="font-semibold text-slate-900">{produceShelf.shelfId} {produceShelf.productName}</span>
+                <span className="text-emerald-700 font-mono font-bold text-[11px]">{shelfAvailabilityPct(produceShelf) ?? '—'}% In-Stock</span>
               </div>
             )}
 
-            {layers.staff && (
+            {layers.staff && produceStaff && (
               <div className="flex items-center gap-1 text-[10.5px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 w-fit font-mono font-semibold">
                 <UserCheck className="h-3 w-3 text-purple-600" />
-                <span>Liam • Restocking</span>
+                <span>{produceStaff.name} • {produceStaff.currentTaskDescription || produceStaff.status}</span>
               </div>
             )}
           </div>
@@ -334,7 +366,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 id: 'zone-dairy',
                 name: 'Dairy & Bakery',
                 code: 'DAIRY',
-                data: { occupancy: 22, traffic: 'MEDIUM', avgDwell: '1m 48s', primaryIssue: 'C2 Whole Milk OUT OF STOCK' },
+                data: { occupancy: zDairy?.currentOccupancy ?? 0, avgDwell: fmtDwell(zDairy?.avgDwellTimeSeconds ?? 0), primaryIssue: dairyShelf && dairyShelf.status !== 'OPTIMAL' ? `${dairyShelf.shelfId} ${dairyShelf.productName} ${dairyShelf.status}` : 'None' },
               })
             }
             className={cn(
@@ -345,57 +377,43 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
                 <span className="text-xs font-bold text-slate-900 uppercase">Dairy & Bakery</span>
-                <div className="text-[11px] font-mono text-sky-700 font-semibold">22 shoppers • Medium Traffic</div>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">{zDairy?.currentOccupancy ?? 0} shoppers</div>
               </div>
               <div className="text-right font-mono text-[10px] text-slate-500">
-                Dwell: <strong className="text-slate-900">1m 48s</strong>
+                Dwell: <strong className="text-slate-900">{fmtDwell(zDairy?.avgDwellTimeSeconds ?? 0)}</strong>
               </div>
             </div>
 
-            {layers.shelves && (
+            {layers.shelves && dairyShelf && (
               <div
                 onClick={(e) => {
                   e.stopPropagation()
                   handleFixtureClick({
                     type: 'shelf',
-                    id: 'shelf-c2',
-                    name: 'C2 Whole Milk',
-                    code: 'C2',
-                    data: { sku: 'Organic Whole Milk', status: 'CRITICAL', visibleUnits: 0, backroomStock: 12 },
+                    id: `shelf-${dairyShelf.shelfId}`,
+                    name: `${dairyShelf.shelfId} ${dairyShelf.productName}`,
+                    code: dairyShelf.shelfId,
+                    data: { sku: dairyShelf.productName, status: dairyShelf.status, visibleUnits: dairyShelf.currentCount, backroomStock: dairyShelf.backroomUnits ?? 0 },
                   })
                 }}
                 className={cn(
-                  'rounded-lg border bg-rose-50/30 p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
-                  selectedFixtureId === 'shelf-c2' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50' : 'border-rose-200 hover:border-rose-400'
+                  'rounded-lg border p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
+                  dairyShelf.status === 'OPTIMAL' ? 'bg-slate-50 border-slate-200 hover:border-slate-300' : 'bg-rose-50/30 border-rose-200 hover:border-rose-400',
+                  selectedFixtureId === `shelf-${dairyShelf.shelfId}` && 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50'
                 )}
               >
                 <div>
-                  <span className="font-bold text-slate-900 block">C2 Whole Milk</span>
-                  <span className="text-[10px] text-slate-500 font-mono">Backroom: 12 units</span>
+                  <span className="font-bold text-slate-900 block">{dairyShelf.shelfId} {dairyShelf.productName}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Backroom: {dairyShelf.backroomUnits ?? 0} units</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-rose-700 font-mono font-bold text-[11px] block">OUT OF STOCK</span>
-                  <span className="text-[10px] text-rose-700 font-mono underline font-semibold">[ Refill ]</span>
+                  <span className={cn('font-mono font-bold text-[11px] block', dairyShelf.status === 'OPTIMAL' ? 'text-emerald-700' : 'text-rose-700')}>
+                    {dairyShelf.status.replace(/_/g, ' ')}
+                  </span>
+                  {dairyShelf.status !== 'OPTIMAL' && (
+                    <span className="text-[10px] text-rose-700 font-mono underline font-semibold">[ Refill ]</span>
+                  )}
                 </div>
-              </div>
-            )}
-
-            {layers.shelves && (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleFixtureClick({
-                    type: 'shelf',
-                    id: 'shelf-d1',
-                    name: 'D1 Sourdough',
-                    code: 'D1',
-                    data: { sku: 'Artisan Sourdough', status: 'OPTIMAL', stock: 16 },
-                  })
-                }}
-                className="px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between text-slate-700 hover:border-slate-300 shadow-2xs font-semibold"
-              >
-                <span>D1 Sourdough</span>
-                <span className="text-emerald-700 font-mono text-[11px] font-bold">98% Available</span>
               </div>
             )}
           </div>
@@ -408,7 +426,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 id: 'zone-beverages',
                 name: 'Beverages',
                 code: 'BEVERAGES',
-                data: { occupancy: 18, demand: 'HIGH', highRiskSku: 'Zero Sugar Cola', predictedStockout: '9 min' },
+                data: { occupancy: zBeverages?.currentOccupancy ?? 0, highRiskSku: beverageShelf?.productName, predictedStockout: beverageShelf?.minutesUntilStockout != null ? `${beverageShelf.minutesUntilStockout} min` : undefined },
               })
             }
             className={cn(
@@ -419,7 +437,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
                 <span className="text-xs font-bold text-slate-900 uppercase">Beverages</span>
-                <div className="text-[11px] font-mono text-sky-700 font-semibold">18 shoppers • High Demand</div>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">{zBeverages?.currentOccupancy ?? 0} shoppers</div>
               </div>
               <button
                 onClick={(e) =>
@@ -427,7 +445,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                     code: 'C03',
                     name: 'Beverages Camera',
                     zone: 'Beverages',
-                    summary: '18 Shoppers • B4 Zero Cola 17% • Spill Alert Cooler 2',
+                    summary: `${zBeverages?.currentOccupancy ?? 0} Shoppers${beverageShelf ? ` • ${beverageShelf.shelfId} ${beverageShelf.productName} ${shelfAvailabilityPct(beverageShelf) ?? '—'}%` : ''}`,
                     resolution: '1080p @ 29fps',
                     fps: 29,
                     latencyMs: 15,
@@ -440,50 +458,55 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
               </button>
             </div>
 
-            {layers.shelves && (
+            {layers.shelves && beverageShelf && (
               <div
                 onClick={(e) => {
                   e.stopPropagation()
                   handleFixtureClick({
                     type: 'shelf',
-                    id: 'shelf-b4',
-                    name: 'B4 Zero Cola',
-                    code: 'B4',
-                    data: { sku: 'Zero Sugar Cola', availability: '17%', visibleUnits: 3, backroom: 14, predictedStockout: '9 min' },
+                    id: `shelf-${beverageShelf.shelfId}`,
+                    name: `${beverageShelf.shelfId} ${beverageShelf.productName}`,
+                    code: beverageShelf.shelfId,
+                    data: { sku: beverageShelf.productName, availability: `${shelfAvailabilityPct(beverageShelf) ?? '—'}%`, visibleUnits: beverageShelf.currentCount, backroom: beverageShelf.backroomUnits ?? 0, predictedStockout: beverageShelf.minutesUntilStockout != null ? `${beverageShelf.minutesUntilStockout} min` : 'N/A' },
                   })
                 }}
                 className={cn(
-                  'rounded-lg border bg-rose-50/30 p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
-                  selectedFixtureId === 'shelf-b4' ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50' : 'border-rose-200 hover:border-rose-400'
+                  'rounded-lg border p-2 text-xs flex items-center justify-between transition-all cursor-pointer shadow-2xs',
+                  beverageShelf.status === 'OPTIMAL' ? 'bg-slate-50 border-slate-200 hover:border-slate-300' : 'bg-rose-50/30 border-rose-200 hover:border-rose-400',
+                  selectedFixtureId === `shelf-${beverageShelf.shelfId}` && 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50'
                 )}
               >
                 <div>
-                  <span className="font-bold text-slate-900 block">B4 Zero Cola</span>
-                  <span className="text-[10px] text-slate-500 font-mono">17% left • Empty in 9m</span>
+                  <span className="font-bold text-slate-900 block">{beverageShelf.shelfId} {beverageShelf.productName}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {shelfAvailabilityPct(beverageShelf) ?? '—'}% left{beverageShelf.minutesUntilStockout != null ? ` • Empty in ${beverageShelf.minutesUntilStockout}m` : ''}
+                  </span>
                 </div>
-                <span className="text-[10px] text-rose-700 font-mono underline font-semibold cursor-pointer">[ Replenish ]</span>
+                {beverageShelf.status !== 'OPTIMAL' && (
+                  <span className="text-[10px] text-rose-700 font-mono underline font-semibold cursor-pointer">[ Replenish ]</span>
+                )}
               </div>
             )}
 
-            {layers.alerts && (
+            {layers.alerts && activeIncident && (
               <div
                 onClick={(e) => {
                   e.stopPropagation()
                   handleFixtureClick({
                     type: 'incident',
-                    id: 'inc-spill-cooler2',
-                    name: 'Cooler 2 Spill',
-                    code: 'INC-SPILL',
-                    data: { location: 'Cooler 2 Floor', assignedTo: 'Sarah Jenkins', status: 'IN_PROGRESS' },
+                    id: activeIncident.id,
+                    name: activeIncident.title,
+                    code: activeIncident.id,
+                    data: { location: activeIncident.zoneName, assignedTo: activeIncident.assignedToStaffName || 'Unassigned', status: activeIncident.status },
                   })
                 }}
                 className="flex items-center justify-between text-[11px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 hover:border-amber-400 cursor-pointer shadow-2xs font-semibold"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 min-w-0">
                   <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0" />
-                  <span>Cooler 2 Spill</span>
+                  <span className="truncate">{activeIncident.title}</span>
                 </div>
-                <span className="text-[10px] text-amber-800 font-sans">Sarah assigned</span>
+                <span className="text-[10px] text-amber-800 font-sans shrink-0">{activeIncident.assignedToStaffName || 'Unassigned'}</span>
               </div>
             )}
           </div>
@@ -499,7 +522,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 id: 'zone-elec',
                 name: 'Electronics',
                 code: 'ELEC',
-                data: { occupancy: 12, avgDwell: '4m 05s', engagement: 'HIGH', security: 'NORMAL' },
+                data: { occupancy: zElectronics?.currentOccupancy ?? 0, avgDwell: fmtDwell(zElectronics?.avgDwellTimeSeconds ?? 0), alertCount: zElectronics?.alertCount ?? 0 },
               })
             }
             className={cn(
@@ -510,16 +533,19 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
             <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div>
                 <span className="text-xs font-bold text-slate-900 uppercase">Electronics</span>
-                <div className="text-[11px] font-mono text-sky-700 font-semibold">12 shoppers • Peak Dwell</div>
+                <div className="text-[11px] font-mono text-sky-700 font-semibold">{zElectronics?.currentOccupancy ?? 0} shoppers</div>
               </div>
-              <div className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-bold">
-                Security Normal
+              <div className={cn(
+                'text-[10px] font-mono px-2 py-0.5 rounded-md border font-bold',
+                (zElectronics?.alertCount ?? 0) > 0 ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+              )}>
+                {(zElectronics?.alertCount ?? 0) > 0 ? 'Security Alert' : 'Security Normal'}
               </div>
             </div>
 
             <div className="text-[11px] font-mono text-slate-500 flex items-center justify-between">
-              <span>Avg Dwell: <strong className="text-slate-900">4m 05s</strong></span>
-              <span>Alerts: <strong className="text-slate-900">0</strong></span>
+              <span>Avg Dwell: <strong className="text-slate-900">{fmtDwell(zElectronics?.avgDwellTimeSeconds ?? 0)}</strong></span>
+              <span>Alerts: <strong className="text-slate-900">{zElectronics?.alertCount ?? 0}</strong></span>
             </div>
           </div>
 
@@ -531,7 +557,7 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                 id: 'zone-checkout-plaza',
                 name: 'Checkout',
                 code: 'CHECKOUT',
-                data: { lanesCount: 4, bestCheckout: 'C2 (~1.4 min wait)' },
+                data: { lanesCount: [q1, q2, q3, q4].filter(Boolean).length, bestCheckout: bestLaneStr },
               })
             }
             className={cn(
@@ -548,7 +574,10 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                       code: 'C05',
                       name: 'Checkout Camera',
                       zone: 'Checkout',
-                      summary: 'C1 Congested (8 in queue • 5.4m wait) • C2 Healthy',
+                      summary: [q1, q2, q3, q4]
+                        .filter((q): q is NonNullable<typeof q> => !!q)
+                        .map((q) => `C${q.laneNumber} ${q.status === 'CONGESTED' ? 'Congested' : 'Healthy'} (${q.currentQueueLength} in queue)`)
+                        .join(' • ') || 'No lanes reporting',
                       resolution: '1080p @ 30fps',
                       fps: 30,
                       latencyMs: 13,
@@ -620,16 +649,21 @@ export const StoreMapDigitalTwin: React.FC<StoreMapDigitalTwinProps> = ({ onSele
                       id: 'lane-3',
                       name: 'Counter C3',
                       code: 'C3',
-                      data: { queueLength: 0, waitTime: '0 min', status: 'STANDBY' },
+                      data: { queueLength: q3?.currentQueueLength || 0, waitTime: `${((q3?.currentWaitTimeSeconds || 0) / 60).toFixed(1)} min`, status: q3?.status || 'STANDBY', staffName: q3?.assignedStaffName },
                     })
                   }}
                   className={cn(
-                    'p-1.5 rounded-lg bg-amber-50/30 border text-center transition-colors cursor-pointer shadow-2xs',
-                    selectedFixtureId === 'lane-3' ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50' : 'border-amber-200 hover:border-amber-300'
+                    'p-1.5 rounded-lg border text-center transition-colors cursor-pointer shadow-2xs',
+                    q3?.status === 'STANDBY' || q3?.status === 'CLOSED' ? 'bg-amber-50/30 border-amber-200 hover:border-amber-300' : 'bg-slate-50 border-slate-200 hover:border-slate-300',
+                    selectedFixtureId === 'lane-3' && 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50'
                   )}
                 >
-                  <div className="text-[9.5px] text-amber-800 font-medium">C3 Standby</div>
-                  <div className="text-amber-800 font-bold text-[10px]">[ Open C3 ]</div>
+                  <div className="text-[9.5px] text-amber-800 font-medium">C3{q3?.assignedStaffName ? ` (${q3.assignedStaffName.split(' ')[0]})` : ''}</div>
+                  {q3?.status === 'STANDBY' || q3?.status === 'CLOSED' ? (
+                    <div className="text-amber-800 font-bold text-[10px]">[ Open C3 ]</div>
+                  ) : (
+                    <div className={cn('font-bold text-xs', q3?.status === 'CONGESTED' ? 'text-rose-700' : 'text-emerald-700')}>{fmtLane(q3)}</div>
+                  )}
                 </div>
 
                 {/* C4 */}

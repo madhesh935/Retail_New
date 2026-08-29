@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { CopilotRobotIcon } from './components/CopilotRobotIcon'
 import { useAppStore } from '@/store/useAppStore'
 import { useStoreData } from '@/hooks/useStoreData'
+import { useWebSocket } from '@/hooks/useWebSocket'
 import { StaffTopBar } from './components/StaffTopBar'
 import { StaffBottomNav, StaffNavTab } from './components/StaffBottomNav'
 import { StaffTodayPage } from './pages/StaffTodayPage'
@@ -26,6 +27,10 @@ import { CustomerHelpRequest } from '@/store/slices/customerRequestSlice'
 export const StaffPwaLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  useWebSocket()
+  // Poll stays as a fallback/heartbeat; DATA_CHANGED push (e.g. a new
+  // customer assist request) now updates this app instantly instead of
+  // waiting up to 8s for the next poll.
   useStoreData({ pollMs: 8000 })
 
   const { authenticatedStaff, attendanceState, syncTaskStatus } = useAppStore()

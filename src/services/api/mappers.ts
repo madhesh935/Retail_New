@@ -42,6 +42,9 @@ export function mapShelfToItem(raw: any): ShelfItem {
     confidenceScore: Number(raw.confidenceScore ?? 0.9),
     cameraSourceId: String(raw.cameraCode ?? raw.cameraSourceId ?? ''),
     backroomUnits: Number(raw.backroomUnits ?? 0),
+    aisle: raw.aisle ? String(raw.aisle) : undefined,
+    minutesUntilStockout: raw.minutesUntilStockout ?? null,
+    depletionRatePerHour: raw.depletionRatePerHour ?? null,
   }
 }
 
@@ -79,8 +82,8 @@ export function buildInventoryAnalytics(items: ShelfItem[]): InventoryAnalytics 
         sku: i.sku,
         productName: i.productName,
         currentStock: i.currentCount,
-        depletionRatePerHour: Math.max(1, Math.round((i.capacityCount - i.currentCount) / 4)),
-        minutesUntilStockout: i.currentCount <= 0 ? 0 : Math.max(5, i.currentCount * 12),
+        depletionRatePerHour: i.depletionRatePerHour ?? Math.max(1, Math.round((i.capacityCount - i.currentCount) / 4)),
+        minutesUntilStockout: i.minutesUntilStockout ?? (i.currentCount <= 0 ? 0 : Math.max(5, i.currentCount * 12)),
       })),
   }
 }

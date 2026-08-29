@@ -1,13 +1,13 @@
 import React from 'react'
 import { CheckCircle2, ShieldCheck, ArrowRight, Clock } from 'lucide-react'
-import { CANONICAL_RESOLUTIONS, ResolvedIncident } from './incidentData'
+import { ResolvedIncident } from './incidentData'
 
 interface ResolvedIncidentShowcaseProps {
   resolutions?: ResolvedIncident[]
 }
 
 export const ResolvedIncidentShowcase: React.FC<ResolvedIncidentShowcaseProps> = ({
-  resolutions = CANONICAL_RESOLUTIONS,
+  resolutions = [],
 }) => {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none font-sans">

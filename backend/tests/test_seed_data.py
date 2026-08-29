@@ -62,7 +62,7 @@ class RetailSeedTests(unittest.TestCase):
                 StaffTaskModel: 9,
                 IncidentModel: 10,
                 Camera: 6,
-                InventoryBatchModel: 9,
+                InventoryBatchModel: 12,
                 MarkdownCandidateModel: 3,
                 WasteRecordModel: 3,
                 RetailMetricModel: 22,

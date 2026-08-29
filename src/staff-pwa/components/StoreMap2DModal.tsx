@@ -327,11 +327,21 @@ export const StoreMap2DModal: React.FC<StoreMap2DModalProps> = ({ isOpen, onClos
         }
 
         if (!cancelled) {
+          // Real backend route lookup failed — synthesize a path from the
+          // actual staff/destination coordinates rather than fabricating one.
+          // Distance is computed from those real coordinates (converted from
+          // grid units via the layout's real metersPerUnit), not a fixed guess.
+          const metersPerUnit = storeLayout?.metersPerUnit || 0.12
+          const AVERAGE_WALK_SPEED_M_PER_S = 1.4
+          const gridDistance = Math.hypot(destinationCoords.x - staffStartCoords.x, destinationCoords.y - staffStartCoords.y)
+          const fallbackDistanceMeters = Math.round(gridDistance * metersPerUnit)
+          const fallbackSeconds = Math.max(5, Math.round(fallbackDistanceMeters / AVERAGE_WALK_SPEED_M_PER_S))
+
           setRoute({
             planId: `staff-nav-${Date.now()}`,
             storeId: 'store-01',
-            totalDistanceMeters: 32,
-            estimatedSeconds: 38,
+            totalDistanceMeters: fallbackDistanceMeters,
+            estimatedSeconds: fallbackSeconds,
             stops: [
               {
                 sequence: 0,
@@ -351,8 +361,8 @@ export const StoreMap2DModal: React.FC<StoreMap2DModalProps> = ({ isOpen, onClos
               {
                 fromStopIndex: 0,
                 toStopIndex: 1,
-                distanceMeters: 32,
-                estimatedSeconds: 38,
+                distanceMeters: fallbackDistanceMeters,
+                estimatedSeconds: fallbackSeconds,
                 svgPath: `M ${staffStartCoords.x} ${staffStartCoords.y} L ${staffStartCoords.x} 295 L 300 295 L 300 ${destinationCoords.y} L ${destinationCoords.x} ${destinationCoords.y}`,
                 arrivalInstruction: `Meet customer at ${destinationCoords.aisle} (Shelf ${effectiveShelfCode})`,
                 segments: [

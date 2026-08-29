@@ -21,7 +21,6 @@ export const CustomerMiniRoutePreview: React.FC<Props> = ({
     navigationPlan,
     setIsNavigating,
     setActiveTab,
-    useCrowdAlternativeRoute,
     navigateToProduct,
     setRouteFocusProductIds,
   } = useCustomerShopping()
@@ -41,17 +40,13 @@ export const CustomerMiniRoutePreview: React.FC<Props> = ({
     ? `${Math.round(productRoute.distanceMeters)} m`
     : plan
       ? `${Math.round(plan.totalDistanceMeters)} m`
-      : useCrowdAlternativeRoute
-        ? '146 m'
-        : '182 m'
+      : 'Calculating…'
 
   const timeLabel = productRoute?.estimatedMinutes
     ? `${productRoute.estimatedMinutes} min`
     : plan
       ? `${plan.estimatedMinutes} min`
-      : useCrowdAlternativeRoute
-        ? '8 min'
-        : '11 min'
+      : 'Calculating…'
 
   const heading =
     title ||

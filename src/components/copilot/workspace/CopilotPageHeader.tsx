@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store/useAppStore'
+import { cn } from '@/lib/utils'
 
 interface CopilotPageHeaderProps {
   onGenerateBrief: () => void
@@ -19,7 +20,6 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
   onGenerateBrief,
   onToggleHistory,
 }) => {
-  const isDemoMode = useAppStore((s) => s.isDemoMode)
   const connectionState = useAppStore((s) => s.connectionState)
   const isConnected = connectionState === 'CONNECTED'
 
@@ -33,8 +33,21 @@ export const CopilotPageHeader: React.FC<CopilotPageHeaderProps> = ({
               <Sparkles className="h-4 w-4 text-sky-600" />
               <span>Store AI Copilot</span>
             </h1>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200">
-              Live Operations Assistant
+            <span
+              className={cn(
+                'text-[10px] font-semibold px-2 py-0.5 rounded-md border flex items-center gap-1.5',
+                isConnected
+                  ? 'bg-sky-50 text-sky-700 border-sky-200'
+                  : 'bg-slate-50 text-slate-500 border-slate-200'
+              )}
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                {isConnected && (
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60 animate-ping" />
+                )}
+                <span className={cn('relative inline-flex rounded-full h-1.5 w-1.5', isConnected ? 'bg-sky-500' : 'bg-slate-400')} />
+              </span>
+              {isConnected ? 'Live Operations Assistant' : 'Disconnected'}
             </span>
           </div>
         </div>

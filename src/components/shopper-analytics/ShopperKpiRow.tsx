@@ -1,13 +1,4 @@
 import React from 'react'
-import {
-  Users,
-  Footprints,
-  Clock,
-  Flame,
-  Compass,
-  Sparkles,
-  ArrowUpRight,
-} from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { formatNumber } from '@/lib/utils'
 import type { CanonicalZoneAnalytics } from './shopperData'
@@ -19,10 +10,12 @@ interface ShopperKpiRowProps {
 export const ShopperKpiRow: React.FC<ShopperKpiRowProps> = ({ shoppingZones = [] }) => {
   const currentOccupancy = useAppStore((s) => s.currentOccupancy)
   const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall)
+  const peakOccupancyToday = useAppStore((s) => s.peakOccupancyToday)
   const storeInfo = useAppStore((s) => s.storeInfo)
 
   const maxCap = storeInfo?.maxCapacity || 1
   const occupancyPct = Math.round((currentOccupancy / maxCap) * 100)
+  const peakPct = Math.round((peakOccupancyToday / maxCap) * 100)
 
   const busiestZone = [...shoppingZones].sort((a, b) => b.visitors - a.visitors)[0]
   const highestEngagementZone = [...shoppingZones].sort(
@@ -43,9 +36,8 @@ export const ShopperKpiRow: React.FC<ShopperKpiRowProps> = ({ shoppingZones = []
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">Total store entries</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center text-[11px] text-emerald-700 font-semibold gap-0.5">
-          <ArrowUpRight className="h-3.5 w-3.5" />
-          <span>+12% vs yesterday</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center text-[11px] text-slate-600 font-semibold gap-0.5">
+          <span>Peak today: {formatNumber(peakOccupancyToday)}</span>
         </div>
       </div>
 
@@ -63,9 +55,8 @@ export const ShopperKpiRow: React.FC<ShopperKpiRowProps> = ({ shoppingZones = []
             {occupancyPct}% of {maxCap} capacity
           </div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center text-[11px] text-emerald-700 font-semibold gap-0.5">
-          <ArrowUpRight className="h-3.5 w-3.5" />
-          <span>+14% vs typical hr</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center text-[11px] text-slate-600 font-semibold gap-0.5">
+          <span>{peakPct}% of capacity at peak</span>
         </div>
       </div>
 
@@ -77,30 +68,29 @@ export const ShopperKpiRow: React.FC<ShopperKpiRowProps> = ({ shoppingZones = []
         </div>
         <div>
           <div className="text-2xl font-bold text-slate-900 tracking-tight">
-            18.4 <span className="text-xs font-normal text-slate-500">min</span>
+            {storeInfo?.averageDwellTimeMinutes ?? 0} <span className="text-xs font-normal text-slate-500">min</span>
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">Full store journey</div>
         </div>
-        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center text-[11px] text-emerald-700 font-semibold gap-0.5">
-          <ArrowUpRight className="h-3.5 w-3.5" />
-          <span>+2.1 min vs average</span>
+        <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-slate-600 font-semibold">
+          Live store average
         </div>
       </div>
 
-      {/* 4. Peak Hour */}
+      {/* 4. Peak Occupancy Today */}
       <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="text-[11px] font-medium text-slate-500">Peak Hour</span>
+          <span className="text-[11px] font-medium text-slate-500">Peak Occupancy Today</span>
           <span className="h-2 w-2 rounded-full bg-amber-500" />
         </div>
         <div>
           <div className="text-2xl font-bold text-amber-700 tracking-tight">
-            18:00–19:00
+            {formatNumber(peakOccupancyToday)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">420 visitors / hr</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">shoppers at busiest point</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 text-[11px] text-amber-800 font-semibold">
-          Evening peak expected
+          Currently at {occupancyPct}% of that peak
         </div>
       </div>
 

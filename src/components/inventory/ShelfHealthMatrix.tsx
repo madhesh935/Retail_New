@@ -15,46 +15,26 @@ export interface ShelfMatrixItem {
   posStock: number
   sku: string
   predictedDepletion: string
+  consumptionRateLabel: string
+  replenishmentDeadline: string
+  cameraCode: string
+  confidenceScore: number
 }
 
 interface ShelfHealthMatrixProps {
+  items: ShelfMatrixItem[]
   selectedShelfId: string
   onSelectShelf: (shelf: ShelfMatrixItem) => void
 }
 
-export const SHELF_MATRIX_ITEMS: ShelfMatrixItem[] = [
-  // Aisle A (Produce & Fruits)
-  { id: 'shelf-a1', code: 'A1', name: 'Produce Tier A1', aisle: 'Aisle A • Fresh Produce', status: 'HEALTHY', availability: 92, visibleUnits: 38, posStock: 80, sku: 'Royal Gala Organic Apples', predictedDepletion: '4.5 hrs' },
-  { id: 'shelf-a2', code: 'A2', name: 'Produce Tier A2', aisle: 'Aisle A • Fresh Produce', status: 'HEALTHY', availability: 88, visibleUnits: 24, posStock: 50, sku: 'Valencia Seedless Oranges', predictedDepletion: '3.8 hrs' },
-  { id: 'shelf-a3', code: 'A3', name: 'Produce Tier A3', aisle: 'Aisle A • Fresh Produce', status: 'LOW', availability: 42, visibleUnits: 12, posStock: 30, sku: 'Organic Hass Avocados', predictedDepletion: '~45 min' },
-  { id: 'shelf-a4', code: 'A4', name: 'Produce Tier A4', aisle: 'Aisle A • Fresh Produce', status: 'HEALTHY', availability: 94, visibleUnits: 30, posStock: 60, sku: 'Honeycrisp Farm Apples', predictedDepletion: '5.2 hrs' },
-
-  // Aisle B (Beverages & Soft Drinks)
-  { id: 'shelf-b1', code: 'B1', name: 'Beverage Gondola B1', aisle: 'Aisle B • Cold Beverages', status: 'HEALTHY', availability: 90, visibleUnits: 32, posStock: 70, sku: 'Sparkling Mineral Water 1L', predictedDepletion: '6.0 hrs' },
-  { id: 'shelf-b2', code: 'B2', name: 'Beverage Gondola B2', aisle: 'Aisle B • Cold Beverages', status: 'CRITICAL', availability: 19, visibleUnits: 4, posStock: 16, sku: 'Electrolyte Sports Drink Blue', predictedDepletion: '~14 min' },
-  { id: 'shelf-b3', code: 'B3', name: 'Beverage Gondola B3', aisle: 'Aisle B • Cold Beverages', status: 'HEALTHY', availability: 85, visibleUnits: 26, posStock: 55, sku: 'Zero Calorie Green Tea 500ml', predictedDepletion: '4.0 hrs' },
-  { id: 'shelf-b4', code: 'B4', name: 'Beverage Gondola B4', aisle: 'Aisle B • Cold Beverages', status: 'CRITICAL', availability: 17, visibleUnits: 3, posStock: 14, sku: 'Sparkling Cola Zero 12-Pack', predictedDepletion: '~9 min' },
-
-  // Aisle C (Dairy, Chilled & Bakery)
-  { id: 'shelf-c1', code: 'C1', name: 'Dairy Chiller Wall C1', aisle: 'Aisle C • Dairy & Bakery', status: 'LOW', availability: 38, visibleUnits: 8, posStock: 25, sku: 'Greek Yogurt Vanilla 32oz', predictedDepletion: '~38 min' },
-  { id: 'shelf-c2', code: 'C2', name: 'Dairy Chiller Wall C2', aisle: 'Aisle C • Dairy & Bakery', status: 'OUT_OF_STOCK', availability: 0, visibleUnits: 0, posStock: 24, sku: 'Horizon Organic Whole Milk 1Gal', predictedDepletion: 'Depleted' },
-  { id: 'shelf-c3', code: 'C3', name: 'Artisan Bakery Rack C3', aisle: 'Aisle C • Dairy & Bakery', status: 'HEALTHY', availability: 96, visibleUnits: 22, posStock: 30, sku: 'Stoneground Sourdough Loaf', predictedDepletion: '5.5 hrs' },
-  { id: 'shelf-c4', code: 'C4', name: 'Artisan Bakery Rack C4', aisle: 'Aisle C • Dairy & Bakery', status: 'HEALTHY', availability: 91, visibleUnits: 18, posStock: 24, sku: 'French Brioche Rolls 6pk', predictedDepletion: '4.8 hrs' },
-
-  // Aisle D (Snacks, Breakfast & Pantry)
-  { id: 'shelf-d1', code: 'D1', name: 'Snacks Endcap D1', aisle: 'Aisle D • Snacks & Pantry', status: 'HEALTHY', availability: 88, visibleUnits: 28, posStock: 60, sku: 'Organic Tortilla Sea Salt Chips', predictedDepletion: '4.2 hrs' },
-  { id: 'shelf-d2', code: 'D2', name: 'Snacks Gondola D2', aisle: 'Aisle D • Snacks & Pantry', status: 'LOW', availability: 24, visibleUnits: 5, posStock: 18, sku: 'Whole Roasted Almonds 200g', predictedDepletion: '~17 min' },
-  { id: 'shelf-d3', code: 'D3', name: 'Breakfast Cereal D3', aisle: 'Aisle D • Snacks & Pantry', status: 'HEALTHY', availability: 92, visibleUnits: 20, posStock: 40, sku: 'Crunchy Honey Oat Granola', predictedDepletion: '6.5 hrs' },
-  { id: 'shelf-d4', code: 'D4', name: 'Snacks Gondola D4', aisle: 'Aisle D • Snacks & Pantry', status: 'LOW', availability: 31, visibleUnits: 8, posStock: 22, sku: 'Kettle Cooked Potato Chips', predictedDepletion: '~28 min' },
-]
-
 export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
+  items,
   selectedShelfId,
   onSelectShelf,
 }) => {
   const [filter, setFilter] = useState<ShelfFilterType>('ALL')
 
-  const filteredItems = SHELF_MATRIX_ITEMS.filter((item) => {
+  const filteredItems = items.filter((item) => {
     if (filter === 'ALL') return true
     if (filter === 'HEALTHY') return item.status === 'HEALTHY'
     if (filter === 'LOW') return item.status === 'LOW'
@@ -63,12 +43,7 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
     return true
   })
 
-  const aisles = [
-    'Aisle A • Fresh Produce',
-    'Aisle B • Cold Beverages',
-    'Aisle C • Dairy & Bakery',
-    'Aisle D • Snacks & Pantry',
-  ]
+  const aisles = Array.from(new Set(items.map((item) => item.aisle)))
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[460px] font-sans">
@@ -80,7 +55,7 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 tracking-wide">
-              Shelf Health Matrix (A1 — D4)
+              Shelf Health Matrix ({items.length} shelves)
             </h3>
           </div>
         </div>
@@ -114,6 +89,9 @@ export const ShelfHealthMatrix: React.FC<ShelfHealthMatrixProps> = ({
 
       {/* Grouped Aisle Matrix Grid */}
       <div className="py-3 space-y-3.5 flex-1 flex flex-col justify-start">
+        {items.length === 0 && (
+          <div className="text-xs text-slate-400 text-center py-8">Loading shelf data…</div>
+        )}
         {aisles.map((aisleName) => {
           const aisleShelves = filteredItems.filter((s) => s.aisle === aisleName)
           if (aisleShelves.length === 0) return null

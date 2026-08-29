@@ -11,11 +11,14 @@ export const StaffTopBar: React.FC<StaffTopBarProps> = ({
   onOpenNotifications,
   storeName = 'Chennai Central • Store 01',
 }) => {
-  const { operationalStatus, setOperationalStatus, customerRequests, pendingTasks } = useAppStore()
+  const { operationalStatus, setOperationalStatus, customerRequests, pendingTasks, connectionState } = useAppStore()
 
   const urgentCount =
     customerRequests.filter((r) => r.status === 'REQUESTED').length +
     pendingTasks.filter((t) => t.priority === 'CRITICAL' && t.status === 'ASSIGNED').length
+
+  const isConnected = connectionState === 'CONNECTED'
+  const isReconnecting = connectionState === 'RECONNECTING' || connectionState === 'CONNECTING'
 
   return (
     <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 flex items-center justify-between shrink-0 z-30 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
@@ -29,9 +32,21 @@ export const StaffTopBar: React.FC<StaffTopBarProps> = ({
             <span className="text-xs font-bold text-slate-900 tracking-tight leading-tight">Retail Edge</span>
             <span className="text-[10px] text-slate-400 font-medium font-mono">Store 01</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Edge Gateway Online</span>
+          <div
+            className={`flex items-center gap-1.5 text-[10px] font-semibold ${
+              isConnected ? 'text-emerald-700' : isReconnecting ? 'text-amber-700' : 'text-rose-700'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isConnected
+                  ? 'bg-emerald-500 animate-pulse'
+                  : isReconnecting
+                  ? 'bg-amber-500 animate-pulse'
+                  : 'bg-rose-500'
+              }`}
+            />
+            <span>{isConnected ? 'Edge Gateway Online' : isReconnecting ? 'Connecting…' : 'Edge Gateway Offline'}</span>
           </div>
         </div>
       </div>

@@ -1,11 +1,24 @@
 import React, { useMemo } from 'react'
 import ReactECharts from 'echarts-for-react'
+import { useMetricHistory } from '@/hooks/useMetricHistory'
+
+const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 export const FootfallTrendEChart: React.FC = () => {
+  const { points, isLoading } = useMetricHistory('FOOTFALL', 60000)
+
+  const sorted = useMemo(
+    () => [...points].sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()),
+    [points]
+  )
+
   const option = useMemo(() => {
+    const labels = sorted.map((p) => fmtTime(p.recordedAt))
+    const values = sorted.map((p) => p.value)
+
     return {
       backgroundColor: 'transparent',
-      grid: { top: 25, right: 15, bottom: 20, left: 35 },
+      grid: { top: 15, right: 15, bottom: 20, left: 40 },
       tooltip: {
         trigger: 'axis',
         backgroundColor: '#FFFFFF',
@@ -13,19 +26,11 @@ export const FootfallTrendEChart: React.FC = () => {
         textStyle: { color: '#0F172A', fontFamily: 'system-ui, sans-serif', fontSize: 11 },
         extraCssText: 'box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-radius: 8px;',
       },
-      legend: {
-        data: ['Today', 'Yesterday'],
-        top: 0,
-        right: 0,
-        textStyle: { color: '#64748B', fontSize: 10, fontFamily: 'system-ui, sans-serif' },
-        itemWidth: 10,
-        itemHeight: 5,
-      },
       xAxis: {
         type: 'category',
-        data: ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+        data: labels,
         axisLine: { lineStyle: { color: '#CBD5E1' } },
-        axisLabel: { color: '#64748B', fontSize: 10, fontFamily: 'system-ui, sans-serif' },
+        axisLabel: { color: '#64748B', fontSize: 9, fontFamily: 'system-ui, sans-serif' },
       },
       yAxis: {
         type: 'value',
@@ -36,36 +41,44 @@ export const FootfallTrendEChart: React.FC = () => {
         {
           name: 'Today',
           type: 'line',
+          data: values,
           smooth: true,
-          data: [120, 240, 310, 420, 520, 380],
-          lineStyle: { color: '#0F766E', width: 2 },
-          areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: 'rgba(2, 132, 199, 0.2)' },
-                { offset: 1, color: 'rgba(2, 132, 199, 0.0)' },
-              ],
-            },
-          },
-        },
-        {
-          name: 'Yesterday',
-          type: 'line',
-          smooth: true,
-          data: [100, 210, 280, 370, 460, 340],
-          lineStyle: { color: '#94A3B8', width: 1.5, type: 'dashed' },
+          symbol: 'circle',
+          symbolSize: 6,
+          lineStyle: { color: '#0284C7', width: 2 },
+          itemStyle: { color: '#0284C7' },
+          areaStyle: { color: 'rgba(2,132,199,0.08)' },
         },
       ],
     }
-  }, [])
+  }, [sorted])
+
+  // Honest "vs earlier today" delta — no fabricated "vs Yesterday" comparison
+  // since the app doesn't retain a prior day's readings yet.
+  const changeLabel = useMemo(() => {
+    if (sorted.length < 2) return null
+    const first = sorted[0].value
+    const last = sorted[sorted.length - 1].value
+    if (first <= 0) return null
+    const pct = Math.round(((last - first) / first) * 100)
+    return `${pct >= 0 ? '+' : ''}${pct}% since ${fmtTime(sorted[0].recordedAt)}`
+  }, [sorted])
+
+  if (!isLoading && points.length < 2) {
+    return (
+      <div className="w-full h-44 flex items-center justify-center text-center px-4">
+        <p className="text-[11px] text-slate-400">
+          Collecting footfall history — trend appears once a few readings are recorded.
+        </p>
+      </div>
+    )
+  }
 
   return (
-    <div className="w-full h-44">
+    <div className="w-full h-44 relative">
+      {changeLabel && (
+        <span className="absolute top-0 right-0 text-[10px] font-semibold text-emerald-700 z-10">{changeLabel}</span>
+      )}
       <ReactECharts option={option} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'canvas' }} />
     </div>
   )

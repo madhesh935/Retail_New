@@ -14,7 +14,6 @@ export const TelemetryPulse: React.FC<TelemetryPulseProps> = ({
 }) => {
   const lastTimestamp = useAppStore((s) => s.lastTelemetryTimestamp)
   const connectionState = useAppStore((s) => s.connectionState)
-  const isDemoMode = useAppStore((s) => s.isDemoMode)
   const [, setTick] = useState(0)
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export const TelemetryPulse: React.FC<TelemetryPulseProps> = ({
       {showText && (
         <div className="flex items-center gap-1.5 text-slate-600 shrink-0 whitespace-nowrap font-sans">
           <span className="text-sky-700 font-bold uppercase tracking-wider text-[10px] font-mono">
-            {isDemoMode ? 'SCENARIO MODE' : 'LIVE TELEMETRY'}
+            LIVE TELEMETRY
           </span>
           <span className="text-slate-300">•</span>
           <span className="text-slate-500 text-[11px]">{timeAgo}</span>

@@ -14,6 +14,7 @@ import {
 import { Checkout3DData } from '../scene/CheckoutLanes3D'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { useAppStore } from '@/store/useAppStore'
 
 interface TwinCheckoutDrawerProps {
   checkout: Checkout3DData | null
@@ -28,10 +29,23 @@ export const TwinCheckoutDrawer: React.FC<TwinCheckoutDrawerProps> = ({
 }) => {
   const navigate = useNavigate()
   const [isLaneActivated, setIsLaneActivated] = useState(false)
+  const queues = useAppStore((s) => s.queues)
+  const staffMembers = useAppStore((s) => s.staffMembers)
 
   if (!checkout) return null
 
   const isCritical = checkout.congestionRisk === 'CRITICAL' || checkout.status === 'CONGESTED'
+  const standbyLane = queues.find((q) => q.status === 'STANDBY' && q.id !== checkout.id)
+  const standbyCode = standbyLane ? `C${standbyLane.laneNumber}` : checkout.code
+  const availableStaff = staffMembers.find((m) => m.status === 'ON_DUTY_AVAILABLE')
+  const confidencePct = Math.min(99, Math.max(15, checkout.queueLength * 12))
+  const recommendationText = standbyLane
+    ? `Open Standby Counter ${standbyCode} and reallocate ${
+        availableStaff ? `${availableStaff.name} (${availableStaff.employeeId})` : 'an available associate'
+      } to register immediately.`
+    : availableStaff
+      ? `Reallocate ${availableStaff.name} (${availableStaff.employeeId}) to support ${checkout.name} immediately.`
+      : 'No standby counter or available associate found — escalate to a supervisor.'
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -116,16 +130,16 @@ export const TwinCheckoutDrawer: React.FC<TwinCheckoutDrawerProps> = ({
                 <Sparkles className="h-3.5 w-3.5 text-sky-600" />
                 <span>Autonomous Queue Rebalance</span>
               </span>
-              <span className="text-[10px] text-sky-700 font-mono">92% Conf</span>
+              <span className="text-[10px] text-sky-700 font-mono">{confidencePct}% Conf</span>
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              Open Standby Counter C3 and reallocate Associate Marcus Vance (EMP-402) to register immediately.
+              {recommendationText}
             </p>
 
             {isLaneActivated ? (
               <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-center flex items-center justify-center gap-1.5 text-xs shadow-2xs">
-                <CheckCircle2 className="h-4 w-4" /> Standby Counter C3 Activated
+                <CheckCircle2 className="h-4 w-4" /> Standby Counter {standbyCode} Activated
               </div>
             ) : (
               <Button
@@ -135,7 +149,7 @@ export const TwinCheckoutDrawer: React.FC<TwinCheckoutDrawerProps> = ({
                 className="w-full gap-1 text-xs bg-sky-600 hover:bg-sky-700 text-white font-semibold"
               >
                 <UserCheck className="h-3.5 w-3.5" />
-                <span>Open Counter C3 & Assign Staff</span>
+                <span>Open Counter {standbyCode} & Assign Staff</span>
               </Button>
             )}
           </div>

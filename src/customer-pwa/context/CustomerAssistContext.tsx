@@ -92,7 +92,13 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
     }
   }, [])
 
-  // Poll live assist task status from DB while request is open
+  // Poll live assist task status from DB while request is open.
+  // `lastKnownStatusRef` tracks status across ticks so the toast decision can
+  // happen outside the setState updater below — calling another component's
+  // setState (showToast) from inside a state updater is impure and can fire
+  // while React is mid-render of a different component.
+  const lastKnownStatusRef = useRef<CustomerAssistStatus | null>(null)
+
   useEffect(() => {
     clearPoll()
     const requestId = activeRequest?.id
@@ -105,12 +111,17 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
       return
     }
 
+    lastKnownStatusRef.current = activeRequest?.status ?? null
+
     const poll = async () => {
       try {
         const live = await realStoreApi.getCustomerAssistStatus(requestId)
+        const nextStatus = mapBackendStatusToUi(live.status, live.assigned_staff_name)
+        const prevStatus = lastKnownStatusRef.current
+        lastKnownStatusRef.current = nextStatus
+
         setActiveRequest((prev) => {
           if (!prev || prev.id !== requestId) return prev
-          const nextStatus = mapBackendStatusToUi(live.status, live.assigned_staff_name)
           const liveMessages = (Array.isArray(live.customer_request_data?.messages)
             ? live.customer_request_data.messages
             : []
@@ -164,7 +175,7 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
               ? {
                   name: live.assigned_staff_name,
                   role: 'Floor Assistance',
-                  estimatedArrival: '~2 min',
+                  estimatedArrival: 'Associate notified — on the way',
                   avatarColor: '#06B6D4',
                 }
               : prev.assignedAssociate,
@@ -172,14 +183,16 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
             timeline,
           }
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
-          if (nextStatus === 'ON_THE_WAY' && prev.status !== 'ON_THE_WAY') {
-            showToast(`${live.assigned_staff_name || 'Associate'} is on the way`)
-          }
-          if (nextStatus === 'COMPLETED' && prev.status !== 'COMPLETED') {
-            showToast('✓ Assistance completed')
-          }
           return updated
         })
+
+        if (prevStatus !== null && nextStatus !== prevStatus) {
+          if (nextStatus === 'ON_THE_WAY') {
+            showToast(`${live.assigned_staff_name || 'Associate'} is on the way`)
+          } else if (nextStatus === 'COMPLETED') {
+            showToast('✓ Assistance completed')
+          }
+        }
       } catch (err) {
         console.warn('Assist status poll failed', err)
       }
@@ -261,7 +274,7 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
         ? {
             name: assignedName,
             role: 'Floor Assistance',
-            estimatedArrival: '~3 min',
+            estimatedArrival: 'Associate notified — on the way',
             avatarColor: '#06B6D4',
           }
         : undefined,
@@ -335,13 +348,19 @@ export const CustomerAssistProvider: React.FC<{ children: React.ReactNode; store
   const confirmMetStaff = () => {
     if (!activeRequest) return
     if (activeRequest.id.startsWith('assist-')) {
-      void realStoreApi.updateTaskStatus(activeRequest.id, 'COMPLETED')
+      void realStoreApi
+        .updateTaskStatus(activeRequest.id, 'COMPLETED')
+        .catch((error) => console.warn('Could not sync assist completion', error))
     }
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const resolvedInMinutes = Math.max(
+      0,
+      Math.round((Date.now() - new Date(activeRequest.createdAt).getTime()) / 60000)
+    )
     saveRequestState({
       ...activeRequest,
       status: 'COMPLETED',
-      resolvedInMinutes: 3,
+      resolvedInMinutes,
       timeline: [
         ...activeRequest.timeline,
         {

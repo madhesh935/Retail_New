@@ -86,8 +86,8 @@ export const OutOfStockAlertModal: React.FC = () => {
                       name: alt.name,
                       shelf: alt.shelf,
                       price: alt.price,
-                      isAvailable: true,
-                      stockCount: 8,
+                      isAvailable: alt.isAvailable !== false,
+                      isLowStock: false,
                     }
                     replaceProductInList(outOfStockProduct.id, newProd)
                   }}

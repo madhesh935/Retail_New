@@ -59,6 +59,7 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
   const [isWasteModalOpen, setIsWasteModalOpen] = useState(false)
   const [shelfObservation, setShelfObservation] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [scanRequiredNotice, setScanRequiredNotice] = useState(false)
 
   // In-line Expiry Verification Audit State
   const [isVerifyingExpiry, setIsVerifyingExpiry] = useState(false)
@@ -318,13 +319,26 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
           </button>
           <button
             type="button"
-            onClick={() => setIsPriceCheckOpen(true)}
+            onClick={() => {
+              if (scannedProduct || scannedBatch) {
+                setIsPriceCheckOpen(true)
+              } else {
+                setScanRequiredNotice(true)
+                setTimeout(() => setScanRequiredNotice(false), 2500)
+              }
+            }}
             className="py-2 px-1 text-[11px] font-bold rounded-xl text-center text-slate-500 hover:bg-slate-100 cursor-pointer"
           >
             Price Tag
           </button>
         </div>
       </div>
+
+      {scanRequiredNotice && (
+        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-semibold text-amber-800 text-center">
+          Scan a product or batch first to check its price tag.
+        </div>
+      )}
 
       {/* Camera Viewport Scanner Card */}
       <div className="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-3">
@@ -468,7 +482,7 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">At-Risk Qty</span>
               <span className="text-xs font-bold text-amber-600 font-mono mt-0.5 block">
-                {batchAssessment?.atRiskQuantity || 8} units
+                {typeof batchAssessment?.atRiskQuantity === 'number' ? `${batchAssessment.atRiskQuantity} units` : '—'}
               </span>
             </div>
           </div>
@@ -775,36 +789,36 @@ export const StaffScanPage: React.FC<StaffScanPageProps> = ({ onOpenMap, onOpenR
       />
 
       <PriceCheckModal
-        isOpen={isPriceCheckOpen}
+        isOpen={isPriceCheckOpen && Boolean(scannedProduct || scannedBatch)}
         onClose={() => setIsPriceCheckOpen(false)}
-        productName={scannedProduct?.name || scannedBatch?.productName || 'Fresh Whole Milk 1L'}
-        sku={scannedProduct?.sku || scannedBatch?.productSku || 'SKU-DAIRY-101'}
-        systemPrice={scannedProduct?.unitPrice || scannedBatch?.unitPrice || 64}
-        shelfTagPrice={scannedProduct?.unitPrice || scannedBatch?.unitPrice || 64}
+        productName={scannedProduct?.name || scannedBatch?.productName || 'Unknown Product'}
+        sku={scannedProduct?.sku || scannedBatch?.productSku || '—'}
+        systemPrice={scannedProduct?.unitPrice || scannedBatch?.unitPrice || 0}
+        shelfTagPrice={scannedProduct?.unitPrice || scannedBatch?.unitPrice || 0}
         onReportMismatch={(shelfPrice) =>
           dispatchRealTask({
             title: `Correct price label: ${scannedProduct?.name || scannedBatch?.productName || 'Product'}`,
             type: 'FACILITY',
             priority: 'HIGH',
-            target_location: `${scannedProduct?.category || scannedBatch?.category || 'Dairy'} · Shelf ${scannedProduct?.shelfCode || scannedBatch?.shelfCode || 'C2'}`,
-            description: `Shelf label ₹${shelfPrice} does not match POS price ₹${scannedProduct?.unitPrice || scannedBatch?.unitPrice || 64}. Print and replace label.`,
+            target_location: `${scannedProduct?.category || scannedBatch?.category || 'Unknown'} · Shelf ${scannedProduct?.shelfCode || scannedBatch?.shelfCode || '—'}`,
+            description: `Shelf label ₹${shelfPrice} does not match POS price ₹${scannedProduct?.unitPrice || scannedBatch?.unitPrice || 0}. Print and replace label.`,
             assigned_staff_id: authenticatedStaff?.id,
           })
         }
       />
 
       <RecordWasteModal
-        isOpen={isWasteModalOpen}
+        isOpen={isWasteModalOpen && Boolean(scannedBatch)}
         onClose={() => setIsWasteModalOpen(false)}
-        productName={scannedBatch?.productName || 'Fresh Whole Milk 1L'}
+        productName={scannedBatch?.productName || 'Unknown Product'}
         productId={scannedBatch?.productId}
-        productSku={scannedBatch?.productSku || 'SKU-DAIRY-101'}
+        productSku={scannedBatch?.productSku || '—'}
         batchId={scannedBatch?.id}
-        batchNumber={scannedBatch?.batchNumber || 'MILK-0827'}
-        shelfCode={scannedBatch?.shelfCode || 'C2'}
+        batchNumber={scannedBatch?.batchNumber}
+        shelfCode={scannedBatch?.shelfCode || '—'}
         defaultQuantity={1}
         maxQuantity={scannedBatch?.quantity}
-        unitCost={scannedBatch?.unitCost || 42}
+        unitCost={scannedBatch?.unitCost || 0}
       />
     </div>
   )

@@ -125,7 +125,7 @@ export const CustomerAssistStatusPage: React.FC = () => {
             </h2>
             <p className="text-xs text-slate-600 font-medium mt-1">
               {isCompleted
-                ? `Assistance concluded in ${activeRequest.resolvedInMinutes || 3} min`
+                ? `Assistance concluded in ${activeRequest.resolvedInMinutes ?? '—'} min`
                 : isCancelled
                 ? 'You cancelled this assistance request.'
                 : isArrived
@@ -181,7 +181,7 @@ export const CustomerAssistStatusPage: React.FC = () => {
 
             {associate.estimatedArrival && !isArrived && !isCompleted && (
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block font-medium">Estimated Arrival</span>
+                <span className="text-[10px] text-slate-400 block font-medium">Status</span>
                 <span className="text-xs font-bold text-cyan-800 flex items-center gap-1 justify-end">
                   <Clock className="h-3 w-3" />
                   {associate.estimatedArrival}

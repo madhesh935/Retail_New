@@ -18,7 +18,7 @@ export const StaffAttendancePage: React.FC = () => {
 
   const [isCheckingIn, setIsCheckingIn] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [checkInTimestamp, setCheckInTimestamp] = useState('13:58')
+  const [checkInTimestamp, setCheckInTimestamp] = useState('--:--')
 
   // Dynamic Live Clock
   const [timeStr, setTimeStr] = useState('')
@@ -105,7 +105,7 @@ export const StaffAttendancePage: React.FC = () => {
             </div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-xs text-slate-500 font-medium">Active Shift Window</span>
-              <span className="text-xs font-bold text-slate-900 font-mono">{authenticatedStaff.shift} · 14:00–22:00</span>
+              <span className="text-xs font-bold text-slate-900 font-mono">{authenticatedStaff.shift}</span>
             </div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-xs text-slate-500 font-medium">Assigned Zone</span>
@@ -186,14 +186,14 @@ export const StaffAttendancePage: React.FC = () => {
           {/* Time with Seconds */}
           <div className="flex items-baseline justify-center gap-1">
             <span className="text-5xl font-black text-slate-900 tracking-tight font-mono">
-              {timeStr || '13:58'}
+              {timeStr || '--:--'}
             </span>
             <span className="text-lg font-bold text-blue-600 font-mono">
               :{secondsStr || '00'}
             </span>
           </div>
 
-          <div className="text-xs font-semibold text-slate-500">{dateStr || 'Thursday, Aug 27, 2026'}</div>
+          <div className="text-xs font-semibold text-slate-500">{dateStr || '—'}</div>
         </div>
 
         {/* Shift & Assignment Details Card */}
@@ -217,7 +217,7 @@ export const StaffAttendancePage: React.FC = () => {
             <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Shift Timing</span>
               <span className="font-bold text-slate-900 font-mono mt-0.5 block">
-                {authenticatedStaff.shift} · 14:00–22:00
+                {authenticatedStaff.shift}
               </span>
             </div>
             <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">

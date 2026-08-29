@@ -21,7 +21,7 @@ const CATEGORIES = [
 export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ isOpen, onClose }) => {
   const { authenticatedStaff, fetchStoreData } = useAppStore()
   const [category, setCategory] = useState('SHELF')
-  const [location, setLocation] = useState('Aisle 4 (Beverages)')
+  const [location, setLocation] = useState('')
   const [description, setDescription] = useState('')
   const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -31,12 +31,12 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ isOpen, onCl
   useEffect(() => {
     if (!isOpen) return
     setCategory('SHELF')
-    setLocation('Aisle 4 (Beverages)')
+    setLocation(authenticatedStaff?.zoneName || '')
     setDescription('')
     setEvidencePhoto(null)
     setIsSubmitted(false)
     setSubmitError(null)
-  }, [isOpen])
+  }, [isOpen, authenticatedStaff?.zoneName])
 
   if (!isOpen || typeof document === 'undefined') return null
 

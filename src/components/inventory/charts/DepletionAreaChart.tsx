@@ -3,10 +3,12 @@ import ReactECharts from 'echarts-for-react'
 
 interface DepletionAreaChartProps {
   currentAvailability: number
+  predictedStockoutLabel?: string
 }
 
 export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
   currentAvailability,
+  predictedStockoutLabel,
 }) => {
   const option = useMemo(() => {
     return {
@@ -34,7 +36,7 @@ export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
       },
       xAxis: {
         type: 'category',
-        data: ['14:00', '15:00', '16:00', '17:00', '18:00 (Now)', '+9m (Pred 0%)'],
+        data: ['Now', predictedStockoutLabel ? `Predicted (${predictedStockoutLabel})` : 'Predicted stockout'],
         axisLine: { lineStyle: { color: '#E2E8F0' } },
         axisLabel: {
           color: '#64748B',
@@ -58,8 +60,8 @@ export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
         {
           name: 'Shelf Availability',
           type: 'line',
-          smooth: true,
-          data: [90, 72, 53, 32, currentAvailability, 0],
+          smooth: false,
+          data: [currentAvailability, 0],
           showSymbol: true,
           symbolSize: 6,
           lineStyle: { color: '#F43F5E', width: 2.5 },
@@ -79,7 +81,7 @@ export const DepletionAreaChart: React.FC<DepletionAreaChartProps> = ({
         },
       ],
     }
-  }, [currentAvailability])
+  }, [currentAvailability, predictedStockoutLabel])
 
   return (
     <div className="w-full h-40">

@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   Search,
   ShoppingBag,
   Navigation,
-  Tag,
   ArrowRight,
   HandHelping,
 } from 'lucide-react'
@@ -14,9 +13,8 @@ import { AssistanceStatusCard } from '../components/assist/AssistanceStatusCard'
 import { CustomerSaveTodaySection } from '../components/CustomerSaveTodaySection'
 
 export const CustomerHomePage: React.FC = () => {
-  const { shoppingList, setActiveTab, setIsNavigating, catalog } = useCustomerShopping()
+  const { shoppingList, setActiveTab, catalog } = useCustomerShopping()
   const { openHelpSheet } = useCustomerAssist()
-  const [showOffersModal, setShowOffersModal] = useState(false)
 
   const listCount = shoppingList.length
 
@@ -141,56 +139,6 @@ export const CustomerHomePage: React.FC = () => {
           ))}
         </div>
       </div>
-
-      {/* Offers Dialog Modal */}
-      {showOffersModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
-                <Tag className="h-4 w-4" />
-                <span>Today's In-Store Offers</span>
-              </div>
-              <button
-                onClick={() => setShowOffersModal(false)}
-                className="text-xs text-slate-400 hover:text-slate-700 font-semibold cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="space-y-2.5 text-xs text-slate-700">
-              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200">
-                <span className="font-extrabold text-amber-900 block">🥛 Dairy Specials</span>
-                <p className="text-[11px] text-amber-800 mt-0.5">
-                  Buy 2 Amul Pasteurised Salted Butter (500g), get 10% instant discount at checkout.
-                </p>
-              </div>
-
-              <div className="p-3 bg-cyan-50 rounded-2xl border border-cyan-200">
-                <span className="font-extrabold text-cyan-900 block">🧴 Personal Care Combo</span>
-                <p className="text-[11px] text-cyan-800 mt-0.5">
-                  Dove Daily Moisture 340ml with free sample pack on Shelf D4.
-                </p>
-              </div>
-
-              <div className="p-3 bg-purple-50 rounded-2xl border border-purple-200">
-                <span className="font-extrabold text-purple-900 block">🥨 Snacks Fiesta</span>
-                <p className="text-[11px] text-purple-800 mt-0.5">
-                  Britannia NutriChoice 250g at flat ₹65 in Aisle 4.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowOffersModal(false)}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

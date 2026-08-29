@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.models import StaffModel, StaffTaskModel
+from app.services.broadcast import broadcast_change
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime, timezone
 import uuid
 
 router = APIRouter()
@@ -112,6 +114,7 @@ def update_staff_task_details(
     details.update(payload.details)
     task.details = details
     db.commit()
+    broadcast_change("staff_tasks", task_id=task.id)
     return {"status": "success", "task_id": task.id, "details": details}
 
 @router.post("/tasks")
@@ -122,7 +125,6 @@ def create_staff_task(payload: CreateTaskPayload, db: Session = Depends(get_db))
         staff = db.query(StaffModel).filter(StaffModel.id == payload.assigned_staff_id).first()
         if staff:
             assigned_name = staff.name
-            staff.status = "BUSY"
             staff.active_task_id = task_id
     
     new_task = StaffTaskModel(
@@ -130,9 +132,10 @@ def create_staff_task(payload: CreateTaskPayload, db: Session = Depends(get_db))
         title=payload.title,
         type=payload.type,
         priority=payload.priority or "MEDIUM",
-        status="PENDING" if not payload.assigned_staff_id else "IN_PROGRESS",
+        status="PENDING" if not payload.assigned_staff_id else "ASSIGNED",
         assigned_staff_id=payload.assigned_staff_id,
         assigned_staff_name=assigned_name,
+        assigned_at=datetime.utcnow() if payload.assigned_staff_id else None,
         target_location=payload.target_location,
         description=payload.description,
         customer_request_data=payload.customer_request_data
@@ -140,6 +143,9 @@ def create_staff_task(payload: CreateTaskPayload, db: Session = Depends(get_db))
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
+    broadcast_change("staff_tasks", task_id=new_task.id)
+    if payload.assigned_staff_id:
+        broadcast_change("staff", staff_id=payload.assigned_staff_id)
     return {"status": "success", "task_id": new_task.id, "title": new_task.title}
 
 @router.patch("/tasks/{task_id}/status")
@@ -156,6 +162,9 @@ def update_task_status(task_id: str, payload: UpdateTaskStatusPayload, db: Sessi
             staff.status = "BUSY"
             staff.active_task_id = task_id
 
+    if task.assigned_staff_id and not task.assigned_at and payload.status != "PENDING":
+        task.assigned_at = datetime.utcnow()
+
     task.status = payload.status
     if payload.blocker_reason or payload.blocker_note or payload.blocker_photo:
         details = dict(task.details or {})
@@ -167,7 +176,6 @@ def update_task_status(task_id: str, payload: UpdateTaskStatusPayload, db: Sessi
             details["blocker_photo"] = payload.blocker_photo
         task.details = details
     if payload.status == "COMPLETED":
-        from datetime import datetime, timezone
         task.completed_at = datetime.now(timezone.utc)
         if task.assigned_staff_id:
             staff = db.query(StaffModel).filter(StaffModel.id == task.assigned_staff_id).first()
@@ -190,6 +198,8 @@ def update_task_status(task_id: str, payload: UpdateTaskStatusPayload, db: Sessi
 
     db.commit()
     db.refresh(task)
+    broadcast_change("staff_tasks", task_id=task.id)
+    broadcast_change("staff")
     return {
         "status": "success",
         "task_id": task.id,

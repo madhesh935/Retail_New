@@ -6,22 +6,44 @@ import {
   Clock,
   Activity,
   AlertOctagon,
-  ArrowUpRight,
-  ArrowDownRight,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { formatNumber } from '@/lib/utils'
 
 export const KpiSummaryRow: React.FC = () => {
-  const currentOccupancy = useAppStore((s) => s.currentOccupancy) || 179
-  const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall) || 2006
+  const currentOccupancy = useAppStore((s) => s.currentOccupancy)
+  const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall)
+  const peakOccupancyToday = useAppStore((s) => s.peakOccupancyToday)
   const storeInfo = useAppStore((s) => s.storeInfo)
-  const systemAvgWaitSec = useAppStore((s) => s.systemAverageWaitTimeSeconds) || 144
-  const activeIncidentsCount = useAppStore((s) => s.activeIncidentsCount) || 5
+  const systemAvgWaitSec = useAppStore((s) => s.systemAverageWaitTimeSeconds)
+  const queues = useAppStore((s) => s.queues)
+  const inventoryAnalytics = useAppStore((s) => s.inventoryAnalytics)
+  const overallHealth = useAppStore((s) => s.overallHealth)
+  const activeAnomalies = useAppStore((s) => s.activeAnomalies)
+  const activeIncidentsCount = useAppStore((s) => s.activeIncidentsCount)
+  const criticalIncidentsCount = useAppStore((s) => s.criticalIncidentsCount)
+  const highIncidentsCount = useAppStore((s) => s.highIncidentsCount)
+  const incidents = useAppStore((s) => s.incidents)
 
   const waitMinutes = (systemAvgWaitSec / 60).toFixed(1)
-  const maxCap = storeInfo?.maxCapacity || 350
+  const maxCap = storeInfo?.maxCapacity || 1
   const occupancyPct = Math.round((currentOccupancy / maxCap) * 100)
+
+  const activeLanes = Array.isArray(queues) ? queues.filter((q) => q.status !== 'CLOSED') : []
+  const congestedLanes = activeLanes.filter((q) => q.status === 'CONGESTED')
+
+  const totalShelves = inventoryAnalytics.totalShelfSections
+  const shelvesNeedingAttention = inventoryAnalytics.activeStockoutsCount + inventoryAnalytics.criticalLowStockCount
+  const shelfHealthPct = totalShelves > 0
+    ? Math.round(((totalShelves - shelvesNeedingAttention) / totalShelves) * 100)
+    : 100
+
+  const storeHealthScore = Math.max(
+    0,
+    100 - activeAnomalies.length * 15 - (overallHealth === 'CRITICAL' ? 40 : overallHealth === 'WARNING' ? 15 : 0)
+  )
+
+  const topOpenIncident = incidents.find((i) => i.status !== 'RESOLVED' && i.status !== 'DISMISSED')
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 font-sans">
@@ -46,10 +68,7 @@ export const KpiSummaryRow: React.FC = () => {
         </div>
 
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-          <span className="text-emerald-700 flex items-center gap-0.5 font-semibold">
-            <ArrowUpRight className="h-3 w-3" /> +14%
-          </span>
-          <span className="text-slate-400 text-[10px]">vs typical</span>
+          <span className="text-slate-600 font-semibold">Peak today: {peakOccupancyToday}</span>
         </div>
       </div>
 
@@ -69,15 +88,14 @@ export const KpiSummaryRow: React.FC = () => {
             {formatNumber(todaysTotalFootfall)}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            Peak: 18:00 – 19:00
+            Today&apos;s total entries
           </div>
         </div>
 
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-          <span className="text-emerald-700 flex items-center gap-0.5 font-semibold">
-            <ArrowUpRight className="h-3 w-3" /> +8.4%
+          <span className="text-slate-600 font-semibold">
+            Avg dwell: {storeInfo?.averageDwellTimeMinutes ?? 0} min
           </span>
-          <span className="text-slate-400 text-[10px]">vs yesterday</span>
         </div>
       </div>
 
@@ -94,17 +112,19 @@ export const KpiSummaryRow: React.FC = () => {
 
         <div className="my-1">
           <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight">
-            86%
+            {shelfHealthPct}%
           </div>
           <div className="text-[11px] text-amber-700 font-semibold mt-0.5 flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            3 need attention
+            {shelvesNeedingAttention} need attention
           </div>
         </div>
 
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <span>Compliance</span>
-          <span className="text-slate-900 font-semibold font-mono">91%</span>
+          <span className="text-slate-900 font-semibold font-mono">
+            {Math.round(inventoryAnalytics.overallPlanogramCompliance)}%
+          </span>
         </div>
       </div>
 
@@ -125,15 +145,14 @@ export const KpiSummaryRow: React.FC = () => {
             <span className="text-xs text-slate-500 font-normal">min</span>
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            4 active counters
+            {activeLanes.length} active counters
           </div>
         </div>
 
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-          <span className="text-emerald-700 flex items-center gap-0.5 font-semibold">
-            <ArrowDownRight className="h-3 w-3" /> -18%
+          <span className={congestedLanes.length > 0 ? 'text-rose-700 font-semibold' : 'text-emerald-700 font-semibold'}>
+            {congestedLanes.length > 0 ? `${congestedLanes.length} congested` : 'No congestion'}
           </span>
-          <span className="text-slate-400 text-[10px]">vs yesterday</span>
         </div>
       </div>
 
@@ -150,18 +169,18 @@ export const KpiSummaryRow: React.FC = () => {
 
         <div className="my-1">
           <div className="text-[1.65rem] font-extrabold font-mono text-slate-900 tracking-tight flex items-baseline gap-1">
-            <span>91</span>
+            <span>{storeHealthScore}</span>
             <span className="text-xs text-slate-400 font-normal">/ 100</span>
           </div>
           <div className="text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Healthy
+            {overallHealth === 'HEALTHY' ? 'Healthy' : overallHealth === 'WARNING' ? 'Warning' : 'Critical'}
           </div>
         </div>
 
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <span>SLA</span>
-          <span className="text-emerald-700 font-semibold">Optimal</span>
+          <span>Anomalies</span>
+          <span className="text-slate-900 font-semibold">{activeAnomalies.length}</span>
         </div>
       </div>
 
@@ -181,15 +200,14 @@ export const KpiSummaryRow: React.FC = () => {
             {activeIncidentsCount}
           </div>
           <div className="text-[11px] text-rose-600 font-medium mt-0.5">
-            2 require action
+            {criticalIncidentsCount} critical, {highIncidentsCount} high
           </div>
         </div>
 
         <div className="mt-2 pt-1.5 border-t border-rose-100 flex items-center justify-between text-[11px]">
-          <span className="text-rose-700 font-semibold">
-            C1 & B4
+          <span className="text-rose-700 font-semibold truncate max-w-[70%]">
+            {topOpenIncident ? topOpenIncident.zoneName : 'None open'}
           </span>
-          <span className="text-slate-400 text-[10px]">3 Warnings</span>
         </div>
       </div>
     </div>

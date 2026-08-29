@@ -9,6 +9,7 @@ from app.db.models import (
     ShelfModel,
     WasteRecordModel,
 )
+from app.services.broadcast import broadcast_change
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
@@ -113,6 +114,7 @@ def update_shelf(shelf_code: str, payload: ShelfUpdate, db: Session = Depends(ge
     
     db.commit()
     db.refresh(shelf)
+    broadcast_change("shelves", shelf_code=shelf.code)
     return {"status": "success", "shelf": shelf.code, "availability": shelf.availability}
 
 
@@ -207,6 +209,7 @@ def update_batch_expiry(
     batch.source = "MANUAL_ENTRY"
     db.commit()
     db.refresh(batch)
+    broadcast_change("inventory_batches", batch_id=batch.id)
     return {
         "status": "success",
         "batch_id": batch.id,
@@ -289,6 +292,9 @@ def create_waste_record(payload: WasteCreate, db: Session = Depends(get_db)):
     db.add(record)
     db.commit()
     db.refresh(record)
+    broadcast_change("waste_records", waste_id=record.id)
+    broadcast_change("shelves", shelf_code=batch.shelf_code)
+    broadcast_change("inventory_batches", batch_id=batch.id)
     return {
         "status": "success",
         "waste_id": record.id,

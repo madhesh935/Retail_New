@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  CANONICAL_TASKS,
   OperationalTask,
 } from './staffData'
 
@@ -23,7 +22,7 @@ interface KanbanTaskBoardProps {
 }
 
 export const KanbanTaskBoard: React.FC<KanbanTaskBoardProps> = ({
-  tasks = CANONICAL_TASKS,
+  tasks = [],
   onSelectTask,
 }) => {
   const columns: { id: TaskStatusColumn; title: string; countBadgeColor: string }[] = [

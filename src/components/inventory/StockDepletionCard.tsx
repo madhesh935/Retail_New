@@ -1,6 +1,7 @@
 import React from 'react'
 import { TrendingDown } from 'lucide-react'
 import { DepletionAreaChart } from './charts/DepletionAreaChart'
+import { Button } from '@/components/ui/button'
 
 interface StockDepletionCardProps {
   shelfName: string
@@ -10,6 +11,7 @@ interface StockDepletionCardProps {
   predictedStockout: string
   replenishmentDeadline: string
   onDispatchRefill?: () => void
+  isDispatched?: boolean
 }
 
 export const StockDepletionCard: React.FC<StockDepletionCardProps> = ({
@@ -19,7 +21,11 @@ export const StockDepletionCard: React.FC<StockDepletionCardProps> = ({
   consumptionRate,
   predictedStockout,
   replenishmentDeadline,
+  onDispatchRefill,
+  isDispatched,
 }) => {
+  const isFastDepletion = availability < 35
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col justify-between shadow-2xs select-none h-full min-h-[380px] font-sans">
       {/* Header */}
@@ -38,14 +44,20 @@ export const StockDepletionCard: React.FC<StockDepletionCardProps> = ({
           </div>
         </div>
 
-        <span className="text-[10px] text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-          Fast Depletion
-        </span>
+        {isFastDepletion ? (
+          <span className="text-[10px] text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+            Fast Depletion
+          </span>
+        ) : (
+          <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+            Stable
+          </span>
+        )}
       </div>
 
       {/* Depletion Chart */}
       <div className="my-2 flex-1 flex flex-col justify-center">
-        <DepletionAreaChart currentAvailability={availability} />
+        <DepletionAreaChart currentAvailability={availability} predictedStockoutLabel={predictedStockout} />
       </div>
 
       {/* Four Clean Metrics Grid */}
@@ -70,6 +82,23 @@ export const StockDepletionCard: React.FC<StockDepletionCardProps> = ({
           <span className="text-base font-bold text-amber-700">{replenishmentDeadline}</span>
         </div>
       </div>
+
+      {onDispatchRefill && (
+        <div className="pt-2.5 mt-1">
+          {isDispatched ? (
+            <span className="text-xs text-emerald-700 font-semibold">Restock task dispatched</span>
+          ) : (
+            <Button
+              variant="action"
+              size="sm"
+              onClick={onDispatchRefill}
+              className="w-full h-8 text-xs bg-sky-600 hover:bg-sky-700 text-white font-semibold"
+            >
+              Dispatch Refill
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

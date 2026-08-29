@@ -37,14 +37,14 @@ import { cn } from '@/lib/utils'
 const LAYERS_STORAGE_KEY = 'retail-edge-twin-layers'
 
 const DEFAULT_LAYERS: TwinLayerState = {
-  shopperPositions: false, // only when live tracking exists
+  shopperPositions: true,
   shopperTrails: false,
   heatmap: false,
   shelfHealth: true,
   queueStatus: true,
   staff: true,
   incidents: true,
-  cameraCoverage: false,
+  cameraCoverage: true,
   productZones: true,
   tasks: true,
   customerRequests: true,
@@ -62,7 +62,7 @@ function loadLayers(): TwinLayerState {
 
 export const DigitalTwinPage: React.FC = () => {
   const storeName = useAppStore((s) => s.storeInfo?.name)
-  const activeShopperCount = useAppStore((s) => s.activeShoppers.length)
+  const activeShopperCount = useAppStore((s) => s.currentOccupancy)
   const zoneMetricCount = useAppStore((s) => s.zoneMetrics.length)
   const queueCount = useAppStore((s) => s.queues.length)
   const staffCount = useAppStore((s) =>
@@ -80,6 +80,7 @@ export const DigitalTwinPage: React.FC = () => {
   )
   const cameraCount = useAppStore((s) => s.cameras.length)
   const staffMembers = useAppStore((s) => s.staffMembers)
+  const queues = useAppStore((s) => s.queues)
 
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -274,6 +275,17 @@ export const DigitalTwinPage: React.FC = () => {
   }
 
   const handleExplainCheckout = (checkout: Checkout3DData) => {
+    const standbyLane = queues.find((q) => q.status === 'STANDBY' && q.id !== checkout.id)
+    const availableStaff = staffMembers.find((m) => m.status === 'ON_DUTY_AVAILABLE')
+    const confidencePct = Math.min(99, Math.max(15, checkout.queueLength * 12))
+    const conclusion = standbyLane
+      ? `Activate Standby Counter C${standbyLane.laneNumber}${
+          availableStaff ? ` & assign ${availableStaff.name} (${availableStaff.employeeId}) immediately` : ' immediately'
+        }`
+      : availableStaff
+        ? `Reallocate ${availableStaff.name} (${availableStaff.employeeId}) to ${checkout.name} immediately`
+        : 'Escalate to a supervisor — no standby counter or available associate found'
+
     setWhyDialogData({
       title: `Queue Congestion Prediction (${checkout.name})`,
       actionType: 'QUEUE',
@@ -288,8 +300,8 @@ export const DigitalTwinPage: React.FC = () => {
       ],
       mathFormula: `Q(t + 5) = Q(t) + 5 × (λ - μ) = ${checkout.queueLength} + 5 × (${checkout.arrivalRate} - ${checkout.serviceRate}) = ${checkout.forecast5Min} shoppers`,
       threshold: '10 Shoppers Queue / 3.0 min Wait SLA',
-      confidence: '92% (QueueSense-TemporalEdge)',
-      conclusion: 'Activate Standby Counter C3 & assign Associate Marcus Vance immediately',
+      confidence: `${confidencePct}% (QueueSense-TemporalEdge)`,
+      conclusion,
       edgeModel: 'QueueSense-Temporal-v2.4 (Jetson TensorRT)',
     })
     setIsWhyDialogOpen(true)

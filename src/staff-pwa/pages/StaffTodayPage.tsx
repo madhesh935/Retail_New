@@ -26,10 +26,10 @@ export const StaffTodayPage: React.FC<StaffTodayPageProps> = ({
 }) => {
   const { authenticatedStaff, attendanceState, pendingTasks, storeAnnouncements, handoverItems } = useAppStore()
 
-  const staffName = authenticatedStaff?.name || 'Madhesh'
-  const staffRole = authenticatedStaff?.role || 'Inventory Restocker'
-  const shiftName = authenticatedStaff?.shift || 'Shift B'
-  const zoneName = authenticatedStaff?.zoneName || 'Beverages'
+  const staffName = authenticatedStaff?.name || 'Loading…'
+  const staffRole = authenticatedStaff?.role || '—'
+  const shiftName = authenticatedStaff?.shift || '—'
+  const zoneName = authenticatedStaff?.zoneName || '—'
 
   // Find top priority active/assigned task
   const topTask =
@@ -60,7 +60,7 @@ export const StaffTodayPage: React.FC<StaffTodayPageProps> = ({
               <span className="font-bold text-slate-900">{zoneName}</span>
               <span>•</span>
               <span className="font-mono text-slate-500">
-                {shiftName} · {attendanceState.shiftStart || '14:00'}–{attendanceState.shiftEnd || '22:00'}
+                {shiftName} · {attendanceState.shiftStart || '—'}–{attendanceState.shiftEnd || '—'}
               </span>
             </div>
           </div>
@@ -73,10 +73,10 @@ export const StaffTodayPage: React.FC<StaffTodayPageProps> = ({
         <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Present • Checked In {attendanceState.checkInAt || '13:57'}</span>
+            <span>Present • Checked In {attendanceState.checkInAt || '—'}</span>
           </div>
           <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-md font-mono">
-            {authenticatedStaff?.employeeId || 'EMP-403'}
+            {authenticatedStaff?.employeeId || '—'}
           </span>
         </div>
       </div>
@@ -133,7 +133,7 @@ export const StaffTodayPage: React.FC<StaffTodayPageProps> = ({
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Empty In</span>
                   <span className="text-sm font-bold text-amber-700 font-mono mt-0.5 block">
-                    ~{topTask.expectedDepletionMinutes || 9}m
+                    {typeof topTask.expectedDepletionMinutes === 'number' ? `~${topTask.expectedDepletionMinutes}m` : '—'}
                   </span>
                 </div>
               </div>

@@ -1,6 +1,9 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import * as THREE from 'three'
+import { Camera as CameraIcon } from 'lucide-react'
+import { useAppStore } from '@/store/useAppStore'
 import { TooltipData } from '../controls/TwinTooltip'
+import { TwinIconBadge } from './TwinIconBadge'
 
 export interface Camera3DData {
   id: string
@@ -18,11 +21,64 @@ export interface Camera3DData {
   fovConeLength: number
 }
 
+type Camera3DLayout = Omit<Camera3DData, 'status' | 'fps' | 'latencyMs'>
+
 interface CameraCoverage3DProps {
   showCoverage: boolean
   onSelectCamera: (cam: Camera3DData) => void
   onHoverCamera?: (data: TooltipData | null) => void
 }
+
+const CAMERA_LAYOUT: Camera3DLayout[] = [
+  {
+    id: 'cam-01',
+    code: 'CAM-01',
+    name: 'Entrance & Turnstiles',
+    zone: 'Entrance',
+    resolution: '1920x1080 @ 30fps',
+    aiModel: 'YOLOv8x PersonCounter',
+    position: [0, 5.0, -12.5],
+    targetPosition: [0, 0, -10],
+    fovConeRadius: 4.5,
+    fovConeLength: 5.2,
+  },
+  {
+    id: 'cam-02',
+    code: 'CAM-02',
+    name: 'Fresh Produce',
+    zone: 'Fresh Produce',
+    resolution: '1920x1080 @ 30fps',
+    aiModel: 'PlanogramNet ResNet50',
+    position: [-8, 5.0, -5.5],
+    targetPosition: [-8, 0, -5.5],
+    fovConeRadius: 5.2,
+    fovConeLength: 5.0,
+  },
+  {
+    id: 'cam-03',
+    code: 'CAM-03',
+    name: 'Cold Beverages & Dairy',
+    zone: 'Beverages',
+    resolution: '1920x1080 @ 30fps',
+    aiModel: 'ShelfEye SKU-Det v3',
+    position: [14, 5.0, -5.5],
+    targetPosition: [14, 0, -5.5],
+    fovConeRadius: 5.0,
+    fovConeLength: 5.0,
+  },
+  {
+    id: 'cam-05',
+    code: 'CAM-05',
+    name: 'Checkout Plaza',
+    zone: 'Checkout Plaza',
+    resolution: '1920x1080 @ 30fps',
+    aiModel: 'QueueSense Temporal v2.4',
+    position: [14, 5.0, 3.5],
+    targetPosition: [14, 0, 3.5],
+    fovConeRadius: 5.5,
+    fovConeLength: 5.0,
+  },
+]
 
 export const CameraCoverage3D: React.FC<CameraCoverage3DProps> = ({
   showCoverage,
@@ -30,69 +86,26 @@ export const CameraCoverage3D: React.FC<CameraCoverage3DProps> = ({
   onHoverCamera,
 }) => {
   const [hoveredCamId, setHoveredCamId] = useState<string | null>(null)
+  const liveCameras = useAppStore((s) => s.cameras)
 
-  const cameras: Camera3DData[] = [
-    {
-      id: 'cam-01',
-      code: 'CAM-01',
-      name: 'Entrance & Turnstiles',
-      zone: 'Entrance',
-      status: 'ONLINE',
-      fps: 30.0,
-      latencyMs: 14.2,
-      resolution: '1920x1080 @ 30fps',
-      aiModel: 'YOLOv8x PersonCounter',
-      position: [0, 5.0, -12.5],
-      targetPosition: [0, 0, -10],
-      fovConeRadius: 4.5,
-      fovConeLength: 5.2,
-    },
-    {
-      id: 'cam-02',
-      code: 'CAM-02',
-      name: 'Fresh Produce',
-      zone: 'Fresh Produce',
-      status: 'ONLINE',
-      fps: 29.8,
-      latencyMs: 16.8,
-      resolution: '1920x1080 @ 30fps',
-      aiModel: 'PlanogramNet ResNet50',
-      position: [-8, 5.0, -5.5],
-      targetPosition: [-8, 0, -5.5],
-      fovConeRadius: 5.2,
-      fovConeLength: 5.0,
-    },
-    {
-      id: 'cam-03',
-      code: 'CAM-03',
-      name: 'Cold Beverages & Dairy',
-      zone: 'Beverages',
-      status: 'ONLINE',
-      fps: 30.0,
-      latencyMs: 15.2,
-      resolution: '1920x1080 @ 30fps',
-      aiModel: 'ShelfEye SKU-Det v3',
-      position: [14, 5.0, -5.5],
-      targetPosition: [14, 0, -5.5],
-      fovConeRadius: 5.0,
-      fovConeLength: 5.0,
-    },
-    {
-      id: 'cam-05',
-      code: 'CAM-05',
-      name: 'Checkout Plaza',
-      zone: 'Checkout Plaza',
-      status: 'ONLINE',
-      fps: 30.0,
-      latencyMs: 13.8,
-      resolution: '1920x1080 @ 30fps',
-      aiModel: 'QueueSense Temporal v2.4',
-      position: [14, 5.0, 3.5],
-      targetPosition: [14, 0, 3.5],
-      fovConeRadius: 5.5,
-      fovConeLength: 5.0,
-    },
-  ]
+  const cameras: Camera3DData[] = useMemo(() => {
+    return CAMERA_LAYOUT.map((layout) => {
+      const live = liveCameras.find((c) => c.code === layout.code)
+      const status: Camera3DData['status'] = !live
+        ? 'OFFLINE'
+        : live.status === 'ONLINE'
+          ? 'ONLINE'
+          : live.status === 'OFFLINE'
+            ? 'OFFLINE'
+            : 'WARNING'
+      return {
+        ...layout,
+        status,
+        fps: live ? live.fps : 0,
+        latencyMs: live ? live.inferenceLatencyMs : 0,
+      }
+    })
+  }, [liveCameras])
 
   const handlePointerOver = (cam: Camera3DData, e: any) => {
     e.stopPropagation()
@@ -157,8 +170,22 @@ export const CameraCoverage3D: React.FC<CameraCoverage3DProps> = ({
 
             <mesh position={[0, -0.06, 0.16]}>
               <sphereGeometry args={[0.035, 8, 8]} />
-              <meshBasicMaterial color="#22C55E" />
+              <meshBasicMaterial
+                color={cam.status === 'ONLINE' ? '#22C55E' : cam.status === 'WARNING' ? '#F59E0B' : '#EF4444'}
+              />
             </mesh>
+
+            <group position={[0, 0.55, 0]}>
+              <mesh>
+                <sphereGeometry args={[0.3, 8, 8]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+              <TwinIconBadge
+                icon={CameraIcon}
+                color={cam.status === 'ONLINE' ? '#0EA5E9' : cam.status === 'WARNING' ? '#F59E0B' : '#EF4444'}
+                hovered={isHovered}
+              />
+            </group>
 
             {/* FOV cone only while hovered — not permanently shown */}
             {isHovered && (

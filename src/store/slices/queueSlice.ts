@@ -1,6 +1,5 @@
 import { StateCreator } from 'zustand'
 import { CheckoutQueue, QueueAnalyticsPayload } from '@/types'
-import { MOCK_QUEUES } from '@/services/mock/mockData'
 
 // ── Queue Action Log (for Reports page before/after history) ──────────────────
 export interface QueueActionEntry {
@@ -37,26 +36,26 @@ export interface QueueSlice {
 }
 
 export const createQueueSlice: StateCreator<QueueSlice, [], [], QueueSlice> = (set) => ({
-  queues: MOCK_QUEUES.lanes,
-  systemAverageWaitTimeSeconds: MOCK_QUEUES.systemAverageWaitTimeSeconds,
-  systemTargetWaitTimeSeconds: MOCK_QUEUES.systemTargetWaitTimeSeconds,
-  congestedLanesCount: MOCK_QUEUES.congestedLanesCount,
-  predictedWaitTimeCurve: MOCK_QUEUES.predictedWaitTimeCurve,
+  queues: [],
+  systemAverageWaitTimeSeconds: 0,
+  systemTargetWaitTimeSeconds: 120,
+  congestedLanesCount: 0,
+  predictedWaitTimeCurve: [],
   isLoadingQueues: false,
   queueActionLog: [],
 
   setQueuesPayload: (payload) =>
     set({
-      queues: payload.lanes && payload.lanes.length > 0 ? payload.lanes : MOCK_QUEUES.lanes,
-      systemAverageWaitTimeSeconds: payload.systemAverageWaitTimeSeconds ?? MOCK_QUEUES.systemAverageWaitTimeSeconds,
+      queues: payload.lanes || [],
+      systemAverageWaitTimeSeconds: payload.systemAverageWaitTimeSeconds ?? 0,
       systemTargetWaitTimeSeconds: payload.systemTargetWaitTimeSeconds ?? 120,
       congestedLanesCount: (payload.lanes || []).filter((l) => l.status === 'CONGESTED').length,
-      predictedWaitTimeCurve: payload.predictedWaitTimeCurve || MOCK_QUEUES.predictedWaitTimeCurve,
+      predictedWaitTimeCurve: payload.predictedWaitTimeCurve || [],
     }),
 
   updateLaneQueue: (laneId, queueLength, waitSeconds, status) =>
     set((state) => {
-      const baseQueues = state.queues && state.queues.length > 0 ? state.queues : MOCK_QUEUES.lanes
+      const baseQueues = state.queues || []
       const existingIndex = baseQueues.findIndex((lane) => lane.id === laneId)
       
       let updated: CheckoutQueue[]

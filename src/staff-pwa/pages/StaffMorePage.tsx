@@ -39,6 +39,7 @@ export const StaffMorePage: React.FC<StaffMorePageProps> = ({
     acknowledgeAnnouncement,
     checkOutShift,
     pendingTasks,
+    connectionState,
   } = useAppStore()
 
   const [activeSopModal, setActiveSopModal] = useState<string | null>(null)
@@ -46,11 +47,14 @@ export const StaffMorePage: React.FC<StaffMorePageProps> = ({
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false)
 
-  const staffName = authenticatedStaff?.name || 'Madhesh'
-  const employeeId = authenticatedStaff?.employeeId || 'EMP-403'
-  const role = authenticatedStaff?.role || 'Inventory Restocker'
-  const shift = authenticatedStaff?.shift || 'Shift B'
-  const storeName = authenticatedStaff?.storeName || 'Chennai Central'
+  const staffName = authenticatedStaff?.name || 'Loading…'
+  const employeeId = authenticatedStaff?.employeeId || '—'
+  const role = authenticatedStaff?.role || '—'
+  const shift = authenticatedStaff?.shift || '—'
+  const storeName = authenticatedStaff?.storeName || '—'
+
+  const isNetworkConnected = connectionState === 'CONNECTED'
+  const isNetworkReconnecting = connectionState === 'RECONNECTING' || connectionState === 'CONNECTING'
 
   const unfinishedTaskCount = (pendingTasks || []).filter(
     (t) => t.status !== 'COMPLETED' && t.status !== 'CANCELLED' && t.status !== 'VERIFIED'
@@ -244,14 +248,28 @@ export const StaffMorePage: React.FC<StaffMorePageProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
             <div className="flex items-center gap-2">
-              <Wifi className="w-4 h-4 text-emerald-600" />
+              <Wifi className={`w-4 h-4 ${isNetworkConnected ? 'text-emerald-600' : isNetworkReconnecting ? 'text-amber-600' : 'text-rose-600'}`} />
               <div>
                 <span className="font-bold text-slate-900 block">Local Store Network</span>
-                <span className="text-[10px] text-slate-500">Connected to Jetson Edge Gateway</span>
+                <span className="text-[10px] text-slate-500">
+                  {isNetworkConnected
+                    ? 'Connected to Jetson Edge Gateway'
+                    : isNetworkReconnecting
+                    ? 'Reconnecting to Jetson Edge Gateway…'
+                    : 'Disconnected from Jetson Edge Gateway'}
+                </span>
               </div>
             </div>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Active
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                isNetworkConnected
+                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                  : isNetworkReconnecting
+                  ? 'text-amber-700 bg-amber-50 border-amber-200'
+                  : 'text-rose-700 bg-rose-50 border-rose-200'
+              }`}
+            >
+              {isNetworkConnected ? 'Active' : isNetworkReconnecting ? 'Connecting' : 'Offline'}
             </span>
           </div>
 

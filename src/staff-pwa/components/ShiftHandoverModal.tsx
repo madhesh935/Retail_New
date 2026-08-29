@@ -24,12 +24,13 @@ export const ShiftHandoverModal: React.FC<ShiftHandoverModalProps> = ({ isOpen, 
   const handleAddHandover = (e: React.FormEvent) => {
     e.preventDefault()
     if (!noteTitle.trim()) return
+    if (!authenticatedStaff) return
 
     addHandoverItem({
       title: noteTitle.trim(),
       description: noteDesc.trim() || 'No additional notes provided.',
       category,
-      authorName: `${authenticatedStaff?.name || 'Madhesh'} (${authenticatedStaff?.shift || 'Shift B'})`,
+      authorName: `${authenticatedStaff.name} (${authenticatedStaff.shift})`,
     })
 
     setNoteTitle('')
@@ -117,6 +118,11 @@ export const ShiftHandoverModal: React.FC<ShiftHandoverModalProps> = ({ isOpen, 
                 rows={2}
                 className="w-full px-3 py-2 text-xs bg-white border border-sky-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
               />
+              {!authenticatedStaff && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-[11px] font-semibold text-rose-700">
+                  Staff identity not loaded yet. Please wait a moment before submitting a handover note.
+                </div>
+              )}
               <div className="flex items-center justify-between gap-2 pt-1">
                 <select
                   value={category}
@@ -130,7 +136,8 @@ export const ShiftHandoverModal: React.FC<ShiftHandoverModalProps> = ({ isOpen, 
                 </select>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs shadow-blue-500/20 transition-all"
+                  disabled={!authenticatedStaff}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-xs shadow-blue-500/20 transition-all"
                 >
                   Save Note
                 </button>

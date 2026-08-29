@@ -17,19 +17,59 @@ import { Shelf3DData } from '../scene/StoreShelves3D'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
 
 interface TwinShelfDrawerProps {
   shelf: Shelf3DData | null
   onClose: () => void
 }
 
+function formatRestockedAt(iso: string): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const now = new Date()
+  const sameDay = d.toDateString() === now.toDateString()
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return sameDay ? `Today, ${time}` : `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`
+}
+
 export const TwinShelfDrawer: React.FC<TwinShelfDrawerProps> = ({ shelf, onClose }) => {
   const navigate = useNavigate()
   const [isReplenishing, setIsReplenishing] = useState(false)
+  const [dispatchedStaffName, setDispatchedStaffName] = useState<string | null>(null)
+  const staffMembers = useAppStore((s) => s.staffMembers)
+  const pendingTasks = useAppStore((s) => s.pendingTasks)
+  const dispatchRealTask = useAppStore((s) => s.dispatchRealTask)
 
   if (!shelf) return null
 
   const isCritical = shelf.status === 'CRITICAL' || shelf.status === 'OUT_OF_STOCK'
+
+  const activeTask = pendingTasks.find(
+    (t) =>
+      t.shelfCode === shelf.code &&
+      t.status !== 'COMPLETED' &&
+      t.status !== 'CANCELLED' &&
+      t.status !== 'VERIFIED'
+  )
+  const assignedStaff = activeTask?.assignedStaffId
+    ? staffMembers.find((m) => m.id === activeTask.assignedStaffId)
+    : undefined
+
+  const handleAssignRefill = () => {
+    const availableStaff = staffMembers.find((m) => m.status === 'ON_DUTY_AVAILABLE')
+    setDispatchedStaffName(availableStaff?.name ?? null)
+    setIsReplenishing(true)
+    dispatchRealTask({
+      title: `Restock ${shelf.code} — ${shelf.sku}`,
+      type: 'RESTOCK',
+      priority: isCritical ? 'CRITICAL' : 'HIGH',
+      target_location: `Shelf ${shelf.code}`,
+      description: `${shelf.availability}% availability, ${shelf.visibleUnits} visible units.`,
+      assigned_staff_id: availableStaff?.id,
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end font-sans">
@@ -140,6 +180,33 @@ export const TwinShelfDrawer: React.FC<TwinShelfDrawerProps> = ({ shelf, onClose
             <div className="text-xs font-bold text-slate-900">{shelf.sku}</div>
           </div>
 
+          {/* Assigned Staff */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 shadow-2xs">
+            <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Assigned Staff</span>
+            {assignedStaff ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
+                    {assignedStaff.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">{assignedStaff.name}</div>
+                    <div className="text-[11px] text-slate-500">{String(assignedStaff.role).replace(/_/g, ' ')}</div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full">
+                  {activeTask?.status === 'IN_PROGRESS' ? 'En Route' : 'Assigned'}
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs text-slate-500 font-medium">No staff currently assigned to this shelf.</div>
+            )}
+            <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-[11px] text-slate-500">
+              <span>Last Replenished</span>
+              <span className="font-bold text-slate-800 font-mono">{formatRestockedAt(shelf.lastRestocked)}</span>
+            </div>
+          </div>
+
           {/* Compact Live RTSP Camera Feed Preview */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-500">
@@ -180,12 +247,13 @@ export const TwinShelfDrawer: React.FC<TwinShelfDrawerProps> = ({ shelf, onClose
             <div className="grid grid-cols-2 gap-2">
               {isReplenishing ? (
                 <div className="col-span-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs text-center flex items-center justify-center gap-1.5 shadow-2xs">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Restocker Liam O&apos;Connor Dispatched
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  {dispatchedStaffName ? `Restocker ${dispatchedStaffName} Dispatched` : 'Restock Task Dispatched'}
                 </div>
               ) : (
                 <button
                   type="button"
-                  onClick={() => setIsReplenishing(true)}
+                  onClick={handleAssignRefill}
                   className="py-2.5 px-3 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <PackageCheck className="h-4 w-4" />

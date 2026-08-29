@@ -70,6 +70,13 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
               ? 'STANDBY'
               : 'ACTIVE'
       const congestionRisk = riskFromQueue(queueLength, waitTimeMinutes)
+      const processingRate = live?.processingRateItemsPerMinute ?? 0
+      const arrivalRate = live
+        ? Number(((queueLength * 0.25) + (processingRate * 0.05)).toFixed(1))
+        : 0
+      const serviceRate = live
+        ? Number(Math.max(0, (processingRate * 0.08) - (queueLength * 0.05)).toFixed(1))
+        : 0
       return {
         id: layout.id,
         code: layout.code,
@@ -78,8 +85,8 @@ export const CheckoutLanes3D: React.FC<CheckoutLanes3DProps> = ({
           : `Checkout ${layout.code}`,
         queueLength,
         waitTimeMinutes,
-        arrivalRate: 1.5,
-        serviceRate: 1.8,
+        arrivalRate,
+        serviceRate,
         forecast5Min,
         congestionRisk,
         status: status === 'ACTIVE' && congestionRisk === 'CRITICAL' ? 'CONGESTED' : status,

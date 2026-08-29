@@ -4,41 +4,19 @@ import {
   Sparkles,
   Bot,
   User,
-  RotateCcw,
-  Camera,
-  UserCheck,
-  PackageCheck,
-  ListOrdered,
-  ArrowRight,
-  HelpCircle,
-  Clock,
-  CheckCircle2,
-  ExternalLink,
-  ShieldAlert,
-  Compass,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CopilotCategoryChips, QueryCategory } from './CopilotCategoryChips'
-import {
-  executeCopilotQuery,
-  CopilotAction,
-  CopilotStructuredResponse,
-} from '../CopilotToolEngine'
-import { StaffDispatchConfirmDialog } from '../StaffDispatchConfirmDialog'
-import { WhyRecommendationDialog, WhyDialogData } from '@/components/command-center/WhyRecommendationDialog'
-import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
-import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { CopilotRichText } from '../CopilotRichText'
 import { sendCopilotChat } from '@/services/api/chat.service'
+import { useLiveManagerContext } from './useLiveManagerContext'
 
 export interface WorkspaceChatMessage {
   id: string
   sender: 'USER' | 'COPILOT'
   timestamp: string
   text?: string
-  structured?: CopilotStructuredResponse
-  specialType?: 'CAMERA_EVIDENCE' | 'INVENTORY_RANKED' | 'EXPLAIN_WHY' | 'CROSS_MODULE' | 'FORECAST_30MIN'
 }
 
 interface CopilotChatWorkspaceProps {
@@ -48,7 +26,6 @@ interface CopilotChatWorkspaceProps {
 export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
   initialPrompt,
 }) => {
-  const navigate = useNavigate()
   const [messages, setMessages] = useState<WorkspaceChatMessage[]>([
     {
       id: 'welcome-msg',
@@ -60,22 +37,7 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
   const [inputValue, setInputValue] = useState('')
   const [isThinking, setIsThinking] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<QueryCategory>('ALL')
-
-  // Dialog states
-  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; staffId: string; taskTitle: string }>({
-    isOpen: false,
-    staffId: '',
-    taskTitle: '',
-  })
-  const [cameraDrawer, setCameraDrawer] = useState<{ isOpen: boolean; cameraCode: string; zoneName: string }>({
-    isOpen: false,
-    cameraCode: '',
-    zoneName: '',
-  })
-  const [whyDialog, setWhyDialog] = useState<{ isOpen: boolean; data: WhyDialogData | null }>({
-    isOpen: false,
-    data: null,
-  })
+  const liveContext = useLiveManagerContext()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -108,25 +70,9 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
     setInputValue('')
     setIsThinking(true)
 
-    // Evaluate grounded query and special rich UI response blocks
-    const q = text.toLowerCase()
-    let specialType: WorkspaceChatMessage['specialType'] = undefined
-
-    if (q.includes('camera') || q.includes('c1 is congested') || q.includes('evidence')) {
-      specialType = 'CAMERA_EVIDENCE'
-    } else if (q.includes('refill first') || q.includes('run out first') || q.includes('which shelves')) {
-      specialType = 'INVENTORY_RANKED'
-    } else if (q.includes('why should counter c3') || q.includes('why should c3')) {
-      specialType = 'EXPLAIN_WHY'
-    } else if (q.includes('beverage') || q.includes('sales opportunities') || q.includes('cross-module') || q.includes('opportunity')) {
-      specialType = 'CROSS_MODULE'
-    } else if (q.includes('next 30 minutes') || q.includes('30 min') || q.includes('forecast')) {
-      specialType = 'FORECAST_30MIN'
-    }
-
     const apiMessages = [...messages, userMsg].map((m) => ({
       role: (m.sender === 'USER' ? 'user' : 'assistant') as 'user' | 'assistant',
-      content: m.text || (m.structured && m.structured.observation ? m.structured.observation : '') || '',
+      content: m.text || '',
     }))
 
     sendCopilotChat({
@@ -136,21 +82,24 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
         surface: 'manager_copilot_workspace',
         page: 'copilot',
         activeStore: 'Store 01 — Chennai Central',
+        liveOccupancy: liveContext.currentOccupancy,
+        occupancyPct: liveContext.occupancyPct,
+        shelfHealthPct: liveContext.shelfHealthPct,
+        criticalShelvesCount: liveContext.criticalShelvesCount,
+        avgWaitMinutes: liveContext.avgWaitMinutes,
+        criticalIncidentsCount: liveContext.criticalIncidentsCount,
+        availableStaffCount: liveContext.availableStaffCount,
+        availableStaffCodes: liveContext.availableStaffCodes,
+        storeHealthScore: liveContext.storeHealthScore,
+        storeHealthLabel: liveContext.storeHealthLabel,
       },
     })
       .then(({ reply }) => {
-        const structRes = executeCopilotQuery(text, {
-          page: 'copilot',
-          activeStore: 'Store 01 — Chennai Central',
-        })
-
         const botMsg: WorkspaceChatMessage = {
           id: `copilot-${Date.now()}`,
           sender: 'COPILOT',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           text: reply,
-          structured: structRes,
-          specialType,
         }
 
         setMessages((prev) => [...prev, botMsg])
@@ -176,26 +125,6 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
-    }
-  }
-
-  const handleTriggerAction = (act: CopilotAction) => {
-    if (act.type === 'NAVIGATE') {
-      navigate(act.payload)
-    } else if (act.type === 'VIEW_TWIN') {
-      navigate('/digital-twin')
-    } else if (act.type === 'VIEW_CAMERA') {
-      setCameraDrawer({
-        isOpen: true,
-        cameraCode: act.payload?.cameraCode || 'CAM-06',
-        zoneName: act.payload?.zoneName || 'Monitored Zone',
-      })
-    } else if (act.type === 'ASSIGN_STAFF') {
-      setConfirmDialog({
-        isOpen: true,
-        staffId: act.payload?.staffId || 'S02',
-        taskTitle: act.payload?.task || 'Staff Operational Reallocation',
-      })
     }
   }
 
@@ -238,67 +167,6 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
                     ) : (
                       <CopilotRichText text={msg.text} className="text-[13px] leading-5" />
                     )
-                  )}
-
-                  {/* Structured Bot Response Content */}
-                  {msg.structured && (
-                    <div className="space-y-2.5">
-                      {/* Observation */}
-                      {msg.structured.observation && (
-                        <div className="text-xs leading-relaxed text-slate-700">
-                          {msg.structured.observation}
-                        </div>
-                      )}
-
-                      {/* Recommendation & Reason */}
-                      {msg.structured.action && (
-                        <div className="p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-200 text-xs">
-                          <span className="text-[10px] text-emerald-800 font-bold block uppercase">
-                            Recommended Action
-                          </span>
-                          <div className="text-slate-900 font-bold mt-0.5">
-                            {msg.structured.action}
-                          </div>
-                          {msg.structured.prediction && (
-                            <div className="text-[11px] text-amber-800 font-medium mt-1">
-                              {msg.structured.prediction}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Raw Metric Chips */}
-                      {msg.structured.rawMetrics && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {Object.entries(msg.structured.rawMetrics).map(([key, val], idx) => (
-                            <div
-                              key={idx}
-                              className="bg-white px-2 py-0.5 rounded-md border border-slate-200 text-[10px] flex items-center gap-1.5 shadow-2xs font-mono"
-                            >
-                              <span className="text-slate-500 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                              <strong className="text-sky-700 font-bold">{String(val)}</strong>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      {msg.structured.actions && msg.structured.actions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200">
-                          {msg.structured.actions.map((act, idx) => (
-                            <Button
-                              key={idx}
-                              variant="action"
-                              size="xs"
-                              onClick={() => handleTriggerAction(act)}
-                              className="h-7 px-2.5 text-[11px] gap-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
-                            >
-                              {act.label}
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   )}
 
                   {/* Message Timestamp & Grounding Badge */}
@@ -371,34 +239,6 @@ export const CopilotChatWorkspace: React.FC<CopilotChatWorkspaceProps> = ({
           </Button>
         </div>
       </div>
-
-      {/* Confirmation & Auxiliary Dialogs */}
-      <StaffDispatchConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        staffId={confirmDialog.staffId}
-        taskTitle={confirmDialog.taskTitle}
-        onCancel={() => setConfirmDialog({ isOpen: false, staffId: '', taskTitle: '' })}
-        onConfirm={() => {
-          setConfirmDialog({ isOpen: false, staffId: '', taskTitle: '' })
-          navigate('/staff-operations')
-        }}
-      />
-
-      <WhyRecommendationDialog
-        data={whyDialog.data}
-        open={whyDialog.isOpen}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setWhyDialog({ isOpen: false, data: null })
-        }}
-      />
-
-      {cameraDrawer.isOpen && (
-        <ZoneCameraDrawer
-          cameraCode={cameraDrawer.cameraCode}
-          zoneName={cameraDrawer.zoneName}
-          onClose={() => setCameraDrawer({ isOpen: false, cameraCode: '', zoneName: '' })}
-        />
-      )}
     </div>
   )
 }

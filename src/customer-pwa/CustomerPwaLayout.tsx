@@ -19,6 +19,7 @@ import {
   useCustomerAssist,
 } from './context/CustomerAssistContext'
 import { useStoreData } from '@/hooks/useStoreData'
+import { useWebSocket } from '@/hooks/useWebSocket'
 import { CustomerHomePage } from './pages/CustomerHomePage'
 import { CustomerSearchPage } from './pages/CustomerSearchPage'
 import { CustomerCopilotPage } from './pages/CustomerCopilotPage'
@@ -30,6 +31,7 @@ import { CustomerCopilotQuickDrawer } from './components/CustomerCopilotQuickDra
 import { HelpRequestSheet } from './components/assist/HelpRequestSheet'
 
 const CustomerPwaContent: React.FC = () => {
+  useWebSocket()
   useStoreData({ pollMs: 15000 })
   const { activeTab, setActiveTab, shoppingList, storeName } = useCustomerShopping()
   const { activeRequest, viewActiveRequest } = useCustomerAssist()

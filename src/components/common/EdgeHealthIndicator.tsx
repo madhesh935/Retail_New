@@ -14,7 +14,6 @@ export const EdgeHealthIndicator: React.FC<EdgeHealthIndicatorProps> = ({
 }) => {
   const edgeDevice = useAppStore((s) => s.edgeDevice)
   const cloudSync = useAppStore((s) => s.cloudSync)
-  const isDemoMode = useAppStore((s) => s.isDemoMode)
 
   if (!edgeDevice) return null
 
@@ -64,7 +63,7 @@ export const EdgeHealthIndicator: React.FC<EdgeHealthIndicatorProps> = ({
               {edgeDevice.deviceName}
             </div>
             <div className="text-[10px] text-slate-500">
-              {isDemoMode ? 'Simulated Edge Telemetry' : `IP: ${edgeDevice.ipAddress} • ${edgeDevice.model}`}
+              {`IP: ${edgeDevice.ipAddress} • ${edgeDevice.model}`}
             </div>
           </div>
         </div>

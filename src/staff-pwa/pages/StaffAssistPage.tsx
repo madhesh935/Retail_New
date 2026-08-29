@@ -18,7 +18,7 @@ interface StaffAssistPageProps {
 export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
   onOpenAssistDetails,
 }) => {
-  const { customerRequests, syncTaskStatus, authenticatedStaff } = useAppStore()
+  const { customerRequests, syncTaskStatus, authenticatedStaff, shelfItems } = useAppStore()
   const [activeFilter, setActiveFilter] = useState<'NEW' | 'HELPING' | 'DONE'>('NEW')
 
   const newRequests = customerRequests.filter((r) => r.status === 'REQUESTED')
@@ -127,6 +127,9 @@ export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
           displayedRequests.map((req) => {
             const isNew = req.status === 'REQUESTED'
             const isBackroom = req.isBackroomFlow
+            const matchedShelfItem = req.productSku
+              ? shelfItems.find((item) => item.sku === req.productSku)
+              : undefined
 
             return (
               <div
@@ -181,7 +184,13 @@ export const StaffAssistPage: React.FC<StaffAssistPageProps> = ({
                       <Inbox className="w-4 h-4 text-blue-600 shrink-0" />
                       <span>Backroom: {req.backroomBay || 'Bay D2'}</span>
                     </div>
-                    <span className="text-[10px] text-emerald-700 font-semibold font-mono">18 units in stock</span>
+                    {typeof matchedShelfItem?.backroomUnits === 'number' ? (
+                      <span className="text-[10px] text-emerald-700 font-semibold font-mono">
+                        {matchedShelfItem.backroomUnits} units in stock
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-semibold font-mono">Stock unknown</span>
+                    )}
                   </div>
                 )}
 

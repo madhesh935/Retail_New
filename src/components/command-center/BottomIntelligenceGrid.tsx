@@ -8,12 +8,31 @@ import {
 import { FootfallTrendChart } from './charts/FootfallTrendChart'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store/useAppStore'
+import { formatNumber, formatTimeAgo } from '@/lib/utils'
+
+/** StaffTask.createdAt arrives pre-formatted as "8h ago" / "12m ago" / "Just now" — approximate an
+ * age in ms so these can be sorted alongside incidents' raw ISO timestamps. */
+function approxAgeMs(relative: string): number {
+  if (/just now/i.test(relative)) return 0
+  const match = relative.match(/(\d+)\s*([smhd])/i)
+  if (!match) return Number.MAX_SAFE_INTEGER
+  const value = Number(match[1])
+  const unitMs = { s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2].toLowerCase() as 's' | 'm' | 'h' | 'd']
+  return value * unitMs
+}
 
 export const BottomIntelligenceGrid: React.FC = () => {
   const [refillTriggered, setRefillTriggered] = useState<Record<string, boolean>>({})
 
-  // Live queue data from the model
+  const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall)
   const queues = useAppStore((s) => s.queues)
+  const shelfItems = useAppStore((s) => s.shelfItems)
+  const staffMembers = useAppStore((s) => s.staffMembers)
+  const pendingTasks = useAppStore((s) => s.pendingTasks)
+  const incidents = useAppStore((s) => s.incidents)
+  const dispatchRealTask = useAppStore((s) => s.dispatchRealTask)
+
+  // ── Live queue data from the model ──────────────────────
   const activeQueues = Array.isArray(queues) ? queues.filter((l) => l.status !== 'CLOSED' && l.status !== 'STANDBY') : []
   const congestedLane = activeQueues.reduce(
     (prev, curr) => (curr.currentQueueLength > (prev?.currentQueueLength || 0) ? curr : prev),
@@ -29,22 +48,70 @@ export const BottomIntelligenceGrid: React.FC = () => {
   const forecast10Pct = Math.min(100, (liveForecast10 / 20) * 100)
   const congestedCode = congestedLane ? `C${congestedLane.laneNumber}` : 'C1'
 
-  const handleQuickRefill = (skuCode: string) => {
-    setRefillTriggered((prev) => ({ ...prev, [skuCode]: true }))
+  // ── Live stock-out risks from shelf inventory ──────────────────────
+  const riskyShelves = [...shelfItems]
+    .filter((s) => s.status === 'CRITICAL' || s.status === 'OUT_OF_STOCK' || s.status === 'LOW')
+    .sort((a, b) => a.currentCount - b.currentCount)
+    .slice(0, 3)
+  const availableStaff = staffMembers.filter((s) => s.status === 'ON_DUTY_AVAILABLE')
+
+  const handleQuickRefill = (shelf: (typeof shelfItems)[number]) => {
+    setRefillTriggered((prev) => ({ ...prev, [shelf.shelfId]: true }))
+    dispatchRealTask({
+      title: `Restock ${shelf.shelfId} — ${shelf.productName}`,
+      type: 'RESTOCK',
+      priority: shelf.status === 'OUT_OF_STOCK' ? 'CRITICAL' : 'HIGH',
+      target_location: `Shelf ${shelf.shelfId}`,
+      description: `${shelf.currentCount} visible units, ${shelf.backroomUnits || 0} in backroom.`,
+      assigned_staff_id: availableStaff[0]?.id,
+    })
   }
+
+  // ── Recent activity from real incidents + staff tasks ──────────────────────
+  // Incidents carry a raw ISO timestamp; StaffTask.createdAt arrives pre-formatted
+  // as "8h ago" (see mapStaffTask), so each branch computes age its own way and
+  // only the pre-formatted display label differs in origin.
+  type ActivityEntry = { displayTime: string; ageMs: number; title: string; status: string }
+  const recentActivity: ActivityEntry[] = [
+    ...incidents
+      .filter((i) => i.status === 'RESOLVED' && (i.resolvedAt || i.timestamp))
+      .map((i) => {
+        const iso = i.resolvedAt || i.timestamp
+        return {
+          displayTime: formatTimeAgo(iso),
+          ageMs: Date.now() - Date.parse(iso),
+          title: i.title,
+          status: 'Completed',
+        }
+      }),
+    ...pendingTasks
+      .filter((t) => t.createdAt)
+      .map((t) => ({
+        displayTime: t.createdAt,
+        ageMs: approxAgeMs(t.createdAt),
+        title: t.assignedStaffName ? `${t.title} — ${t.assignedStaffName}` : t.title,
+        status: t.status === 'COMPLETED' ? 'Completed' : t.status === 'IN_PROGRESS' ? 'In Progress' : 'Acknowledged',
+      })),
+  ]
+    .sort((a, b) => a.ageMs - b.ageMs)
+    .slice(0, 4)
+
+  const statusBadgeClass = (status: string) =>
+    status === 'Completed'
+      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      : status === 'In Progress'
+        ? 'bg-sky-50 text-sky-700 border-sky-200'
+        : 'bg-amber-50 text-amber-700 border-amber-200'
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 select-none font-sans">
-      {/* 1. Footfall Trend Panel */}
+      {/* 1. Occupancy Snapshot Panel */}
       <div className="rounded-xl border border-slate-200 bg-white p-3.5 flex flex-col justify-between shadow-2xs">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wider">
             <TrendingUp className="h-3.5 w-3.5 text-sky-600" />
-            <span>Footfall Trend</span>
+            <span>Occupancy Snapshot</span>
           </div>
-          <span className="text-[10px] text-sky-600 font-mono font-semibold">
-            Peak: 18:00 – 19:00
-          </span>
         </div>
 
         <div className="my-1">
@@ -52,8 +119,8 @@ export const BottomIntelligenceGrid: React.FC = () => {
         </div>
 
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-          <span className="font-sans">vs yesterday: +8.4%</span>
-          <span className="text-slate-900 font-bold">2,006 Total</span>
+          <span className="font-sans">Today&apos;s footfall</span>
+          <span className="text-slate-900 font-bold">{formatNumber(todaysTotalFootfall)}</span>
         </div>
       </div>
 
@@ -119,81 +186,50 @@ export const BottomIntelligenceGrid: React.FC = () => {
             <span>Stock-Out Risks</span>
           </div>
           <span className="text-[10px] text-amber-700 font-mono font-semibold">
-            3 Flagged
+            {riskyShelves.length} Flagged
           </span>
         </div>
 
         <div className="my-2 space-y-2 text-xs">
-          {/* 1. Zero Sugar Cola */}
-          <div className="p-2 rounded-lg bg-rose-50/20 border border-rose-200 flex items-center justify-between shadow-2xs">
-            <div>
-              <span className="font-semibold text-slate-900 block">Zero Sugar Cola</span>
-              <div className="text-[11px] text-slate-500 font-mono">
-                Shelf B4 • <strong className="text-rose-600 font-semibold">17%</strong> (3 visible • 9m left)
-              </div>
-            </div>
-            {refillTriggered['B4'] ? (
-              <span className="text-emerald-700 text-[10px] font-bold">Refilling</span>
-            ) : (
-              <Button
-                variant="action"
-                size="xs"
-                onClick={() => handleQuickRefill('B4')}
-                className="text-[11px] h-6 px-2 font-medium bg-amber-600 hover:bg-amber-700 text-white"
+          {riskyShelves.length === 0 && (
+            <div className="text-[11px] text-slate-400 text-center py-4">No shelves at risk</div>
+          )}
+          {riskyShelves.map((shelf) => {
+            const pct = shelf.capacityCount > 0 ? Math.round((shelf.currentCount / shelf.capacityCount) * 100) : 0
+            const isOos = shelf.status === 'OUT_OF_STOCK'
+            return (
+              <div
+                key={shelf.id}
+                className={`p-2 rounded-lg border flex items-center justify-between shadow-2xs ${isOos ? 'bg-rose-50/20 border-rose-200' : 'bg-slate-50 border-slate-200'}`}
               >
-                Refill
-              </Button>
-            )}
-          </div>
-
-          {/* 2. Organic Whole Milk */}
-          <div className="p-2 rounded-lg bg-rose-50/20 border border-rose-200 flex items-center justify-between shadow-2xs">
-            <div>
-              <span className="font-semibold text-slate-900 block">Organic Whole Milk</span>
-              <div className="text-[11px] text-rose-600 font-mono font-medium">
-                Shelf C2 • Stockout (12 in backroom)
+                <div>
+                  <span className="font-semibold text-slate-900 block">{shelf.productName}</span>
+                  <div className="text-[11px] text-slate-500 font-mono">
+                    Shelf {shelf.shelfId} • <strong className={isOos ? 'text-rose-600 font-semibold' : 'text-amber-700 font-semibold'}>{pct}%</strong> ({shelf.currentCount} visible)
+                  </div>
+                </div>
+                {refillTriggered[shelf.shelfId] ? (
+                  <span className="text-emerald-700 text-[10px] font-bold">Dispatched</span>
+                ) : (
+                  <Button
+                    variant={isOos ? 'action' : 'outline'}
+                    size="xs"
+                    onClick={() => handleQuickRefill(shelf)}
+                    className={isOos ? 'text-[11px] h-6 px-2 font-medium bg-amber-600 hover:bg-amber-700 text-white' : 'text-[11px] h-6 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-50'}
+                  >
+                    Refill
+                  </Button>
+                )}
               </div>
-            </div>
-            {refillTriggered['C2'] ? (
-              <span className="text-emerald-700 text-[10px] font-bold">Refilling</span>
-            ) : (
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => handleQuickRefill('C2')}
-                className="text-[11px] h-6 px-2 text-slate-700 border-slate-200 bg-white hover:bg-slate-50"
-              >
-                Refill
-              </Button>
-            )}
-          </div>
-
-          {/* 3. Kettle Chips */}
-          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between shadow-2xs">
-            <div>
-              <span className="font-semibold text-slate-800 block">Kettle Chips</span>
-              <div className="text-[11px] text-slate-500 font-mono">
-                Shelf D4 • 34% (8 visible)
-              </div>
-            </div>
-            {refillTriggered['D4'] ? (
-              <span className="text-emerald-700 text-[10px] font-bold">Refilling</span>
-            ) : (
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => handleQuickRefill('D4')}
-                className="text-[11px] h-6 px-2 text-slate-500 hover:text-slate-900"
-              >
-                Refill
-              </Button>
-            )}
-          </div>
+            )
+          })}
         </div>
 
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <span>Backroom stock</span>
-          <span className="text-emerald-700 font-medium">Available</span>
+          <span>Available staff</span>
+          <span className={availableStaff.length > 0 ? 'text-emerald-700 font-medium' : 'text-rose-600 font-medium'}>
+            {availableStaff.length}
+          </span>
         </div>
       </div>
 
@@ -205,63 +241,31 @@ export const BottomIntelligenceGrid: React.FC = () => {
             <span>Recent Actions</span>
           </div>
           <span className="text-[10px] text-emerald-700 font-mono font-bold">
-            Live Stream
+            Live
           </span>
         </div>
 
         <div className="my-2 space-y-1.5 text-xs">
-          <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5 shadow-2xs">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 font-mono font-bold">18:01</span>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold">
-                Completed
-              </span>
+          {recentActivity.length === 0 && (
+            <div className="text-[11px] text-slate-400 text-center py-4">No recent activity</div>
+          )}
+          {recentActivity.map((entry, idx) => (
+            <div key={idx} className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5 shadow-2xs">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-slate-400 font-mono font-bold">{entry.displayTime}</span>
+                <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold ${statusBadgeClass(entry.status)}`}>
+                  {entry.status}
+                </span>
+              </div>
+              <div className="text-xs font-medium text-slate-800 truncate">
+                {entry.title}
+              </div>
             </div>
-            <div className="text-xs font-medium text-slate-800">
-              Marcus assigned to Counter C3
-            </div>
-          </div>
-
-          <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5 shadow-2xs">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 font-mono font-bold">17:48</span>
-              <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 text-[9px] font-bold">
-                In Progress
-              </span>
-            </div>
-            <div className="text-xs font-medium text-slate-800">
-              Shelf B4 restock assigned to Liam
-            </div>
-          </div>
-
-          <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5 shadow-2xs">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 font-mono font-bold">17:32</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-bold">
-                Acknowledged
-              </span>
-            </div>
-            <div className="text-xs font-medium text-slate-800">
-              Cooler 2 spill acknowledged
-            </div>
-          </div>
-
-          <div className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 space-y-0.5 shadow-2xs">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 font-mono font-bold">17:15</span>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold">
-                Completed
-              </span>
-            </div>
-            <div className="text-xs font-medium text-slate-800">
-              Counter C2 opened
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <span>Audit Log #409</span>
-          <span className="text-emerald-700 font-semibold font-mono">100% SLA</span>
+          <span>{pendingTasks.length} tracked tasks</span>
         </div>
       </div>
     </div>

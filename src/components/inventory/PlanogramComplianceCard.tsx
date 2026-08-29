@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Sparkles,
   Camera,
@@ -8,6 +8,8 @@ import {
   Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAppStore } from '@/store/useAppStore'
+import { cn } from '@/lib/utils'
 
 export interface PlanogramViolation {
   id: string
@@ -29,39 +31,34 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
 }) => {
   const [isExpanded, setIsExpanded] = useState(true)
   const [createdTasks, setCreatedTasks] = useState<Record<string, boolean>>({})
+  const shelfItems = useAppStore((s) => s.shelfItems)
+  const overallPlanogramCompliance = useAppStore((s) => s.inventoryAnalytics.overallPlanogramCompliance)
 
-  const violations: PlanogramViolation[] = [
-    {
-      id: 'plano-01',
-      shelfCode: 'Shelf A4',
-      location: 'Aisle A · Produce',
-      issueType: 'Wrong product placement',
-      expected: 'Royal Gala Organic Apples',
-      detected: 'Honeycrisp Farm Apples',
-      severity: 'MEDIUM',
-      cameraCode: 'CAM-02',
-    },
-    {
-      id: 'plano-02',
-      shelfCode: 'Shelf C2',
-      location: 'Aisle C · Dairy',
-      issueType: 'Missing front facing',
-      expected: 'Horizon Organic Whole Milk (4 facings)',
-      detected: 'Empty front slot (2 missing)',
-      severity: 'HIGH',
-      cameraCode: 'CAM-03',
-    },
-    {
-      id: 'plano-03',
-      shelfCode: 'Shelf D1',
-      location: 'Aisle D · Snacks Endcap',
-      issueType: 'Promotional display mismatch',
-      expected: 'Tortilla Sea Salt Chips Sign',
-      detected: 'Generic Snack Promo Sign',
-      severity: 'LOW',
-      cameraCode: 'CAM-04',
-    },
-  ]
+  const violations: PlanogramViolation[] = useMemo(() => {
+    return shelfItems
+      .filter((item) => item.isMisplaced || item.status === 'MISPLACED' || item.planogramComplianceScore < 70)
+      .map((item) => {
+        const severity: PlanogramViolation['severity'] = item.isMisplaced || item.status === 'MISPLACED'
+          ? 'HIGH'
+          : item.planogramComplianceScore < 50
+          ? 'MEDIUM'
+          : 'LOW'
+        return {
+          id: item.id,
+          shelfCode: item.shelfId,
+          location: `${item.aisle || item.zoneName} · ${item.category}`,
+          issueType: item.isMisplaced || item.status === 'MISPLACED'
+            ? 'Misplaced item detected'
+            : 'Low planogram compliance score',
+          expected: item.productName,
+          detected: item.isMisplaced || item.status === 'MISPLACED'
+            ? 'Product out of planogram position'
+            : `${Math.round(item.planogramComplianceScore)}% compliance score`,
+          severity,
+          cameraCode: item.cameraSourceId || 'CAM-01',
+        }
+      })
+  }, [shelfItems])
 
   const handleCreateTask = (id: string) => {
     setCreatedTasks((prev) => ({ ...prev, [id]: true }))
@@ -78,12 +75,21 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
           <div>
             <h3 className="text-xs font-bold text-slate-900 tracking-wide flex items-center gap-2">
               <span>Planogram Compliance</span>
-              <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
-                93%
+              <span
+                className={cn(
+                  'font-bold text-xs px-1.5 py-0.5 rounded-md border',
+                  overallPlanogramCompliance >= 85
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : 'text-amber-800 bg-amber-50 border-amber-200'
+                )}
+              >
+                {Math.round(overallPlanogramCompliance)}%
               </span>
             </h3>
             <span className="text-[11px] text-slate-500">
-              3 active placement issues detected
+              {violations.length > 0
+                ? `${violations.length} active placement issue${violations.length === 1 ? '' : 's'} detected`
+                : 'No active placement issues detected'}
             </span>
           </div>
         </div>
@@ -100,7 +106,13 @@ export const PlanogramComplianceCard: React.FC<PlanogramComplianceCardProps> = (
       </div>
 
       {/* Expanded Violations List */}
-      {isExpanded && (
+      {isExpanded && violations.length === 0 && (
+        <div className="mt-3 pt-3 border-t border-slate-100 text-center py-4">
+          <span className="text-xs font-semibold text-slate-500">No active placement issues detected</span>
+        </div>
+      )}
+
+      {isExpanded && violations.length > 0 && (
         <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
           {violations.map((v) => {
             const isTaskCreated = createdTasks[v.id]

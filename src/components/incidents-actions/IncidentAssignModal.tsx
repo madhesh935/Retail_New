@@ -1,23 +1,36 @@
-import React from 'react'
-import { X, UserCheck, MapPin, CheckCircle2, ShieldAlert } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, UserCheck, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OperationalIncident } from './incidentData'
 
+export interface AssignableStaffOption {
+  id: string
+  name: string
+  role?: string
+}
+
 interface IncidentAssignModalProps {
   incident: OperationalIncident | null
+  staffOptions: AssignableStaffOption[]
   onClose: () => void
-  onConfirm: (incident: OperationalIncident) => void
+  onConfirm: (incident: OperationalIncident, staff: AssignableStaffOption) => void
 }
 
 export const IncidentAssignModal: React.FC<IncidentAssignModalProps> = ({
   incident,
+  staffOptions,
   onClose,
   onConfirm,
 }) => {
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setSelectedStaffId(staffOptions[0]?.id ?? null)
+  }, [incident?.id, staffOptions])
+
   if (!incident) return null
 
-  const staffName = incident.suggestedStaffName || 'Marcus Vance'
-  const staffId = incident.suggestedStaffId || 'S02'
+  const selectedStaff = staffOptions.find((s) => s.id === selectedStaffId) || null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none font-sans">
@@ -64,15 +77,37 @@ export const IncidentAssignModal: React.FC<IncidentAssignModalProps> = ({
             {incident.recommendation}
           </div>
 
-          <div className="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between mt-2 shadow-2xs">
-            <div>
-              <span className="text-[10px] text-slate-500 block">Recommended Staff</span>
-              <strong className="text-slate-900 text-xs font-bold">{staffName} ({staffId})</strong>
-            </div>
-
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-              Available Now
-            </span>
+          <div className="mt-2 space-y-1.5">
+            <span className="text-[10px] text-slate-500 block">Assign Available Staff</span>
+            {staffOptions.length === 0 && (
+              <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-500">
+                No available staff members right now.
+              </div>
+            )}
+            {staffOptions.map((staff) => (
+              <button
+                key={staff.id}
+                type="button"
+                onClick={() => setSelectedStaffId(staff.id)}
+                className={`w-full p-2.5 rounded-lg border flex items-center justify-between text-left transition-colors shadow-2xs ${
+                  selectedStaffId === staff.id
+                    ? 'bg-sky-50 border-sky-300'
+                    : 'bg-white border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div>
+                  <strong className="text-slate-900 text-xs font-bold">
+                    {staff.name} ({staff.id})
+                  </strong>
+                  {staff.role && (
+                    <span className="block text-[10px] text-slate-500">{staff.role}</span>
+                  )}
+                </div>
+                {selectedStaffId === staff.id && (
+                  <CheckCircle2 className="h-4 w-4 text-sky-600 shrink-0" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -90,8 +125,9 @@ export const IncidentAssignModal: React.FC<IncidentAssignModalProps> = ({
           <Button
             variant="action"
             size="sm"
-            onClick={() => onConfirm(incident)}
-            className="text-xs px-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold"
+            disabled={!selectedStaff}
+            onClick={() => selectedStaff && onConfirm(incident, selectedStaff)}
+            className="text-xs px-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Confirm Assignment
           </Button>

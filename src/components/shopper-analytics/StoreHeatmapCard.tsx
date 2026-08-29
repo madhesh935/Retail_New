@@ -3,8 +3,9 @@ import {
   Flame,
   Layers,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatNumber } from '@/lib/utils'
 import { CanonicalZoneAnalytics } from './shopperData'
+import { useAppStore } from '@/store/useAppStore'
 
 export type TrafficTimeRange = 'LIVE' | 'LAST_HOUR' | 'TODAY' | '7_DAYS'
 export type MapViewMode = 'HEATMAP' | 'ZONE_VIEW'
@@ -26,6 +27,7 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
   const [timeRange, setTimeRange] = useState<TrafficTimeRange>('LIVE')
   const [viewMode, setViewMode] = useState<MapViewMode>('HEATMAP')
   const [hoveredZone, setHoveredZone] = useState<CanonicalZoneAnalytics | null>(null)
+  const todaysTotalFootfall = useAppStore((s) => s.todaysTotalFootfall)
 
   const shopping = zones.filter((z) => !z.isCheckout)
   const checkoutZone = zones.find((z) => z.isCheckout)
@@ -125,7 +127,7 @@ export const StoreHeatmapCard: React.FC<StoreHeatmapCardProps> = ({
           <div className="flex justify-center">
             <div className="w-64 py-2 px-3 rounded-lg bg-white border border-slate-200 text-center shadow-sm flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-700">Store Entrance & Lobby</span>
-              <span className="text-[10px] text-sky-700 font-medium font-mono">Inflow: 1,840 / day</span>
+              <span className="text-[10px] text-sky-700 font-medium font-mono">Inflow: {formatNumber(todaysTotalFootfall)} / day</span>
             </div>
           </div>
 

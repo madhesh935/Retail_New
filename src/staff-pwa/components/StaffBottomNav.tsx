@@ -10,10 +10,19 @@ interface StaffBottomNavProps {
 }
 
 export const StaffBottomNav: React.FC<StaffBottomNavProps> = ({ activeTab, onSelectTab }) => {
-  const { customerRequests, pendingTasks } = useAppStore()
+  const { customerRequests, pendingTasks, authenticatedStaff } = useAppStore()
 
   const pendingAssistCount = customerRequests.filter((r) => r.status === 'REQUESTED').length
-  const activeWorkCount = pendingTasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS').length
+  // Scope to the logged-in staff member's own work (mirrors StaffWorkPage's
+  // `myTasks` filter) — this used to count every staff member's active tasks
+  // store-wide, which made the badge show a number far larger than what the
+  // signed-in staff member actually had to do.
+  const myActiveTasks = pendingTasks.filter((t) => {
+    if (t.category === 'CUSTOMER_ASSISTANCE') return false
+    if (!authenticatedStaff?.id) return true
+    return !t.assignedStaffId || t.assignedStaffId === authenticatedStaff.id
+  })
+  const activeWorkCount = myActiveTasks.filter((t) => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS').length
 
   return (
     <nav className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 z-40 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">

@@ -19,6 +19,7 @@ export type WebSocketEventType =
   | 'AI_RECOMMENDATION_DISPATCHED'
   | 'STAFF_STATUS_CHANGED'
   | 'HEARTBEAT'
+  | 'DATA_CHANGED'
 
 export interface WebSocketMessage<T = unknown> {
   event: WebSocketEventType

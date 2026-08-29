@@ -4,7 +4,6 @@ import { useAppStore } from '@/store/useAppStore'
 /** Load store data from the live API and optionally keep polling for staff/customer PWAs. */
 export function useStoreData(options?: { pollMs?: number }) {
   const activeStoreId = useAppStore((s) => s.activeStoreId)
-  const isDemoMode = useAppStore((s) => s.isDemoMode)
   const fetchStoreData = useAppStore((s) => s.fetchStoreData)
   const isLoadingStore = useAppStore((s) => s.isLoadingStore)
   const storeError = useAppStore((s) => s.storeError)
@@ -17,7 +16,7 @@ export function useStoreData(options?: { pollMs?: number }) {
       fetchStoreData(activeStoreId)
     }, pollMs)
     return () => window.clearInterval(timer)
-  }, [activeStoreId, isDemoMode, fetchStoreData, pollMs])
+  }, [activeStoreId, fetchStoreData, pollMs])
 
   return {
     activeStoreId,

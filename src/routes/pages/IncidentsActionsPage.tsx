@@ -15,7 +15,7 @@ import {
 } from '@/components/incidents-actions/IncidentListCard'
 import { IncidentDetailDrawer } from '@/components/incidents-actions/IncidentDetailDrawer'
 import { ResolvedIncidentShowcase } from '@/components/incidents-actions/ResolvedIncidentShowcase'
-import { IncidentAssignModal } from '@/components/incidents-actions/IncidentAssignModal'
+import { IncidentAssignModal, AssignableStaffOption } from '@/components/incidents-actions/IncidentAssignModal'
 import {
   WhyRecommendationDialog,
   WhyDialogData,
@@ -23,7 +23,6 @@ import {
 import { ZoneCameraDrawer } from '@/components/shopper-analytics/ZoneCameraDrawer'
 import {
   OperationalIncident,
-  CANONICAL_INCIDENTS,
 } from '@/components/incidents-actions/incidentData'
 import { useAppStore } from '@/store/useAppStore'
 import { toOperationalIncident, toResolvedIncidents } from '@/services/api/livePageAdapters'
@@ -32,13 +31,21 @@ import { cn } from '@/lib/utils'
 export const IncidentsActionsPage: React.FC = () => {
   const storeInfo = useAppStore((s) => s.storeInfo)
   const storeIncidents = useAppStore((s) => s.incidents)
+  const staffMembers = useAppStore((s) => s.staffMembers)
+  const assignRealIncident = useAppStore((s) => s.assignRealIncident)
+  const resolveRealIncident = useAppStore((s) => s.resolveRealIncident)
 
   const liveIncidents = useMemo<OperationalIncident[]>(() => {
-    if (storeIncidents && storeIncidents.length > 0) {
-      return storeIncidents.map((inc, i) => toOperationalIncident(inc, i))
-    }
-    return CANONICAL_INCIDENTS
+    return (storeIncidents || []).map((inc, i) => toOperationalIncident(inc, i))
   }, [storeIncidents])
+
+  const availableStaffOptions = useMemo<AssignableStaffOption[]>(
+    () =>
+      (staffMembers || [])
+        .filter((s) => s.status === 'ON_DUTY_AVAILABLE')
+        .map((s) => ({ id: s.id, name: s.name, role: s.role })),
+    [staffMembers]
+  )
 
   const [incidents, setIncidents] = useState<OperationalIncident[]>([])
   const [hydrated, setHydrated] = useState(false)
@@ -78,6 +85,10 @@ export const IncidentsActionsPage: React.FC = () => {
   const highCount = activeHigh.length
   const activeCount = effectiveIncidents.filter((i) => i.status !== 'RESOLVED').length
   const resolvedTodayCount = resolutions.length
+  const resolvedCount = effectiveIncidents.filter((i) => i.status === 'RESOLVED').length
+  const resolutionRatePct = effectiveIncidents.length > 0
+    ? Math.round((resolvedCount / effectiveIncidents.length) * 100)
+    : null
 
   const latestCriticalMessage = activeCritical.length > 0
     ? `${activeCritical[0].title} · ${activeCritical[0].zone}`
@@ -114,14 +125,17 @@ export const IncidentsActionsPage: React.FC = () => {
   }, [effectiveIncidents, filters])
 
   // Handle staff assignment confirmation
-  const handleConfirmAssignment = (inc: OperationalIncident) => {
+  const handleConfirmAssignment = (inc: OperationalIncident, staff: AssignableStaffOption) => {
+    assignRealIncident(inc.id, staff.id, staff.name)
+
     setIncidents((prev) =>
       prev.map((item) => {
         if (item.id === inc.id) {
           return {
             ...item,
             status: 'ASSIGNED',
-            assignedStaffName: inc.suggestedStaffName || 'Liam O\'Connor',
+            assignedStaffId: staff.id,
+            assignedStaffName: staff.name,
           }
         }
         return item
@@ -132,11 +146,25 @@ export const IncidentsActionsPage: React.FC = () => {
       setSelectedIncident({
         ...selectedIncident,
         status: 'ASSIGNED',
-        assignedStaffName: inc.suggestedStaffName || 'Liam O\'Connor',
+        assignedStaffId: staff.id,
+        assignedStaffName: staff.name,
       })
     }
 
     setAssignModalIncident(null)
+  }
+
+  // Handle incident resolution
+  const handleResolveIncident = (inc: OperationalIncident) => {
+    resolveRealIncident(inc.id)
+
+    setIncidents((prev) =>
+      prev.map((item) => (item.id === inc.id ? { ...item, status: 'RESOLVED' } : item))
+    )
+
+    if (selectedIncident && selectedIncident.id === inc.id) {
+      setSelectedIncident({ ...selectedIncident, status: 'RESOLVED' })
+    }
   }
 
   const handleResetFilters = () => {
@@ -266,6 +294,7 @@ export const IncidentsActionsPage: React.FC = () => {
         highCount={highCount}
         activeCount={activeCount}
         resolvedTodayCount={resolvedTodayCount}
+        resolutionRatePct={resolutionRatePct}
         latestCriticalMessage={latestCriticalMessage}
         latestHighMessage={latestHighMessage}
       />
@@ -296,6 +325,7 @@ export const IncidentsActionsPage: React.FC = () => {
         onViewCamera={(camCode, title) =>
           setCameraDrawerInfo({ camCode, title })
         }
+        onResolve={handleResolveIncident}
       />
 
       {/* Camera Live Drawer */}
@@ -310,6 +340,7 @@ export const IncidentsActionsPage: React.FC = () => {
       {assignModalIncident && (
         <IncidentAssignModal
           incident={assignModalIncident}
+          staffOptions={availableStaffOptions}
           onClose={() => setAssignModalIncident(null)}
           onConfirm={handleConfirmAssignment}
         />

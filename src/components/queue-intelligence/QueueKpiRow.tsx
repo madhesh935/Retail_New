@@ -6,7 +6,6 @@ import {
   Zap,
   ShieldAlert,
   ArrowUpRight,
-  ArrowDownRight,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
@@ -16,7 +15,7 @@ export const QueueKpiRow: React.FC = () => {
 
   const activeQueues = Array.isArray(queues) ? queues.filter((l) => l.status !== 'CLOSED') : []
   const activeCount = activeQueues.length
-  const totalCount = Array.isArray(queues) && queues.length > 0 ? queues.length : 4
+  const totalCount = Array.isArray(queues) ? queues.length : 0
   const avgWaitMin = systemAvgWaitSec ? (systemAvgWaitSec / 60).toFixed(1) : '0.0'
 
   const assistedCount = activeQueues.filter(q => q.laneType !== 'SELF_CHECKOUT').length
@@ -27,9 +26,15 @@ export const QueueKpiRow: React.FC = () => {
   const avgQueueLength = activeCount > 0 ? (activeQueues.reduce((acc, q) => acc + q.currentQueueLength, 0) / activeCount).toFixed(1) : '0.0'
   
   const customersServedHr = activeQueues.reduce((acc, q) => acc + Math.round(q.processingRateItemsPerMinute * 1.5), 0)
+  const maxCapacityPerHr = (Array.isArray(queues) ? queues : []).reduce(
+    (acc, q) => acc + Math.round(q.processingRateItemsPerMinute * 1.5),
+    0
+  )
 
   const highestRiskQueue = activeQueues.reduce((prev, curr) => (curr.currentWaitTimeSeconds > prev.currentWaitTimeSeconds) ? curr : prev, activeQueues[0] || null)
   const highestRiskWaitMin = highestRiskQueue ? (highestRiskQueue.currentWaitTimeSeconds / 60).toFixed(1) : '0'
+  const maxActiveQueueLength = activeQueues.length > 0 ? Math.max(...activeQueues.map((q) => q.currentQueueLength)) : 0
+  const waitVsTargetMin = (Number(avgWaitMin) - 3.0).toFixed(1)
 
 
   return (
@@ -74,10 +79,7 @@ export const QueueKpiRow: React.FC = () => {
           <div className="text-[10px] text-slate-500 mt-0.5">Across active lanes</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
-            <ArrowDownRight className="h-3 w-3" /> -0.8
-          </span>
-          <span className="text-slate-400 text-[9px]">vs peak</span>
+          <span className="text-slate-600 font-semibold">Longest lane: {maxActiveQueueLength}</span>
         </div>
       </div>
 
@@ -99,10 +101,9 @@ export const QueueKpiRow: React.FC = () => {
           <div className="text-[10px] text-slate-500 mt-0.5">Target SLA: &lt;3.0 min</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
-          <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
-            <ArrowDownRight className="h-3 w-3" /> 18% lower
+          <span className={Number(waitVsTargetMin) <= 0 ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>
+            {Number(waitVsTargetMin) <= 0 ? `${Math.abs(Number(waitVsTargetMin)).toFixed(1)} min under SLA` : `${waitVsTargetMin} min over SLA`}
           </span>
-          <span className="text-slate-400 text-[9px]">than yesterday</span>
         </div>
       </div>
 
@@ -118,7 +119,7 @@ export const QueueKpiRow: React.FC = () => {
         </div>
         <div>
           <div className="text-2xl font-bold text-slate-900 tracking-tight">{customersServedHr}</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Peak Capacity: 180/hr</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Max Capacity: {maxCapacityPerHr}/hr</div>
         </div>
         <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
           <span className="text-emerald-700 font-semibold flex items-center gap-0.5">

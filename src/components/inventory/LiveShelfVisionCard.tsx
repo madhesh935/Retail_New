@@ -25,8 +25,8 @@ export const LiveShelfVisionCard: React.FC<LiveShelfVisionCardProps> = ({
   skuName,
   availability,
   visibleUnits,
-  confidence = '94.2%',
-  latencyMs = 14.8,
+  confidence = '—',
+  latencyMs,
 }) => {
   const [overlayMode, setOverlayMode] = useState<'AI_OVERLAY' | 'RAW_FEED'>('AI_OVERLAY')
 

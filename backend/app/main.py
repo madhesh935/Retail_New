@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
@@ -6,20 +8,31 @@ from app.core.config import settings
 from app.db.database import engine, Base, get_db
 from app.db.init_db import seed_database
 from app.services.firebase_sync import init_firebase
-from app.api.endpoints import cameras, queue, entrance, store, inventory, staff, incidents, customer, system, chat, rag, navigation, database
+from app.services.broadcast import manager as live_updates_manager
+from app.services.metrics_snapshot import snapshot_loop
+from app.api.endpoints import cameras, queue, entrance, store, inventory, staff, incidents, customer, system, chat, rag, navigation, database, live
 
 # Create SQLite tables and seed baseline production data
 seed_database()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Bind the running event loop so sync request handlers can push live updates
+    live_updates_manager.bind_loop(asyncio.get_running_loop())
+
     # Initialize Firebase on startup
     try:
         init_firebase()
     except Exception as e:
         print(f"Firebase init notice: {e}")
-    
+
+    # Periodically record real footfall/shelf/queue/dispatch readings so
+    # trend charts have genuine history instead of a fabricated one-time seed.
+    snapshot_task = asyncio.create_task(snapshot_loop())
+
     yield
+
+    snapshot_task.cancel()
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -49,6 +62,7 @@ app.include_router(database.router, prefix="/api/v1/database", tags=["Database I
 app.include_router(system.router, prefix="/api/v1/system", tags=["System Health"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat & Copilot"])
 app.include_router(rag.router, prefix="/api/v1/rag", tags=["Retail RAG"])
+app.include_router(live.router, prefix="/api/v1/live", tags=["Live Updates"])
 
 @app.get("/")
 def read_root():

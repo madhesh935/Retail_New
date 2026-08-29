@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { useAppStore } from '@/store/useAppStore'
 import type { StoreZone } from '@/types/store.types'
 import type { ZoneTrafficMetric } from '@/types/shopper.types'
+import type { ShelfItem } from '@/types/inventory.types'
 import { ZONE_ANCHORS } from '../layout/storeLayout'
 import { RetailPalette } from '../theme/retailPalette'
 import { TooltipData } from '../controls/TwinTooltip'
@@ -165,6 +166,13 @@ function findMetric(
   return metrics.find((m) => m.zoneId === id)
 }
 
+function computeShelfHealthPercent(shelfItems: ShelfItem[], zoneId: string, fallback: number): number {
+  const zoneItems = shelfItems.filter((item) => item.zoneId === zoneId)
+  if (zoneItems.length === 0) return fallback
+  const healthyCount = zoneItems.filter((item) => item.status === 'OPTIMAL').length
+  return Math.round((healthyCount / zoneItems.length) * 100)
+}
+
 /** Clean architectural hanging-sign face — white panel, dark slate type, no count pills. */
 const createSignTexture = (label: string): THREE.CanvasTexture => {
   const canvas = document.createElement('canvas')
@@ -202,7 +210,8 @@ const createSignTexture = (label: string): THREE.CanvasTexture => {
 
 function buildZones(
   storeZones: StoreZone[],
-  zoneMetrics: ZoneTrafficMetric[]
+  zoneMetrics: ZoneTrafficMetric[],
+  shelfItems: ShelfItem[]
 ): Zone3DData[] {
   return ZONE_TEMPLATES.map((template) => {
     const storeZone = findStoreZone(storeZones, template.id)
@@ -234,6 +243,8 @@ function buildZones(
           ? 'MEDIUM'
           : template.defaultRisk
 
+    const shelfHealthPercent = computeShelfHealthPercent(shelfItems, template.id, template.shelfHealthPercent)
+
     return {
       id: template.id,
       code: storeZone?.code ?? template.code,
@@ -243,7 +254,7 @@ function buildZones(
       currentShoppers,
       trafficDensity,
       avgDwellSeconds,
-      shelfHealthPercent: template.shelfHealthPercent,
+      shelfHealthPercent,
       criticalShelvesCount,
       opportunityRisk,
       position: template.position,
@@ -261,10 +272,11 @@ export const ZoneLabels3D: React.FC<ZoneLabels3DProps> = ({
 
   const storeZones = useAppStore((s) => s.zones)
   const zoneMetrics = useAppStore((s) => s.zoneMetrics)
+  const shelfItems = useAppStore((s) => s.shelfItems)
 
   const zones = useMemo(
-    () => buildZones(storeZones ?? [], zoneMetrics ?? []),
-    [storeZones, zoneMetrics]
+    () => buildZones(storeZones ?? [], zoneMetrics ?? [], shelfItems ?? []),
+    [storeZones, zoneMetrics, shelfItems]
   )
 
   // Sign faces never change — create once (labels are static template strings)

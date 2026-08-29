@@ -49,6 +49,18 @@ export const ExpiryWasteSection: React.FC = () => {
   // Distinct categories for filter
   const categories = ['ALL', ...Array.from(new Set(inventoryBatches.map((b) => b.category)))]
 
+  // Real breakdown of recorded waste by reason
+  const wasteByReason = React.useMemo(() => {
+    const totals = new Map<string, number>()
+    wasteRecords.forEach((w) => {
+      totals.set(w.reason, (totals.get(w.reason) || 0) + w.quantity)
+    })
+    return Array.from(totals.entries())
+      .map(([reason, quantity]) => ({ reason, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 3)
+  }, [wasteRecords])
+
   // Filtered batch rows
   const filteredBatches = inventoryBatches.filter((batch) => {
     const assessment = expiryRiskAssessments.find((a) => a.batchId === batch.id)
@@ -569,20 +581,27 @@ export const ExpiryWasteSection: React.FC = () => {
 
           <div className="space-y-2 text-xs">
             <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Top Causes of Recorded Waste</div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Expired</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">3 units</span>
+            {wasteByReason.length === 0 ? (
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center text-slate-400">
+                No waste recorded
               </div>
-              <div className="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Spoiled</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">2 units</span>
+            ) : (
+              <div
+                className={cn(
+                  'grid gap-2 text-center',
+                  wasteByReason.length >= 3 ? 'grid-cols-3' : wasteByReason.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+                )}
+              >
+                {wasteByReason.map((w) => (
+                  <div key={w.reason} className="p-2 bg-slate-50 rounded-xl border border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">
+                      {w.reason.replace(/_/g, ' ')}
+                    </span>
+                    <span className="font-bold text-slate-900 font-mono text-sm">{w.quantity} units</span>
+                  </div>
+                ))}
               </div>
-              <div className="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Damaged</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">2 units</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

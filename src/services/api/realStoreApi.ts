@@ -2,7 +2,7 @@ import type { NavigationPlan, StoreLayout } from '@/customer-pwa/types/navigatio
 import type { DatabaseDump } from '@/types/database';
 
 // 100% Real Live Store API Client connecting to FastAPI backend
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
@@ -112,6 +112,14 @@ export const realStoreApi = {
     return fetchJson<any[]>('/api/v1/incidents');
   },
 
+  async assignIncident(incidentId: string, staffId: string, staffName: string) {
+    return fetchJson<any>(`/api/v1/incidents/${incidentId}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staff_id: staffId, staff_name: staffName }),
+    });
+  },
+
   async resolveIncident(incidentId: string) {
     return fetchJson<any>(`/api/v1/incidents/${incidentId}/resolve`, { method: 'POST' });
   },
@@ -140,6 +148,18 @@ export const realStoreApi = {
 
   async getEntranceStatus() {
     return fetchJson<any>('/api/v1/entrance/status');
+  },
+
+  async getMetricHistory(metricType: string) {
+    return fetchJson<Array<{
+      id: string;
+      type: string;
+      label: string;
+      value: number;
+      unit: string;
+      dimensions: Record<string, unknown>;
+      recordedAt: string;
+    }>>(`/api/v1/inventory/metrics?metric_type=${encodeURIComponent(metricType)}`);
   },
 
   async getInventoryBatches() {
@@ -256,7 +276,6 @@ export const realStoreApi = {
       status: string;
       request_id: string;
       assigned_staff_name: string | null;
-      estimated_arrival_minutes: number;
     }>('/api/v1/customer/assist', {
       method: 'POST',
       body: JSON.stringify(payload)
